@@ -3,6 +3,11 @@ package neo;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 import static org.junit.Assert.*;
 
 public class UIntBaseTest {
@@ -79,5 +84,37 @@ public class UIntBaseTest {
         UIntBase uIntBase = out.get();
         Assert.assertEquals("0x01020304", uIntBase.toString());
         Assert.assertArrayEquals(new byte[]{0x04, 0x03, 0x02, 0x01}, uIntBase.toArray());
+    }
+
+    @Test
+    public void serialize() {
+        UInt32 uInt32 = UInt32.parse("0x01020304");
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+        try {
+            uInt32.serialize(outputStream);
+            byte[] byteArray = outputStream.toByteArray();
+            Assert.assertArrayEquals(new byte[]{0x04, 0x03, 0x02, 0x01}, byteArray);
+        } catch (IOException e) {
+            Assert.assertTrue(false);
+        }
+    }
+
+    @Test
+    public void deserialize() {
+        UInt32 uInt32 = UInt32.parse("0x01020304");
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
+        try {
+            uInt32.serialize(outputStream);
+            byte[] byteArray = outputStream.toByteArray();
+
+            UInt32 newUint = new UInt32();
+            newUint.deserialize(new ByteArrayInputStream(byteArray));
+            Assert.assertEquals("0x01020304", newUint.toString());
+
+            Assert.assertTrue(newUint.equals(uInt32));
+            Assert.assertEquals(0, newUint.compareTo(uInt32));
+        } catch (IOException e) {
+            Assert.assertTrue(false);
+        }
     }
 }
