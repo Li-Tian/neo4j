@@ -80,3 +80,5 @@ fabric.properties
 
 # Maven
 target/
+
+.factorypath

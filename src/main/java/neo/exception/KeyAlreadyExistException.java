@@ -1,4 +1,4 @@
 package neo.exception;
 
-public class KeyAlreadyExistException {
+public class KeyAlreadyExistException extends RuntimeException {
 }

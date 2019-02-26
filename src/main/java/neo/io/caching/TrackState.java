@@ -1,4 +1,8 @@
 package neo.io.caching;
 
-public class TrackState {
+public enum TrackState {
+    NONE,
+    ADDED,
+    CHANGED,
+    DELETED
 }

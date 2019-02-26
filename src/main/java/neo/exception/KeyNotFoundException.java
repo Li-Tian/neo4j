@@ -1,4 +1,4 @@
 package neo.exception;
 
-public class KeyNotFoundException {
+public class KeyNotFoundException extends RuntimeException {
 }
