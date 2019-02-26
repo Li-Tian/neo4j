@@ -41,6 +41,12 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
         TR.exit();
     }
 
+    public Fixed8(Fixed8 input) {
+        TR.enter();
+        this.value = input.value;
+        TR.exit();
+    }
+
     public Fixed8 abs() {
         TR.enter();
         if (value >= 0) {
@@ -52,7 +58,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     @Override
     public int size() {
         TR.enter();
-        return TR.exit(Long.SIZE);
+        return TR.exit(Long.BYTES);
     }
 
     public Fixed8 ceiling() {
