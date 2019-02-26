@@ -3,7 +3,7 @@ package neo;
 /**
  * This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array
  */
-public class UInt160 extends UIntBase {
+public class UInt160 extends UIntBase implements Cloneable{
 
     public static final UInt160 Zero = new UInt160();
 
@@ -60,6 +60,13 @@ public class UInt160 extends UIntBase {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    protected UInt160 clone() {
+        byte[] tmp = new byte[dataBytes.length];
+        System.arraycopy(dataBytes, 0, tmp, 0, dataBytes.length);
+        return new UInt160(tmp);
     }
 
 }

@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import neo.csharp.Out;
 import neo.io.ISerializable;
 
 /**
@@ -207,6 +208,5 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         }
         return false;
     }
-
 
 }

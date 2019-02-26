@@ -3,7 +3,7 @@ package neo;
 /**
  * This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
  */
-public class UInt256 extends UIntBase {
+public class UInt256 extends UIntBase implements Cloneable{
 
     public static final UInt256 Zero = new UInt256();
 
@@ -59,6 +59,13 @@ public class UInt256 extends UIntBase {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    protected UInt256 clone() {
+        byte[] tmp = new byte[dataBytes.length];
+        System.arraycopy(dataBytes, 0, tmp, 0, dataBytes.length);
+        return new UInt256(tmp);
     }
 
 }

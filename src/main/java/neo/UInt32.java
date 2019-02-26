@@ -3,7 +3,7 @@ package neo;
 /**
  * This class stores a 32 bit unsigned int, represented as a 4-byte little-endian byte array
  */
-public class UInt32 extends UIntBase {
+public class UInt32 extends UIntBase implements Cloneable{
 
     public static final UInt32 Zero = new UInt32();
 
@@ -25,8 +25,7 @@ public class UInt32 extends UIntBase {
 
     /**
      * Method Parse receives a big-endian hex string and stores as a UInt32 little-endian 4-bytes
-     * array Example: Parse("0xff00ff01")
-     * should create UInt32 01ff00ff
+     * array Example: Parse("0xff00ff01") should create UInt32 01ff00ff
      */
     public static UInt32 parse(String s) {
         if (s == null) {
@@ -61,5 +60,12 @@ public class UInt32 extends UIntBase {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    @Override
+    protected UInt32 clone() {
+        byte[] tmp = new byte[dataBytes.length];
+        System.arraycopy(dataBytes, 0, tmp, 0, dataBytes.length);
+        return new UInt32(tmp);
     }
 }
