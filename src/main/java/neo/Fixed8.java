@@ -1,13 +1,16 @@
 package neo;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.io.Serializable;
+
+import neo.io.ISerializable;
+
 import java.io.OutputStream;
 import java.io.InputStream;
 
 import neo.log.tr.TR;
 
-public class Fixed8 implements Comparable<Fixed8>, Serializable {
+public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     /// <summary>
     /// Accurate to 10^-8 64-bit fixed-point numbers minimize rounding errors.
     /// By controlling the accuracy of the multiplier, rounding errors can be completely eliminated.
@@ -25,8 +28,6 @@ public class Fixed8 implements Comparable<Fixed8>, Serializable {
     public static final Fixed8 SATOSHI = new Fixed8(1);
 
     public static final Fixed8 ZERO = new Fixed8(0);
-
-    public int Size = Long.SIZE;
 
     static final String EMPTY = "";
     static final String POINT = ".";
@@ -46,6 +47,12 @@ public class Fixed8 implements Comparable<Fixed8>, Serializable {
             return TR.exit(this);
         }
         return TR.exit(new Fixed8(-value));
+    }
+
+    @Override
+    public int size() {
+        TR.enter();
+        return TR.exit(Long.SIZE);
     }
 
     public Fixed8 ceiling() {
@@ -113,7 +120,8 @@ public class Fixed8 implements Comparable<Fixed8>, Serializable {
         return TR.exit(null);
     }
 
-    void deserialize(InputStream reader) throws Exception {
+    @Override
+    public void deserialize(InputStream reader) throws IOException {
         TR.enter();
         byte[] input = new byte[8];
         value = reader.read(input);
@@ -174,7 +182,8 @@ public class Fixed8 implements Comparable<Fixed8>, Serializable {
         return TR.exit(fromDecimal(toBigDecimal(s)));
     }
 
-    void serialize(OutputStream writer) throws Exception {
+    @Override
+    public void serialize(OutputStream writer) throws IOException {
         TR.enter();
         byte[] byteNum = new byte[8];
         for (int ix = 0; ix < 8; ++ix) {
