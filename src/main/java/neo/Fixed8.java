@@ -41,9 +41,9 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
         TR.exit();
     }
 
-    public Fixed8 clone(Fixed8 input) {
+    public Fixed8 clone() {
         TR.enter();
-        return TR.exit(new Fixed8(input.value));
+        return TR.exit(new Fixed8(value));
     }
 
     public Fixed8 abs() {
