@@ -267,6 +267,50 @@ public class BinaryReaderTest {
 
     @Test
     public void readSerializable() {
-        // TODO
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            BinaryWriter writer = new BinaryWriter(out);
+            DummySerializableTestObj dummy = new DummySerializableTestObj();
+            dummy.value = 1;
+            writer.writeSerializable(dummy);
+            ByteArrayInputStream input = new ByteArrayInputStream(out.toByteArray());
+            BinaryReader reader = new BinaryReader(input);
+            assertEquals(dummy, reader.readSerializable(DummySerializableTestObj::new));
+        } catch (IOException e) {
+            fail();
+        }
+    }
+
+    static class DummySerializableTestObj implements ISerializable {
+
+        long value;
+
+        @Override
+        public int size() {
+            return Long.SIZE;
+        }
+
+        @Override
+        public void serialize(BinaryWriter writer) throws IOException {
+            writer.writeLong(value);
+        }
+
+        @Override
+        public void deserialize(BinaryReader reader) throws IOException {
+            value = reader.readLong();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DummySerializableTestObj that = (DummySerializableTestObj) o;
+            return value == that.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Long.hashCode(value);
+        }
     }
 }
