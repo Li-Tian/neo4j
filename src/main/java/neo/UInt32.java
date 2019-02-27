@@ -5,7 +5,7 @@ import neo.log.tr.TR;
 /**
  * This class stores a 32 bit unsigned int, represented as a 4-byte little-endian byte array
  */
-public class UInt32 extends UIntBase implements Cloneable{
+public class UInt32 extends UIntBase implements Cloneable {
 
     public static final UInt32 Zero = new UInt32();
 

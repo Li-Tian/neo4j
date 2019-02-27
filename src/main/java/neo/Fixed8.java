@@ -139,7 +139,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     }
 
     @Override
-    public void serialize(BinaryWriter writer)  {
+    public void serialize(BinaryWriter writer) {
         TR.enter();
         writer.writeLong(value);
         TR.exit();

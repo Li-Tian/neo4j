@@ -8,7 +8,7 @@ import neo.io.BinaryWriter;
 import neo.io.ICloneable;
 import neo.io.ISerializable;
 
-public  class TransactionDemo implements IInventory, ICloneable<TransactionDemo>, ISerializable {
+public class TransactionDemo implements IInventory, ICloneable<TransactionDemo>, ISerializable {
 
     private UInt256 value;
 
@@ -42,7 +42,7 @@ public  class TransactionDemo implements IInventory, ICloneable<TransactionDemo>
     }
 
     @Override
-    public void serialize(BinaryWriter writer)  {
+    public void serialize(BinaryWriter writer) {
 
     }
 

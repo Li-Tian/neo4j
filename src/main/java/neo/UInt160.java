@@ -5,7 +5,7 @@ import neo.log.tr.TR;
 /**
  * This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array
  */
-public class UInt160 extends UIntBase implements Cloneable{
+public class UInt160 extends UIntBase implements Cloneable {
 
     public static final UInt160 Zero = new UInt160();
 

@@ -5,7 +5,7 @@ import neo.log.tr.TR;
 /**
  * This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
  */
-public class UInt256 extends UIntBase implements Cloneable{
+public class UInt256 extends UIntBase implements Cloneable {
 
     public static final UInt256 Zero = new UInt256();
 

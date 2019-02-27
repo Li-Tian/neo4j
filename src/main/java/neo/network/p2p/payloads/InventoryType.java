@@ -8,11 +8,11 @@ import neo.exception.TypeNotExistException;
 
 public enum InventoryType {
 
-    TR((byte)0x01, () -> new TransactionDemo(UInt256.Zero)),
+    TR((byte) 0x01, () -> new TransactionDemo(UInt256.Zero)),
     // TODO
-    BLOCK((byte)0x02, ()-> new TransactionDemo(UInt256.Zero)),
+    BLOCK((byte) 0x02, () -> new TransactionDemo(UInt256.Zero)),
     // TODO
-    CONSENSUS((byte)0x03, ()-> new TransactionDemo(UInt256.Zero));
+    CONSENSUS((byte) 0x03, () -> new TransactionDemo(UInt256.Zero));
 
     private byte value;
     private Supplier factory;
@@ -26,11 +26,11 @@ public enum InventoryType {
         return this.value;
     }
 
-    public<T> T gen(){
+    public <T> T gen() {
         return (T) this.factory.get();
     }
 
-    public static InventoryType parse(byte type){
+    public static InventoryType parse(byte type) {
         if (type == TR.value) return TR;
         if (type == BLOCK.value) return BLOCK;
         if (type == CONSENSUS.value) return CONSENSUS;
