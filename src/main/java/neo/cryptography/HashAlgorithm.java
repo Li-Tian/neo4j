@@ -2,6 +2,8 @@ package neo.cryptography;
 
 import java.util.Arrays;
 
+import neo.log.notr.TR;
+
 abstract class HashAlgorithm {
     protected byte[] hashValue;
     private boolean m_bDisposed = false;
@@ -15,21 +17,26 @@ abstract class HashAlgorithm {
     }
 
     protected void dispose(boolean disposing) {
+        TR.enter();
         if (disposing) {
             if (hashValue != null)
                 Arrays.fill(hashValue, (byte) 0);
             hashValue = null;
             m_bDisposed = true;
         }
+        TR.exit();
     }
 
     public byte[] computeHash(byte[] buffer) {
+        TR.enter();
         if (m_bDisposed) {
+            TR.exit();
             throw new IllegalStateException();
         }
 
         // Do some validation
         if (buffer == null) {
+            TR.exit();
             throw new NullPointerException("buffer");
         }
 
@@ -37,7 +44,7 @@ abstract class HashAlgorithm {
         hashValue = hashFinal();
         byte[] tmp = Arrays.copyOf(hashValue, hashValue.length);
         initialize();
-        return (tmp);
+        return TR.exit(tmp);
     }
 
     //
