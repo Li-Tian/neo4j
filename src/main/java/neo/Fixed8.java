@@ -8,9 +8,6 @@ import neo.io.BinaryReader;
 import neo.io.BinaryWriter;
 import neo.io.ISerializable;
 
-import java.io.OutputStream;
-import java.io.InputStream;
-
 import neo.log.tr.TR;
 
 public class Fixed8 implements Comparable<Fixed8>, ISerializable {
