@@ -1,6 +1,7 @@
 package neo.io.caching;
 
-import neo.function.FuncVoid2T;
+import java.util.function.Supplier;
+
 import neo.io.ICloneable;
 import neo.io.ISerializable;
 
@@ -10,7 +11,7 @@ public class TestMetaDataCache <T extends ICloneable<T> & ISerializable> extends
         super(null);
     }
 
-    public TestMetaDataCache(FuncVoid2T factory){
+    public TestMetaDataCache(Supplier factory){
         super(factory);
     }
 

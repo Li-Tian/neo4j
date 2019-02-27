@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import neo.exception.KeyAlreadyExistException;
 import neo.exception.KeyNotFoundException;
 import neo.function.FuncAB2T;
-import neo.function.FuncVoid2T;
 import neo.io.ICloneable;
 import neo.io.ISerializable;
 import neo.log.tr.TR;
@@ -134,7 +134,7 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
         trackable.State = Deleted;
         */
         for (Map.Entry<TKey, Trackable> entry : map.entrySet()) {
-            if (predicate.gen(entry.getKey(), entry.getValue().item)) {
+            if (predicate.get(entry.getKey(), entry.getValue().item)) {
                 map.remove(entry.getKey());
             }
         }
@@ -185,7 +185,7 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
     /**
      * get value by key, and add a new one if not exist
      */
-    public TValue getAndChange(TKey key, FuncVoid2T<TValue> factory) {
+    public TValue getAndChange(TKey key, Supplier<TValue> factory) {
         TR.enter();
 
         Trackable trackable;
@@ -195,7 +195,7 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
                 if (factory == null) {
                     throw new KeyNotFoundException();
                 }
-                trackable.item = factory.gen();
+                trackable.item = factory.get();
                 trackable.state = CHANGED;
             } else if (trackable.state == NONE) {
                 trackable.state = CHANGED;
@@ -206,7 +206,7 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
                 if (factory == null) {
                     throw new KeyNotFoundException();
                 }
-                trackable.item = factory.gen();
+                trackable.item = factory.get();
                 trackable.state = ADDED;
             }
             map.put(key, trackable);
@@ -214,20 +214,20 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
         return TR.exit(trackable.item);
     }
 
-    public TValue getOrAdd(TKey key, FuncVoid2T<TValue> factory) {
+    public TValue getOrAdd(TKey key, Supplier<TValue> factory) {
         TR.enter();
 
         Trackable trackable;
         if (map.containsKey(key)) {
             trackable = map.get(key);
             if (trackable.state == DELETED) {
-                trackable.item = factory.gen();
+                trackable.item = factory.get();
                 trackable.state = CHANGED;
             }
         } else {
             trackable = new Trackable(key, tryGetInternal(key), NONE);
             if (trackable.item == null) {
-                trackable.item = factory.gen();
+                trackable.item = factory.get();
                 trackable.state = ADDED;
             }
             map.put(key, trackable);

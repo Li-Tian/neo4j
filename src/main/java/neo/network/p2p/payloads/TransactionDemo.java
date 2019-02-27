@@ -42,12 +42,12 @@ public  class TransactionDemo implements IInventory, ICloneable<TransactionDemo>
     }
 
     @Override
-    public void serialize(BinaryWriter writer) throws IOException {
+    public void serialize(BinaryWriter writer)  {
 
     }
 
     @Override
-    public void deserialize(BinaryReader reader) throws IOException {
+    public void deserialize(BinaryReader reader) {
 
     }
 

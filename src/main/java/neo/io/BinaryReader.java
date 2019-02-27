@@ -10,6 +10,7 @@ import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
+import neo.log.tr.TR;
 
 /**
  * 从C#移植过来的数据写入包装类。 与 java.io.DataInput 的不同在于它使用 little endian
@@ -23,93 +24,124 @@ public class BinaryReader {
         inputStream = stream;
     }
 
-    public void close() throws IOException {
-        inputStream.close();
-    }
-
-    public boolean readBoolean() throws IOException {
-        return inputStream.read() != 0;
-    }
-
-    public byte readByte() throws IOException {
-        return (byte) inputStream.read();
-    }
-
-    public void readFully(byte[] b) throws IOException {
-        readFully(b, 0, b.length);
-    }
-
-    public void readFully(byte[] b, int off, int len) throws IOException {
-        int readLen = inputStream.read(b, off, len);
-        if (readLen < len) {
-            throw new EOFException();
+    public void close() {
+        try {
+            inputStream.close();
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
         }
     }
 
-    public char readChar() throws IOException {
+    public boolean readBoolean() {
+        try {
+            return inputStream.read() != 0;
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public byte readByte() {
+        try {
+            return (byte) inputStream.read();
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void readFully(byte[] b) {
+        readFully(b, 0, b.length);
+    }
+
+    public void readFully(byte[] b, int off, int len) {
+        int readLen = 0;
+        try {
+            readLen = inputStream.read(b, off, len);
+            if (readLen < len) {
+                throw new EOFException();
+            }
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public char readChar() {
         byte[] temp = new byte[2];
         readFully(temp);
         return BitConverter.toChar(temp);
     }
 
-    public double readDouble() throws IOException {
+    public double readDouble() {
         byte[] temp = new byte[8];
         readFully(temp);
         return BitConverter.toDouble(temp);
     }
 
-    public double readFloat() throws IOException {
+    public double readFloat() {
         byte[] temp = new byte[4];
         readFully(temp);
         return BitConverter.toFloat(temp);
     }
 
-    public int readInt() throws IOException {
+    public int readInt() {
         byte[] temp = new byte[4];
         readFully(temp);
         return BitConverter.toInt(temp);
     }
 
-    public long readLong() throws IOException {
+    public long readLong() {
         byte[] temp = new byte[8];
         readFully(temp);
         return BitConverter.toLong(temp);
     }
 
-    public short readShort() throws IOException {
+    public short readShort() {
         byte[] temp = new byte[2];
         readFully(temp);
         return BitConverter.toShort(temp);
     }
 
-    public Ushort readUshort() throws IOException {
+    public Ushort readUshort() {
         byte[] temp = new byte[2];
         readFully(temp);
         return BitConverter.toUshort(temp);
     }
 
-    public Uint readUint() throws IOException {
+    public Uint readUint() {
         byte[] temp = new byte[4];
         readFully(temp);
         return BitConverter.toUint(temp);
     }
 
-    public Ulong readUlong() throws IOException {
+    public Ulong readUlong() {
         byte[] temp = new byte[8];
         readFully(temp);
         return BitConverter.toUlong(temp);
     }
 
-    public String readUTF() throws IOException {
-        int length = BitConverter.decode7BitEncodedInt(inputStream);
-        byte[] buf = new byte[length];
-        inputStream.read(buf);
-        return new String(buf, "UTF-8");
+    public String readUTF() {
+        try {
+            int length = BitConverter.decode7BitEncodedInt(inputStream);
+            byte[] buf = new byte[length];
+            inputStream.read(buf);
+            return new String(buf, "UTF-8");
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
     }
 
-    public <T extends ISerializable> T readSerializable(Supplier<T> generator) throws IOException {
+    public <T extends ISerializable> T readSerializable(Supplier<T> generator) {
         T obj = generator.get();
-        obj.deserialize(this);
-        return obj;
+        try {
+            obj.deserialize(this);
+            return obj;
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -1,15 +1,23 @@
 package neo.persistence.leveldb;
 
 import org.iq80.leveldb.DB;
+import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Supplier;
 
+import neo.csharp.BitConverter;
 import neo.io.ICloneable;
 import neo.io.ISerializable;
+import neo.io.SerializeHelper;
 import neo.io.caching.DataCache;
+import neo.log.tr.TR;
 
 public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {
 
@@ -17,41 +25,83 @@ public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValu
     private final ReadOptions options;
     private final WriteBatch batch;
     private final byte prefix;
+    private final Supplier<TKey> keyGenerator;
+    private final Supplier<TValue> valueGenerator;
 
-    public DBCache(DB db, ReadOptions options, WriteBatch batch, byte prefix) {
+    public DBCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, Supplier<TKey> keyGenerator, Supplier<TValue> valueGenerator) {
         this.db = db;
         this.options = options;
         this.batch = batch;
         this.prefix = prefix;
+        this.keyGenerator = keyGenerator;
+        this.valueGenerator = valueGenerator;
     }
 
     @Override
     protected TValue getInternal(TKey key) {
-        return null;
+        byte[] bytes = new byte[0];
+        try {
+            bytes = BitConverter.merge(new byte[]{prefix}, SerializeHelper.toBytes(key));
+            byte[] value = db.get(bytes, options);
+            return SerializeHelper.parse(valueGenerator, value);
+        } catch (IOException e) {
+            // 返回 null
+            TR.error(e);
+            return null;
+        }
     }
 
     @Override
     protected void addInternal(TKey key, TValue value) {
-
+        try {
+            byte[] bytes = BitConverter.merge(new byte[]{prefix}, SerializeHelper.toBytes(key));
+            batch.put(bytes, SerializeHelper.toBytes(value));
+        } catch (IOException e) {
+            // 返回 null
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     protected TValue tryGetInternal(TKey key) {
-        return null;
+        return getInternal(key);
     }
 
     @Override
     protected void updateInternal(TKey key, TValue value) {
-
+        addInternal(key, value);
     }
 
     @Override
     public void deleteInternal(TKey key) {
-
+        byte[] bytes;
+        try {
+            bytes = BitConverter.merge(new byte[]{prefix}, SerializeHelper.toBytes(key));
+            db.delete(bytes);
+        } catch (IOException e) {
+            // 返回 null
+            TR.error(e);
+        }
     }
 
     @Override
     protected Collection<Map.Entry<TKey, TValue>> findInternal(byte[] keyPrefix) {
-        return null;
+        DBIterator iterator = db.iterator();
+        iterator.seek(keyPrefix);
+        ArrayList<Map.Entry<TKey, TValue>> list = new ArrayList<>();
+
+        try {
+            while (iterator.hasNext()) {
+                Map.Entry<byte[], byte[]> entry = iterator.next();
+                TKey key = SerializeHelper.parse(keyGenerator, entry.getValue());
+                TValue value = SerializeHelper.parse(valueGenerator, entry.getValue());
+                list.add(new AbstractMap.SimpleEntry<>(key, value));
+            }
+        } catch (IOException e) {
+            // 返回 null
+            TR.error(e);
+        }
+        return list;
     }
 }

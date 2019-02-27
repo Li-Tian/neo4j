@@ -1,9 +1,10 @@
 package neo.network.p2p.payloads;
 
 
+import java.util.function.Supplier;
+
 import neo.UInt256;
 import neo.exception.TypeNotExistException;
-import neo.function.FuncVoid2T;
 
 public enum InventoryType {
 
@@ -14,9 +15,9 @@ public enum InventoryType {
     CONSENSUS((byte)0x03, ()-> new TransactionDemo(UInt256.Zero));
 
     private byte value;
-    private FuncVoid2T factory;
+    private Supplier factory;
 
-    InventoryType(byte val, FuncVoid2T factory) {
+    InventoryType(byte val, Supplier factory) {
         this.value = val;
         this.factory = factory;
     }
@@ -26,7 +27,7 @@ public enum InventoryType {
     }
 
     public<T> T gen(){
-        return (T) this.factory.gen();
+        return (T) this.factory.get();
     }
 
     public static InventoryType parse(byte type){

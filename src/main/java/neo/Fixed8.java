@@ -78,7 +78,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     }
 
     @Override
-    public void deserialize(BinaryReader reader) throws IOException {
+    public void deserialize(BinaryReader reader) {
         TR.enter();
         value = reader.readLong();
         TR.exit();
@@ -139,7 +139,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     }
 
     @Override
-    public void serialize(BinaryWriter writer) throws IOException {
+    public void serialize(BinaryWriter writer)  {
         TR.enter();
         writer.writeLong(value);
         TR.exit();

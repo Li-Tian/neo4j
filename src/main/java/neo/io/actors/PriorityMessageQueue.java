@@ -44,11 +44,11 @@ public class PriorityMessageQueue implements MessageQueue, UnboundedMessageQueue
         ArrayList<Object> msgs = new ArrayList<>(high.size() + low.size());
         msgs.addAll(high);
         msgs.addAll(low);
-        if (dropper.gen(msg, msgs)) {
+        if (dropper.get(msg, msgs)) {
             TR.exit();
             return;
         }
-        ConcurrentLinkedQueue<Envelope> queue = priorityGenerator.gen(msg) ? high : low;
+        ConcurrentLinkedQueue<Envelope> queue = priorityGenerator.get(msg) ? high : low;
         queue.add(handle);
         TR.exit();
     }

@@ -57,7 +57,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * Method Serialize writes the data_bytes array into a BinaryWriter object
      */
     @Override
-    public void serialize(BinaryWriter writer) throws IOException {
+    public void serialize(BinaryWriter writer)  {
         TR.enter();
         writer.write(dataBytes);
         TR.exit();
@@ -68,7 +68,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * in data_bytes array.
      */
     @Override
-    public void deserialize(BinaryReader reader) throws IOException {
+    public void deserialize(BinaryReader reader) {
         TR.enter();
         reader.readFully(dataBytes, 0, dataBytes.length);
         TR.exit();

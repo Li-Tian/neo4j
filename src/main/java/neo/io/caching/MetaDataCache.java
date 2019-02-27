@@ -1,6 +1,7 @@
 package neo.io.caching;
 
-import neo.function.FuncVoid2T;
+import java.util.function.Supplier;
+
 import neo.io.ICloneable;
 import neo.io.ISerializable;
 import neo.log.tr.TR;
@@ -9,7 +10,7 @@ public abstract class MetaDataCache<T extends ISerializable & ICloneable<T>> {
 
     private T item;
     private TrackState state;
-    private final FuncVoid2T<T> factory;
+    private final Supplier<T> factory;
 
     protected abstract void addInternal(T item);
 
@@ -17,7 +18,7 @@ public abstract class MetaDataCache<T extends ISerializable & ICloneable<T>> {
 
     protected abstract void updateInternal(T item);
 
-    protected MetaDataCache(FuncVoid2T<T> factory) {
+    protected MetaDataCache(Supplier<T> factory) {
         this.factory = factory;
     }
 
@@ -53,7 +54,7 @@ public abstract class MetaDataCache<T extends ISerializable & ICloneable<T>> {
             item = tryGetInternal();
         }
         if (item == null) {
-            item = factory == null ? null : factory.gen();
+            item = factory == null ? null : factory.get();
             state = TrackState.ADDED;
         }
         return TR.exit(item);

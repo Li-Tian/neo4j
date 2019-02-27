@@ -4,10 +4,14 @@ import org.iq80.leveldb.DB;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 
-import neo.function.FuncVoid2T;
+import java.io.IOException;
+import java.util.function.Supplier;
+
 import neo.io.ICloneable;
 import neo.io.ISerializable;
+import neo.io.SerializeHelper;
 import neo.io.caching.MetaDataCache;
+import neo.log.tr.TR;
 
 public class DbMetaDataCache<T extends ISerializable & ICloneable<T>> extends MetaDataCache<T> {
 
@@ -15,28 +19,44 @@ public class DbMetaDataCache<T extends ISerializable & ICloneable<T>> extends Me
     private final ReadOptions options;
     private final WriteBatch batch;
     private final byte prefix;
+    private final Supplier<T> valueGenerator;
 
-    protected DbMetaDataCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, FuncVoid2T<T> factory) {
-        super(factory);
+    protected DbMetaDataCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, Supplier<T> valueGenerator) {
+        super(valueGenerator);
 
         this.db = db;
         this.options = options;
         this.batch = batch;
         this.prefix = prefix;
+        this.valueGenerator = valueGenerator;
     }
 
     @Override
     protected void addInternal(T item) {
-        //
+        try {
+            byte[] bytes = new byte[]{prefix};
+            batch.put(bytes, SerializeHelper.toBytes(item));
+        } catch (IOException e) {
+            // 返回 null
+            TR.error(e);
+        }
     }
 
     @Override
     protected T tryGetInternal() {
-        return null;
+        byte[] bytes = new byte[]{prefix};
+        try {
+            byte[] value = db.get(bytes, options);
+            return SerializeHelper.parse(valueGenerator, value);
+        } catch (IOException e) {
+            // 返回 null
+            TR.error(e);
+            return null;
+        }
     }
 
     @Override
     protected void updateInternal(T item) {
-
+        addInternal(item);
     }
 }

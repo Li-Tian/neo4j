@@ -94,31 +94,23 @@ public class UIntBaseTest {
     public void serialize() {
         UInt32 uInt32 = UInt32.parse("0x01020304");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-        try {
-            uInt32.serialize(new BinaryWriter(outputStream));
-            byte[] byteArray = outputStream.toByteArray();
-            Assert.assertArrayEquals(new byte[]{0x04, 0x03, 0x02, 0x01}, byteArray);
-        } catch (IOException e) {
-            Assert.assertTrue(false);
-        }
+        uInt32.serialize(new BinaryWriter(outputStream));
+        byte[] byteArray = outputStream.toByteArray();
+        Assert.assertArrayEquals(new byte[]{0x04, 0x03, 0x02, 0x01}, byteArray);
     }
 
     @Test
     public void deserialize() {
         UInt32 uInt32 = UInt32.parse("0x01020304");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
-        try {
-            uInt32.serialize(new BinaryWriter(outputStream));
-            byte[] byteArray = outputStream.toByteArray();
+        uInt32.serialize(new BinaryWriter(outputStream));
+        byte[] byteArray = outputStream.toByteArray();
 
-            UInt32 newUint = new UInt32();
-            newUint.deserialize(new BinaryReader(new ByteArrayInputStream(byteArray)));
-            Assert.assertEquals("0x01020304", newUint.toString());
+        UInt32 newUint = new UInt32();
+        newUint.deserialize(new BinaryReader(new ByteArrayInputStream(byteArray)));
+        Assert.assertEquals("0x01020304", newUint.toString());
 
-            Assert.assertTrue(newUint.equals(uInt32));
-            Assert.assertEquals(0, newUint.compareTo(uInt32));
-        } catch (IOException e) {
-            Assert.assertTrue(false);
-        }
+        Assert.assertTrue(newUint.equals(uInt32));
+        Assert.assertEquals(0, newUint.compareTo(uInt32));
     }
 }
