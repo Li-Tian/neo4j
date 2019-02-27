@@ -235,7 +235,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
         }
         Ulong r = rh.multiply(QUO).add(rd.divide(new Ulong(D)));
         x.value = r.longValue() * sign;
-        return x;
+        return TR.exit(x);
     }
 
     public static Fixed8 multiply(Fixed8 x, long y) {
