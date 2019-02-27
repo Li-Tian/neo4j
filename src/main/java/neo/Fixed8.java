@@ -80,54 +80,6 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
         return TR.exit(Long.compare(this.value, other.value));
     }
 
-    public static BigDecimal toBigDecimal(final String value) {
-        TR.enter();
-        if (value != null) {
-            boolean negativeNumber = false;
-
-            if (value.contains("(") && value.contains(")"))
-                negativeNumber = true;
-            if (value.endsWith("-") || value.startsWith("-"))
-                negativeNumber = true;
-
-            String parsedValue = value.replaceAll("[^0-9\\,\\.]", EMPTY);
-
-            if (negativeNumber)
-                parsedValue = "-" + parsedValue;
-
-            int lastPointPosition = parsedValue.lastIndexOf(POINT);
-            int lastCommaPosition = parsedValue.lastIndexOf(COMMA);
-
-            if (lastPointPosition == -1 && lastCommaPosition == -1)
-                return TR.exit(new BigDecimal(parsedValue));
-            if (lastPointPosition > -1 && lastCommaPosition == -1) {
-                int firstPointPosition = parsedValue.indexOf(POINT);
-                if (firstPointPosition != lastPointPosition)
-                    return TR.exit(new BigDecimal(parsedValue.replace(POINT_AS_STRING, EMPTY)));
-                else
-                    return TR.exit(new BigDecimal(parsedValue));
-            }
-            if (lastPointPosition == -1 && lastCommaPosition > -1) {
-                int firstCommaPosition = parsedValue.indexOf(COMMA);
-                if (firstCommaPosition != lastCommaPosition)
-                    return TR.exit(new BigDecimal(parsedValue.replace(COMMA_AS_STRING, EMPTY)));
-                else
-                    return TR.exit(new BigDecimal(parsedValue.replace(COMMA, POINT)));
-            }
-            if (lastPointPosition < lastCommaPosition) {
-                parsedValue = parsedValue.replace(POINT_AS_STRING, EMPTY);
-                return TR.exit(new BigDecimal(parsedValue.replace(COMMA, POINT)));
-            }
-            if (lastCommaPosition < lastPointPosition) {
-                parsedValue = parsedValue.replace(COMMA_AS_STRING, EMPTY);
-                return TR.exit(new BigDecimal(parsedValue));
-            }
-            TR.exit();
-            throw new NumberFormatException("Unexpected number format. Cannot convert '" + value + "' to BigDecimal.");
-        }
-        return TR.exit(null);
-    }
-
     @Override
     public void deserialize(BinaryReader reader) throws IOException {
         TR.enter();
@@ -186,7 +138,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
 
     public static Fixed8 parse(String s) {
         TR.enter();
-        return TR.exit(fromDecimal(toBigDecimal(s)));
+        return TR.exit(fromDecimal(new BigDecimal(s)));
     }
 
     @Override
@@ -210,9 +162,10 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
             BigDecimal val = new BigDecimal(s);
             Fixed8 fixed8Val = fromDecimal(val);
             result.value = fixed8Val.value;
-            return true;
+            return TR.exit(true);
         } catch (NumberFormatException | ArithmeticException ex) {
-            return false;
+            result.value = 0;
+            return TR.exit(false);
         }
     }
 
