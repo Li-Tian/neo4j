@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.math.BigDecimal;
 
 import neo.csharp.Ulong;
+import neo.io.BinaryReader;
+import neo.io.BinaryWriter;
 import neo.io.ISerializable;
 
 import java.io.OutputStream;
@@ -127,10 +129,9 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     }
 
     @Override
-    public void deserialize(InputStream reader) throws IOException {
+    public void deserialize(BinaryReader reader) throws IOException {
         TR.enter();
-        byte[] input = new byte[8];
-        value = reader.read(input);
+        value = reader.readLong();
         TR.exit();
     }
 
@@ -189,14 +190,9 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     }
 
     @Override
-    public void serialize(OutputStream writer) throws IOException {
+    public void serialize(BinaryWriter writer) throws IOException {
         TR.enter();
-        byte[] byteNum = new byte[8];
-        for (int ix = 0; ix < 8; ++ix) {
-            int offset = 64 - (ix + 1) * 8;
-            byteNum[ix] = (byte) ((this.value >> offset) & 0xff);
-        }
-        writer.write(byteNum);
+        writer.writeLong(value);
         TR.exit();
     }
 

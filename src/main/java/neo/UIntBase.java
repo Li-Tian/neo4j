@@ -2,13 +2,13 @@ package neo;
 
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import neo.csharp.Out;
+import neo.io.BinaryReader;
+import neo.io.BinaryWriter;
 import neo.io.ISerializable;
 
 /**
@@ -53,7 +53,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * Method Serialize writes the data_bytes array into a BinaryWriter object
      */
     @Override
-    public void serialize(OutputStream writer) throws IOException {
+    public void serialize(BinaryWriter writer) throws IOException {
         writer.write(dataBytes);
     }
 
@@ -62,8 +62,8 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * in data_bytes array.
      */
     @Override
-    public void deserialize(InputStream reader) throws IOException {
-        reader.read(dataBytes, 0, dataBytes.length);
+    public void deserialize(BinaryReader reader) throws IOException {
+        reader.readFully(dataBytes, 0, dataBytes.length);
     }
 
     /**

@@ -7,7 +7,7 @@ import java.io.OutputStream;
 public interface ISerializable {
     int size();
 
-    void serialize(OutputStream writer) throws IOException;
+    void serialize(BinaryWriter writer) throws IOException;
 
-    void deserialize(InputStream reader) throws IOException;
+    void deserialize(BinaryReader reader) throws IOException;
 }

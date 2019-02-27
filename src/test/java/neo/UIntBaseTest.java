@@ -9,6 +9,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import neo.csharp.Out;
+import neo.io.BinaryReader;
+import neo.io.BinaryWriter;
 
 import static org.junit.Assert.*;
 
@@ -93,7 +95,7 @@ public class UIntBaseTest {
         UInt32 uInt32 = UInt32.parse("0x01020304");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         try {
-            uInt32.serialize(outputStream);
+            uInt32.serialize(new BinaryWriter(outputStream));
             byte[] byteArray = outputStream.toByteArray();
             Assert.assertArrayEquals(new byte[]{0x04, 0x03, 0x02, 0x01}, byteArray);
         } catch (IOException e) {
@@ -106,11 +108,11 @@ public class UIntBaseTest {
         UInt32 uInt32 = UInt32.parse("0x01020304");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         try {
-            uInt32.serialize(outputStream);
+            uInt32.serialize(new BinaryWriter(outputStream));
             byte[] byteArray = outputStream.toByteArray();
 
             UInt32 newUint = new UInt32();
-            newUint.deserialize(new ByteArrayInputStream(byteArray));
+            newUint.deserialize(new BinaryReader(new ByteArrayInputStream(byteArray)));
             Assert.assertEquals("0x01020304", newUint.toString());
 
             Assert.assertTrue(newUint.equals(uInt32));
