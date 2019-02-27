@@ -1,6 +1,7 @@
 package neo.io.wrappers;
 
 import neo.io.ISerializable;
+import neo.log.tr.TR;
 
 public abstract class SerializableWrapper<T> implements ISerializable {
 
@@ -8,18 +9,20 @@ public abstract class SerializableWrapper<T> implements ISerializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj){
-            return true;
+        TR.enter();
+
+        if (this == obj) {
+            return TR.exit(true);
         }
         if (value == null || obj == null) {
-            return false;
+            return TR.exit(false);
         }
 
         if (getClass() != obj.getClass()) {
             final SerializableWrapper other = (SerializableWrapper) obj;
-            return value.equals(other.value);
+            return TR.exit(value.equals(other.value));
         } else {
-            return value.equals(obj);
+            return TR.exit(value.equals(obj));
         }
     }
 }

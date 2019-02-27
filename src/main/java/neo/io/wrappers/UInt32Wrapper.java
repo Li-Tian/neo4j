@@ -5,6 +5,7 @@ import java.io.IOException;
 import neo.UInt32;
 import neo.io.BinaryReader;
 import neo.io.BinaryWriter;
+import neo.log.tr.TR;
 
 public final class UInt32Wrapper extends SerializableWrapper<UInt32> {
 
@@ -27,19 +28,24 @@ public final class UInt32Wrapper extends SerializableWrapper<UInt32> {
 
     @Override
     public int size() {
-        return UInt32.Zero.size();
+        TR.enter();
+        return TR.exit(UInt32.Zero.size());
     }
 
     @Override
     public void serialize(BinaryWriter writer) throws IOException {
+        TR.enter();
         // NOTE 这里必须与C# uint存储大小保持一致
         this.value.serialize(writer);
+        TR.exit();
     }
 
     @Override
     public void deserialize(BinaryReader reader) throws IOException {
+        TR.enter();
         // NOTE 这里必须与C# uint存储大小保持一致
         this.value.deserialize(reader);
+        TR.exit();
     }
 
     //   C#中的 隐式转换方法
@@ -48,7 +54,8 @@ public final class UInt32Wrapper extends SerializableWrapper<UInt32> {
     //        return wrapper.value;
     //    }
     public UInt32 toUint32() {
-        return this.value;
+        TR.enter();
+        return TR.exit(this.value);
     }
 
 }
