@@ -35,15 +35,16 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     static final String POINT_AS_STRING = ".";
     static final String COMMA_AS_STRING = ",";
 
+    public Fixed8() {
+        TR.enter();
+        this.value = 0;
+        TR.exit();
+    }
+
     public Fixed8(long data) {
         TR.enter();
         this.value = data;
         TR.exit();
-    }
-
-    public Fixed8 clone() {
-        TR.enter();
-        return TR.exit(new Fixed8(value));
     }
 
     public Fixed8 abs() {
@@ -234,8 +235,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
             rh = rh.add(new Ulong(1));
         }
         Ulong r = rh.multiply(QUO).add(rd.divide(new Ulong(D)));
-        x.value = r.longValue() * sign;
-        return TR.exit(x);
+        return TR.exit(new Fixed8 (r.longValue() * sign));
     }
 
     public static Fixed8 multiply(Fixed8 x, long y) {
