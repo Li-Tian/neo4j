@@ -3,6 +3,7 @@ package neo;
 import java.io.IOException;
 import java.math.BigDecimal;
 
+import neo.csharp.Ulong;
 import neo.io.ISerializable;
 
 import java.io.OutputStream;
@@ -259,65 +260,35 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
         return TR.exit(x.compareTo(y) <= 0);
     }
 
-    //Return the byte result, pretending x and y are unsigned long type
-    static long add(long x, long y) {
-        TR.enter();
-        long result = (x & Long.MAX_VALUE) + (y & Long.MAX_VALUE);
-        if (Long.signum(x) * Long.signum(y) < 0) {
-            result ^= Long.MIN_VALUE;
-        }
-        return TR.exit(result);
-    }
-
-    //Return the byte result, pretending x and y are unsigned long type
-    static long multiply(long x, long y) {
-        TR.enter();
-        long result = (x & Long.MAX_VALUE) * (y & Long.MAX_VALUE);
-        if (x % 2 != 0 && y < 0) {
-            result ^= Long.MIN_VALUE;
-        }
-        if (y % 2 != 0 && x < 0) {
-            result ^= Long.MIN_VALUE;
-        }
-        return TR.exit(result);
-    }
-
-    //Return the comparation result, pretending x and y are unsigned long type
-    static long compare(long x, long y) {
-        long result = (x >> 1) - (y >> 1);
-        if (result > 0) return TR.exit(1);
-        else if (result < 0) return TR.exit(-1);
-        return TR.exit(x & 1l - y & 1l);
-    }
-
     public static Fixed8 multiply(Fixed8 x, Fixed8 y) {
         TR.enter();
-        final long QUO = -((1l << 63) / (D >> 1));//2^41
-        final long REM = (-((1l << 63) % (D >> 1))) << 1;//2^25
+        final Ulong QUO = new Ulong(1).shiftLeft(63).divide(new Ulong(D).shiftRight(1));
+        final Ulong REM = Ulong.remainder(new Ulong(1).shiftLeft(63), new Ulong(D).shiftRight(1)).shiftLeft(1);
         int sign = Long.signum(x.value) * Long.signum(y.value);
-        long ux = Math.abs(x.value);
-        long uy = Math.abs(y.value);
-        long xh = ux >> 32;//2^22
-        long xl = ux & 0x00000000ffffffffl;//2^32
-        long yh = uy >> 32;//2^22
-        long yl = uy & 0x00000000ffffffffl;//2^32
-        long rh = xh * yh;//2^44
-        long rm = xh * yl + xl * yh;//2^55
-        long rl = xl * yl;//2^64
-        long rmh = rm >> 32;//2^23
-        long rml = rm << 32;//2^64
-        rh += rmh;
-        rl = add(rl, rml);
-        if (compare(rl, rml) < 0)
-            ++rh;
-        if (rh >= D)
+        Ulong ux = new Ulong(Math.abs(x.value));
+        Ulong uy = new Ulong(Math.abs(y.value));
+        Ulong xh = ux.shiftRight(32);
+        Ulong xl = ux.and(new Ulong(0x00000000ffffffffl));
+        Ulong yh = uy.shiftRight(32);
+        Ulong yl = uy.and(new Ulong(0x00000000ffffffffl));
+        Ulong rh = xh.multiply(yh);
+        Ulong rm = xh.multiply(yl).add(xl.multiply(yh));
+        Ulong rl = xl.multiply(yl);
+        Ulong rmh = rm.shiftRight(32);
+        Ulong rml = rm.shiftLeft(32);
+        rh = rh.add(rmh);
+        rl = rl.add(rml);
+        if (rl.compareTo(rml) < 0)
+            rh = rh.add(new Ulong(1));
+        if (rh.compareTo(new Ulong(D)) >= 0) {
             throw new NumberFormatException();
-
-        long rd = multiply(rh, REM) + rl;
-        if (compare(rd, rl) < 0)
-            ++rh;
-        long r = multiply(rh, QUO) + rd / D;
-        x.value = (long) r * sign;
+        }
+        Ulong rd = rh.multiply(REM).add(rl);
+        if (rd.compareTo(rl) < 0) {
+            rh = rh.add(new Ulong(1));
+        }
+        Ulong r = rh.multiply(QUO).add(rd.divide(new Ulong(D)));
+        x.value = r.longValue() * sign;
         return x;
     }
 
