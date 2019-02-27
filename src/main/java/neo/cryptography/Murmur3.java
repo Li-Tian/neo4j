@@ -1,7 +1,9 @@
 package neo.cryptography;
 
+import neo.Helper;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
+import neo.log.notr.TR;
 
 public class Murmur3 extends HashAlgorithm {
 
@@ -17,8 +19,10 @@ public class Murmur3 extends HashAlgorithm {
     private int length;
 
     public Murmur3(Uint seed) {
+        TR.enter();
         this.seed = seed;
         initialize();
+        TR.exit();
     }
 
     @Override
@@ -28,11 +32,12 @@ public class Murmur3 extends HashAlgorithm {
 
     @Override
     protected void hashCore(byte[] array, int ibStart, int cbSize) {
+        TR.enter();
         length += cbSize;
         int remainder = cbSize & 3;
         int alignedLength = ibStart + (cbSize - remainder);
         for (int i = ibStart; i < alignedLength; i += 4) {
-            Uint k = new Uint(0);//TODO array.ToUInt32(i);
+            Uint k = Helper.toUint(array, i);
             k = k.multiply(c1);
             k = k.rotateLeft(r1);
             k = k.multiply(c2);
@@ -66,23 +71,27 @@ public class Murmur3 extends HashAlgorithm {
             remainingBytes = remainingBytes.multiply(c2);
             hash = hash.xor(remainingBytes);
         }
+        TR.exit();
     }
 
     @Override
     protected byte[] hashFinal() {
+        TR.enter();
         hash = hash.xor(new Uint(length));
         hash = hash.xor(hash.shiftRight(16));
         hash = hash.multiply(new Uint(0x85ebca6b));
         hash = hash.xor(hash.shiftRight(13));
         hash = hash.multiply(new Uint(0xc2b2ae35));
         hash = hash.xor(hash.shiftRight(16));
-        return BitConverter.getBytes(hash);
+        return TR.exit(BitConverter.getBytes(hash));
     }
 
     @Override
     public void initialize() {
+        TR.enter();
         hash = seed;
         length = 0;
+        TR.exit();
     }
 
 }
