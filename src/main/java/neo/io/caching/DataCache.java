@@ -13,21 +13,19 @@ import neo.function.FuncAB2T;
 import neo.function.FuncVoid2T;
 import neo.io.ICloneable;
 import neo.io.ISerializable;
+import neo.log.tr.TR;
 
 import static neo.io.caching.TrackState.ADDED;
 import static neo.io.caching.TrackState.CHANGED;
 import static neo.io.caching.TrackState.DELETED;
 import static neo.io.caching.TrackState.NONE;
 
-public abstract class DataCache<TKey extends ISerializable, TValue extends  ICloneable<TValue> & ISerializable> {
+public abstract class DataCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> {
 
     public class Trackable {
         public TKey key;
         public TValue item;
         public TrackState state;
-
-        public Trackable() {
-        }
 
         public Trackable(TKey key, TValue value, TrackState state) {
             this.key = key;
@@ -38,21 +36,31 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
 
     private final ConcurrentHashMap<TKey, Trackable> map = new ConcurrentHashMap<>();
 
+    /**
+     * get value by key
+     *
+     * @throws KeyNotFoundException if key is deleted in the datacache
+     */
     public TValue get(TKey key) {
+        TR.enter();
+
+        Trackable trackable;
         if (map.containsKey(key)) {
-            Trackable trackable = map.get(key);
+            trackable = map.get(key);
             if (trackable.state == DELETED) {
                 throw new KeyNotFoundException();
             }
-            return trackable.item;
         } else {
-            Trackable trackable = new Trackable(key, getInternal(key), NONE);
+            trackable = new Trackable(key, getInternal(key), NONE);
             map.put(key, trackable);
-            return trackable.item;
+
         }
+        return TR.exit(trackable.item);
     }
 
     public void add(TKey key, TValue value) {
+        TR.enter();
+
         if (map.containsKey(key)) {
             Trackable trackable = map.get(key);
             if (trackable.state != DELETED) {
@@ -63,29 +71,41 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
         } else {
             map.put(key, new Trackable(key, value, ADDED));
         }
+        TR.exit();
     }
 
 
     public void commit() {
+        TR.enter();
+
         for (Trackable trackable : map.values()) {
             switch (trackable.state) {
                 case ADDED:
                     addInternal(trackable.key, trackable.item);
+                    trackable.state = NONE; // C# 这里没有. 这里补加的，防止C#中的 add -> commit -> delete -> commit 失效
+                    break;
                 case CHANGED:
                     updateInternal(trackable.key, trackable.item);
+                    trackable.state = NONE;// C# 这里没有. 这里补加的，防止C#中的 add -> commit -> delete -> commit 失效
+                    break;
                 case DELETED:
                     deleteInternal(trackable.key);
+                    map.remove(trackable.key);
+                    break;
                 default:
-                    ;
+                    break;
             }
         }
+        TR.exit();
     }
 
-    public DataCache<TKey, TValue> CreateSnapshot() {
-        return new CloneCache<>(this);
+    public DataCache<TKey, TValue> createSnapshot() {
+        TR.enter();
+        return TR.exit(new CloneCache<>(this));
     }
 
     public void delete(TKey key) {
+        TR.enter();
         if (map.containsKey(key)) {
             Trackable trackable = map.get(key);
             if (trackable.state == ADDED) {
@@ -100,10 +120,13 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
             }
             map.put(key, new Trackable(key, item, DELETED));
         }
+        TR.exit();
     }
 
 
     public void deleteWhere(FuncAB2T<TKey, TValue, Boolean> predicate) {
+        TR.enter();
+
         /*
         C# deleteWhere
         foreach(Trackable trackable in dictionary
@@ -115,9 +138,12 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
                 map.remove(entry.getKey());
             }
         }
+        TR.exit();
     }
 
     public Collection<Map.Entry<TKey, TValue>> find(byte[] keyPrefix) {
+        TR.enter();
+
         Collection<Map.Entry<TKey, TValue>> results = new ArrayList<>();
 
         Collection<Map.Entry<TKey, TValue>> c = findInternal(keyPrefix);
@@ -133,25 +159,35 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
                 results.add(new AbstractMap.SimpleEntry<>(entry.getKey(), trackable.item));
             }
         }
-        return results;
+        return TR.exit(results);
     }
 
 
     public Collection<Trackable> getChangeSet() {
+        TR.enter();
+
         /*
         C# code
         foreach(Trackable trackable in dictionary.Values.Where(p = > p.State != None))
         yield return trackable;
         */
-        return map.values().stream().filter(p -> p.state != NONE).collect(Collectors.toList());
+        Collection<Trackable> collection = map.values().stream().filter(p -> p.state != NONE).collect(Collectors.toList());
+        return TR.exit(collection);
     }
 
 
     public TValue getAndChange(TKey key) {
-        return getAndChange(key, null);
+        TR.enter();
+
+        return TR.exit(getAndChange(key, null));
     }
 
+    /**
+     * get value by key, and add a new one if not exist
+     */
     public TValue getAndChange(TKey key, FuncVoid2T<TValue> factory) {
+        TR.enter();
+
         Trackable trackable;
         if (map.containsKey(key)) {
             trackable = map.get(key);
@@ -164,7 +200,6 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
             } else if (trackable.state == NONE) {
                 trackable.state = CHANGED;
             }
-
         } else {
             trackable = new Trackable(key, tryGetInternal(key), CHANGED);
             if (trackable.item == null) {
@@ -176,10 +211,12 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
             }
             map.put(key, trackable);
         }
-        return trackable.item;
+        return TR.exit(trackable.item);
     }
 
     public TValue getOrAdd(TKey key, FuncVoid2T<TValue> factory) {
+        TR.enter();
+
         Trackable trackable;
         if (map.containsKey(key)) {
             trackable = map.get(key);
@@ -195,25 +232,27 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends  IClo
             }
             map.put(key, trackable);
         }
-        return trackable.item;
+        return TR.exit(trackable.item);
     }
 
     public TValue tryGet(TKey key) {
+        TR.enter();
+
         if (map.containsKey(key)) {
             Trackable trackable = map.get(key);
 
             if (trackable.state == DELETED) {
-                return null;
+                return TR.exit(null);
             }
-            return trackable.item;
+            return TR.exit(trackable.item);
         }
 
         TValue value = tryGetInternal(key);
         if (value == null) {
-            return null;
+            return TR.exit(null);
         }
         map.put(key, new Trackable(key, value, NONE));
-        return value;
+        return TR.exit(value);
     }
 
     protected abstract TValue getInternal(TKey key);

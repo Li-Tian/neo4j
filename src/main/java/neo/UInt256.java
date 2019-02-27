@@ -1,5 +1,7 @@
 package neo;
 
+import neo.log.tr.TR;
+
 /**
  * This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
  */
@@ -28,6 +30,7 @@ public class UInt256 extends UIntBase implements Cloneable{
      * should create UInt256 01ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
      */
     public static UInt256 parse(String s) {
+        TR.enter();
         if (s == null) {
             throw new NullPointerException();
         }
@@ -41,7 +44,7 @@ public class UInt256 extends UIntBase implements Cloneable{
 
         byte[] bytes = ByteHelper.hexToBytes(s);
         bytes = ByteHelper.reverse(bytes);
-        return new UInt256(bytes);
+        return TR.exit(new UInt256(bytes));
     }
 
     /**
@@ -52,20 +55,23 @@ public class UInt256 extends UIntBase implements Cloneable{
      * @return true if successfully parsed.
      */
     public static boolean tryParse(String s, UInt256 out_result) {
+        TR.enter();
         try {
             UInt256 v = parse(s);
             out_result.dataBytes = v.dataBytes;
-            return true;
+            return TR.exit(true);
         } catch (Exception e) {
-            return false;
+            return TR.exit(false);
         }
     }
 
     @Override
     protected UInt256 clone() {
+        TR.enter();
+
         byte[] tmp = new byte[dataBytes.length];
         System.arraycopy(dataBytes, 0, tmp, 0, dataBytes.length);
-        return new UInt256(tmp);
+        return TR.exit(new UInt256(tmp));
     }
 
 }

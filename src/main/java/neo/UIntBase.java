@@ -10,6 +10,7 @@ import neo.csharp.Out;
 import neo.io.BinaryReader;
 import neo.io.BinaryWriter;
 import neo.io.ISerializable;
+import neo.log.tr.TR;
 
 /**
  * Base class for little-endian unsigned integers. Two classes inherit from this: UInt160 and
@@ -29,6 +30,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * null, it's automatically initialized with given size.
      */
     protected UIntBase(int bytes, byte[] value) {
+        TR.enter();
         if (value == null) {
             this.dataBytes = new byte[bytes];
             return;
@@ -38,6 +40,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         }
 
         this.dataBytes = value;
+        TR.exit();
     }
 
     /**
@@ -46,7 +49,8 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      */
     @Override
     public int size() {
-        return dataBytes.length;
+        TR.enter();
+        return TR.exit(dataBytes.length);
     }
 
     /**
@@ -54,7 +58,9 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      */
     @Override
     public void serialize(BinaryWriter writer) throws IOException {
+        TR.enter();
         writer.write(dataBytes);
+        TR.exit();
     }
 
     /**
@@ -63,7 +69,9 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      */
     @Override
     public void deserialize(BinaryReader reader) throws IOException {
+        TR.enter();
         reader.readFully(dataBytes, 0, dataBytes.length);
+        TR.exit();
     }
 
     /**
@@ -72,14 +80,16 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      */
     @Override
     public boolean equals(Object o) {
+        TR.enter();
         if (this == o) {
-            return true;
+            return TR.exit(true);
         }
         if (o == null || getClass() != o.getClass()) {
-            return false;
+            return TR.exit(false);
         }
         final UIntBase uIntBase = (UIntBase) o;
-        return Arrays.equals(dataBytes, uIntBase.dataBytes);
+        boolean result = Arrays.equals(dataBytes, uIntBase.dataBytes);
+        return TR.exit(result);
     }
 
     /**
@@ -88,10 +98,12 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      */
     @Override
     public int hashCode() {
+        TR.enter();
         if (dataBytes == null || dataBytes.length == 0) {
             return 0;
         }
-        return ByteBuffer.wrap(dataBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        int code = ByteBuffer.wrap(dataBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        return TR.exit(code);
     }
 
     /**
@@ -101,6 +113,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      */
     @Override
     public int compareTo(UIntBase other) {
+        TR.enter();
         byte[] x = this.dataBytes;
         byte[] y = other.dataBytes;
 
@@ -109,23 +122,23 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         // 包含比较 UInt32, UInt160, UInt256  之间的大小
         while (i > j) {
             int r = Byte.toUnsignedInt(x[i]);
-            if (r > 0) return r;
+            if (r > 0) return TR.exit(r);
             i--;
         }
 
         while (j > i) {
             int r = Byte.toUnsignedInt(y[j]);
-            if (r > 0) return -r;
+            if (r > 0) return TR.exit(-r);
             j--;
         }
 
         for (; i >= 0 && j >= 0; i--, j--) {
             int r = Byte.toUnsignedInt(x[i]) - Byte.toUnsignedInt(y[j]);
             if (r != 0) {
-                return r;
+                return TR.exit(r);
             }
         }
-        return 0;
+        return TR.exit(0);
     }
 
 
@@ -136,12 +149,13 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      */
     @Override
     public String toString() {
+        TR.enter();
         final StringBuilder builder = new StringBuilder("0x");
 
         if (dataBytes == null || dataBytes.length <= 0) {
-            return null;
+            return TR.exit(null);
         }
-        return "0x" + ByteHelper.toHexString(ByteHelper.reverse(dataBytes));
+        return TR.exit("0x" + ByteHelper.toHexString(ByteHelper.reverse(dataBytes)));
     }
 
     /**
@@ -150,12 +164,13 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * create UInt160 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
      */
     public static UIntBase parse(String s) {
+        TR.enter();
         if (s.length() == 8 || s.length() == 10) {
-            return UInt32.parse(s);
+            return TR.exit(UInt32.parse(s));
         } else if (s.length() == 40 || s.length() == 42)
-            return UInt160.parse(s);
+            return TR.exit(UInt160.parse(s));
         else if (s.length() == 64 || s.length() == 66)
-            return UInt256.parse(s);
+            return TR.exit(UInt256.parse(s));
         else {
             throw new IllegalArgumentException(String.format("%s cannot convert to UIntBase.class", s));
         }
@@ -166,7 +181,8 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * int
      */
     public byte[] toArray() {
-        return dataBytes;
+        TR.enter();
+        return TR.exit(dataBytes);
     }
 
     /**
@@ -175,6 +191,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
      * result) should create result UInt160 01ff00ff00ff00ff00ff00ff00ff00ff00ff00a4
      */
     public static boolean tryParse(String s, Out<UIntBase> result) {
+        TR.enter();
         int size = 0;
 
         if (s.length() == 8 || s.length() == 10) {
@@ -191,22 +208,22 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
             UInt32 uInt32 = new UInt32();
             if (UInt32.tryParse(s, uInt32)) {
                 result.set(uInt32);
-                return true;
+                return TR.exit(true);
             }
         } else if (size == 20) {
             UInt160 uInt160 = new UInt160();
             if (UInt160.tryParse(s, uInt160)) {
                 result.set(uInt160);
-                return true;
+                return TR.exit(true);
             }
         } else if (size == 32) {
             UInt256 uInt256 = new UInt256();
             if (UInt256.tryParse(s, uInt256)) {
                 result.set(uInt256);
-                return true;
+                return TR.exit(true);
             }
         }
-        return false;
+        return TR.exit(false);
     }
 
 }

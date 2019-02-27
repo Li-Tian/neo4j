@@ -34,5 +34,10 @@ public class UInt256Test {
         Assert.assertTrue(success);
         Assert.assertEquals("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01", uInt256.toString());
         Assert.assertArrayEquals(BYTES, uInt256.toArray());
+
+        uInt256 = uInt256.clone();
+        Assert.assertEquals("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01", uInt256.toString());
+        Assert.assertArrayEquals(BYTES, uInt256.toArray());
     }
+
 }

@@ -1,5 +1,7 @@
 package neo;
 
+import neo.log.tr.TR;
+
 /**
  * This class stores a 32 bit unsigned int, represented as a 4-byte little-endian byte array
  */
@@ -28,6 +30,8 @@ public class UInt32 extends UIntBase implements Cloneable{
      * array Example: Parse("0xff00ff01") should create UInt32 01ff00ff
      */
     public static UInt32 parse(String s) {
+        TR.enter();
+
         if (s == null) {
             throw new NullPointerException();
         }
@@ -41,7 +45,7 @@ public class UInt32 extends UIntBase implements Cloneable{
 
         byte[] bytes = ByteHelper.hexToBytes(s);
         bytes = ByteHelper.reverse(bytes);
-        return new UInt32(bytes);
+        return TR.exit(new UInt32(bytes));
     }
 
 
@@ -53,19 +57,22 @@ public class UInt32 extends UIntBase implements Cloneable{
      * @return true if successfully parsed.
      */
     public static boolean tryParse(String s, UInt32 out_result) {
+        TR.enter();
         try {
             UInt32 v = parse(s);
             out_result.dataBytes = v.dataBytes;
-            return true;
+            return TR.exit(true);
         } catch (Exception e) {
-            return false;
+            return TR.exit(false);
         }
     }
 
     @Override
     protected UInt32 clone() {
+        TR.enter();
+
         byte[] tmp = new byte[dataBytes.length];
         System.arraycopy(dataBytes, 0, tmp, 0, dataBytes.length);
-        return new UInt32(tmp);
+        return TR.exit(new UInt32(tmp));
     }
 }

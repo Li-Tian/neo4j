@@ -1,5 +1,7 @@
 package neo.io.caching;
 
+import neo.log.tr.TR;
+
 public abstract class FIFOCache<TKey, TValue> extends Cache<TKey, TValue> {
 
     public FIFOCache(int maxCapacity) {
@@ -8,5 +10,7 @@ public abstract class FIFOCache<TKey, TValue> extends Cache<TKey, TValue> {
 
     @Override
     protected void onAccess(CacheItem item) {
+        TR.enter();
+        TR.exit();
     }
 }

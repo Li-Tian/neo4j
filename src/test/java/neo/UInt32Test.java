@@ -29,5 +29,9 @@ public class UInt32Test {
         Assert.assertTrue(success);
         Assert.assertEquals("0x01020304", uInt32.toString());
         Assert.assertArrayEquals(new byte[]{0x04, 0x03, 0x02, 0x01}, uInt32.toArray());
+
+        uInt32 = uInt32.clone();
+        Assert.assertEquals("0x01020304", uInt32.toString());
+        Assert.assertArrayEquals(new byte[]{0x04, 0x03, 0x02, 0x01}, uInt32.toArray());
     }
 }

@@ -36,5 +36,9 @@ public class UInt160Test {
         Assert.assertTrue(success);
         Assert.assertEquals("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01", uInt160.toString());
         Assert.assertArrayEquals(BYTES, uInt160.toArray());
+
+        uInt160 = uInt160.clone();
+        Assert.assertEquals("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01", uInt160.toString());
+        Assert.assertArrayEquals(BYTES, uInt160.toArray());
     }
 }
