@@ -8,5 +8,5 @@ public interface ISerializable {
 
     void serialize(BinaryWriter writer);
 
-    void deserialize(BinaryReader reader) throws IOException;
+    void deserialize(BinaryReader reader);
 }

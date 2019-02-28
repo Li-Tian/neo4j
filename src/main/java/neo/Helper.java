@@ -2,6 +2,7 @@ package neo;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -11,7 +12,9 @@ import neo.log.notr.TR;
 
 public class Helper {
 
-    static final Properties properties;
+    private static final Properties properties;
+
+    public static final Charset UTF_8;
 
     /**
      * 初始化项目配置
@@ -26,6 +29,14 @@ public class Helper {
             properties.clear();
             properties.put("neo.version", "unknown");
         }
+        Charset charset = null;
+        try {
+            charset = Charset.forName("UTF-8");
+        } catch (RuntimeException e) {
+            TR.error("UTF-8 is not supported : %s", e.getMessage());
+            System.exit(1);
+        }
+        UTF_8 = charset;
         TR.exit();
     }
 
