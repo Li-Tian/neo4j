@@ -2,6 +2,8 @@ package neo.network.p2p.payloads;
 
 
 import java.io.ByteArrayOutputStream;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 
 import neo.Fixed8;
@@ -10,6 +12,7 @@ import neo.UInt256;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
+import neo.persistence.Snapshot;
 
 public abstract class Transaction implements IInventory, ICloneable<Transaction> {
 
@@ -24,8 +27,8 @@ public abstract class Transaction implements IInventory, ICloneable<Transaction>
     public final TransactionType type;
     public byte version;
     public TransactionAttribute[] attributes;
-    public CoinReference inputs;
-    public TransactionOutput outputs;
+    public CoinReference[] inputs;
+    public TransactionOutput[] outputs;
     public Witness[] witnesses;
 
     private Fixed8 feePerByte = Fixed8.negate(Fixed8.SATOSHI);
@@ -59,8 +62,24 @@ public abstract class Transaction implements IInventory, ICloneable<Transaction>
 
     @Override
     public void serialize(BinaryWriter writer) {
+        serializeUnsigned(writer);
+        writer.writeArray(witnesses);
+    }
+
+    protected void serializeExclusiveData(BinaryWriter writer) {
 
     }
+
+    @Override
+    public void serializeUnsigned(BinaryWriter writer) {
+        writer.writeByte(type.value());
+        writer.writeByte(version);
+        serializeExclusiveData(writer);
+        writer.writeArray(attributes);
+        writer.writeArray(inputs);
+        writer.writeArray(outputs);
+    }
+
 
     @Override
     public void deserialize(BinaryReader reader) {
@@ -92,11 +111,35 @@ public abstract class Transaction implements IInventory, ICloneable<Transaction>
         return false;
     }
 
-    public Fixed8 systemFee() {
+    public Fixed8 getSystemFee() {
         Fixed8 fee = ProtocolSettings.Default.systemFee.get(type);
         return fee == null ? Fixed8.ZERO : fee;
     }
 
+    public HashMap<CoinReference, TransactionOutput> getReferences() {
+        if (references == null) {
+            references = new HashMap<>();
+//            Arrays.stream(inputs).collect(Collectors.groupingBy(p -> p.prevHash)).forEach();
+        }
+        return references;
+    }
+
+    public Collection<TransactionResult> getTransactionResults() {
+        if (references == null) return null;
+
+        return null;
+    }
+
+
+    boolean verify(Snapshot snapshot) {
+        return verify(snapshot, Collections.emptyList());
+    }
+
+    public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
+
+
+        return true;
+    }
 
     private boolean verifyReceivingScripts() {
         //TODO: run ApplicationEngine

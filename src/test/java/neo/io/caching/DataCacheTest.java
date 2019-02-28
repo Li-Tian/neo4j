@@ -8,7 +8,7 @@ import java.util.Map;
 import neo.io.ICloneable;
 import neo.csharp.io.ISerializable;
 
-public class TestDataCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {
+public class DataCacheTest<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {
 
     private HashMap<TKey, TValue> cache = new HashMap<>();
 

@@ -5,13 +5,13 @@ import java.util.function.Supplier;
 import neo.io.ICloneable;
 import neo.csharp.io.ISerializable;
 
-public class TestMetaDataCache <T extends ICloneable<T> & ISerializable> extends MetaDataCache<T>  {
+public class MetaDataCacheTest <T extends ICloneable<T> & ISerializable> extends MetaDataCache<T>  {
 
-    public TestMetaDataCache() {
+    public MetaDataCacheTest() {
         super(null);
     }
 
-    public TestMetaDataCache(Supplier factory){
+    public MetaDataCacheTest(Supplier factory){
         super(factory);
     }
 

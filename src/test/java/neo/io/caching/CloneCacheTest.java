@@ -26,7 +26,7 @@ public class CloneCacheTest {
 
     @Test()
     public void get() {
-        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(new TestDataCache<>());
+        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(new DataCacheTest<>());
         cloneCache.add(t1.hash(), t1);
 
         TransactionDemo t = cloneCache.get(t1.hash());
@@ -37,7 +37,7 @@ public class CloneCacheTest {
 
     @Test
     public void add() {
-        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(new TestDataCache<>());
+        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(new DataCacheTest<>());
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);
 
@@ -49,8 +49,8 @@ public class CloneCacheTest {
 
     @Test
     public void commit() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
-//        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
+//        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(DataCacheTest);
         TestDataCache.add(t1.hash(), t1);
         TestDataCache.add(t2.hash(), t2);
         TestDataCache.add(t3.hash(), t3);
@@ -70,8 +70,8 @@ public class CloneCacheTest {
 
     @Test(expected = KeyNotFoundException.class)
     public void delete() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
-//        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
+//        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(DataCacheTest);
         TestDataCache.add(t1.hash(), t1);
         TestDataCache.add(t2.hash(), t2);
 
@@ -86,7 +86,7 @@ public class CloneCacheTest {
 
     @Test
     public void deleteWhere() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
         CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);
@@ -108,7 +108,7 @@ public class CloneCacheTest {
 
     @Test
     public void find() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
         CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);
@@ -121,7 +121,7 @@ public class CloneCacheTest {
 
     @Test
     public void getChangeSet() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
         CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);
@@ -137,7 +137,7 @@ public class CloneCacheTest {
 
     @Test
     public void getAndChange() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
         CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);
@@ -151,7 +151,7 @@ public class CloneCacheTest {
 
     @Test(expected = KeyNotFoundException.class)
     public void getAndChange1() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
         CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);
@@ -163,7 +163,7 @@ public class CloneCacheTest {
 
     @Test
     public void getOrAdd() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
         CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(TestDataCache);
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);
@@ -177,7 +177,7 @@ public class CloneCacheTest {
 
     @Test
     public void tryGet() {
-        TestDataCache<UInt256, TransactionDemo> TestDataCache = new TestDataCache<>();
+        DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
         CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<>(TestDataCache);
         cloneCache.add(t1.hash(), t1);
         cloneCache.add(t2.hash(), t2);

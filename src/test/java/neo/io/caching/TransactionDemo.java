@@ -34,12 +34,12 @@ public class TransactionDemo implements IInventory, ICloneable<TransactionDemo> 
 
     @Override
     public void serialize(neo.csharp.io.BinaryWriter writer) {
-
+        writer.writeSerializable(value);
     }
 
     @Override
     public void deserialize(neo.csharp.io.BinaryReader reader) {
-
+        this.value = reader.readSerializable(() -> new UInt256());
     }
 
     @Override
