@@ -2,8 +2,8 @@ package neo.io.caching;
 
 import neo.UInt160;
 import neo.UInt256;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
 import neo.network.p2p.payloads.IInventory;
 import neo.network.p2p.payloads.InventoryType;
@@ -33,12 +33,12 @@ public class TransactionDemo implements IInventory, ICloneable<TransactionDemo> 
     }
 
     @Override
-    public void serialize(BinaryWriter writer) {
+    public void serialize(neo.csharp.io.BinaryWriter writer) {
 
     }
 
     @Override
-    public void deserialize(BinaryReader reader) {
+    public void deserialize(neo.csharp.io.BinaryReader reader) {
 
     }
 

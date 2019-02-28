@@ -6,9 +6,9 @@ import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
 import neo.csharp.Ushort;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
-import neo.io.ISerializable;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
+import neo.csharp.io.ISerializable;
 
 public class TransactionOutput implements ISerializable {
 

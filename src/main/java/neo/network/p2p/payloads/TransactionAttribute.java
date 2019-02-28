@@ -5,9 +5,9 @@ import com.google.gson.JsonObject;
 
 import neo.csharp.BitConverter;
 import neo.csharp.Ushort;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
-import neo.io.ISerializable;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
+import neo.csharp.io.ISerializable;
 
 public class TransactionAttribute implements ISerializable {
 

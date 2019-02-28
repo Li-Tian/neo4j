@@ -1,7 +1,8 @@
 package neo.network.p2p.payloads;
 
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
+
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
 
 public class Header extends BlockBase {
 

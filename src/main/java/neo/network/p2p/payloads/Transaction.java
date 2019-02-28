@@ -7,8 +7,8 @@ import java.util.HashMap;
 import neo.Fixed8;
 import neo.ProtocolSettings;
 import neo.UInt256;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
 
 public abstract class Transaction implements IInventory, ICloneable<Transaction> {

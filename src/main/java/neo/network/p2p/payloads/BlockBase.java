@@ -10,8 +10,8 @@ import neo.UInt256;
 import neo.cryptography.Crypto;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
 import neo.persistence.Snapshot;
 
 

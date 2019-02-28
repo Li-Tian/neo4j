@@ -3,7 +3,7 @@ package neo.io.caching;
 import java.util.function.Supplier;
 
 import neo.io.ICloneable;
-import neo.io.ISerializable;
+import neo.csharp.io.ISerializable;
 
 public class TestMetaDataCache <T extends ICloneable<T> & ISerializable> extends MetaDataCache<T>  {
 

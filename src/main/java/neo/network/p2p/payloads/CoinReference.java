@@ -4,9 +4,9 @@ import com.google.gson.JsonObject;
 
 import neo.UInt256;
 import neo.csharp.Ushort;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
-import neo.io.ISerializable;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
+import neo.csharp.io.ISerializable;
 
 public class CoinReference implements ISerializable {
 

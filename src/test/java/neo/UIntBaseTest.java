@@ -3,14 +3,12 @@ package neo;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import neo.csharp.Out;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
 
 import static org.junit.Assert.*;
 

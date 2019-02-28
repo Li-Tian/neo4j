@@ -5,9 +5,9 @@ import com.google.gson.JsonObject;
 
 import neo.UInt160;
 import neo.csharp.BitConverter;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
-import neo.io.ISerializable;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
+import neo.csharp.io.ISerializable;
 
 public class Witness implements ISerializable {
 

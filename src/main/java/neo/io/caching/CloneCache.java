@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.AbstractMap.SimpleEntry;
 
 import neo.io.ICloneable;
-import neo.io.ISerializable;
+import neo.csharp.io.ISerializable;
 import neo.log.tr.TR;
 
 public class CloneCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {

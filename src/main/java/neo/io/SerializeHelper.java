@@ -4,6 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.function.Supplier;
 
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
+import neo.csharp.io.ISerializable;
+
 public class SerializeHelper {
 
     public static byte[] toBytes(ISerializable serializable) {
