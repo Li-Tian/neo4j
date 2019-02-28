@@ -5,7 +5,6 @@ import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 
-import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +16,6 @@ import neo.io.ICloneable;
 import neo.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.io.caching.DataCache;
-import neo.log.tr.TR;
 
 public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {
 
@@ -39,28 +37,15 @@ public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValu
 
     @Override
     protected TValue getInternal(TKey key) {
-        byte[] bytes = new byte[0];
-        try {
-            bytes = BitConverter.merge(new byte[]{prefix}, SerializeHelper.toBytes(key));
-            byte[] value = db.get(bytes, options);
-            return SerializeHelper.parse(valueGenerator, value);
-        } catch (IOException e) {
-            // 返回 null
-            TR.error(e);
-            return null;
-        }
+        byte[] bytes = BitConverter.merge(prefix, SerializeHelper.toBytes(key));
+        byte[] value = db.get(bytes, options);
+        return SerializeHelper.parse(valueGenerator, value);
     }
 
     @Override
     protected void addInternal(TKey key, TValue value) {
-        try {
-            byte[] bytes = BitConverter.merge(new byte[]{prefix}, SerializeHelper.toBytes(key));
-            batch.put(bytes, SerializeHelper.toBytes(value));
-        } catch (IOException e) {
-            // 返回 null
-            TR.error(e);
-            throw new RuntimeException(e);
-        }
+        byte[] bytes = BitConverter.merge(prefix, SerializeHelper.toBytes(key));
+        batch.put(bytes, SerializeHelper.toBytes(value));
     }
 
     @Override
@@ -75,14 +60,8 @@ public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValu
 
     @Override
     public void deleteInternal(TKey key) {
-        byte[] bytes;
-        try {
-            bytes = BitConverter.merge(new byte[]{prefix}, SerializeHelper.toBytes(key));
-            db.delete(bytes);
-        } catch (IOException e) {
-            // 返回 null
-            TR.error(e);
-        }
+        byte[] bytes = BitConverter.merge(prefix, SerializeHelper.toBytes(key));
+        db.delete(bytes);
     }
 
     @Override
@@ -91,16 +70,11 @@ public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValu
         iterator.seek(keyPrefix);
         ArrayList<Map.Entry<TKey, TValue>> list = new ArrayList<>();
 
-        try {
-            while (iterator.hasNext()) {
-                Map.Entry<byte[], byte[]> entry = iterator.next();
-                TKey key = SerializeHelper.parse(keyGenerator, entry.getValue());
-                TValue value = SerializeHelper.parse(valueGenerator, entry.getValue());
-                list.add(new AbstractMap.SimpleEntry<>(key, value));
-            }
-        } catch (IOException e) {
-            // 返回 null
-            TR.error(e);
+        while (iterator.hasNext()) {
+            Map.Entry<byte[], byte[]> entry = iterator.next();
+            TKey key = SerializeHelper.parse(keyGenerator, entry.getValue());
+            TValue value = SerializeHelper.parse(valueGenerator, entry.getValue());
+            list.add(new AbstractMap.SimpleEntry<>(key, value));
         }
         return list;
     }

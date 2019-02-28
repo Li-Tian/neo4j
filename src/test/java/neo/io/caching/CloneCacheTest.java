@@ -8,7 +8,6 @@ import java.util.Map;
 
 import neo.UInt256;
 import neo.exception.KeyNotFoundException;
-import neo.network.p2p.payloads.TransactionDemo;
 
 public class CloneCacheTest {
 

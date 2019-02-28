@@ -1,5 +1,6 @@
 package neo;
 
+import neo.csharp.BitConverter;
 import neo.log.tr.TR;
 
 /**
@@ -42,8 +43,8 @@ public class UInt256 extends UIntBase implements Cloneable {
             throw new IllegalArgumentException();
         }
 
-        byte[] bytes = ByteHelper.hexToBytes(s);
-        bytes = ByteHelper.reverse(bytes);
+        byte[] bytes = BitConverter.hexToBytes(s);
+        bytes = BitConverter.reverse(bytes);
         return TR.exit(new UInt256(bytes));
     }
 

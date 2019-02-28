@@ -1,11 +1,11 @@
 package neo;
 
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import neo.csharp.BitConverter;
 import neo.csharp.Out;
 import neo.io.BinaryReader;
 import neo.io.BinaryWriter;
@@ -155,7 +155,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         if (dataBytes == null || dataBytes.length <= 0) {
             return TR.exit(null);
         }
-        return TR.exit("0x" + ByteHelper.toHexString(ByteHelper.reverse(dataBytes)));
+        return TR.exit("0x" + BitConverter.toHexString(BitConverter.reverse(dataBytes)));
     }
 
     /**

@@ -4,7 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import neo.UInt256;
-import neo.network.p2p.payloads.TransactionDemo;
 
 
 public class CloneMetaCacheTest {

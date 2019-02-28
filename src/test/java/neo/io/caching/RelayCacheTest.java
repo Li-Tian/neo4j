@@ -10,7 +10,6 @@ import neo.UInt256;
 import neo.csharp.Out;
 import neo.exception.KeyNotFoundException;
 import neo.network.p2p.payloads.IInventory;
-import neo.network.p2p.payloads.TransactionDemo;
 
 public class RelayCacheTest {
 

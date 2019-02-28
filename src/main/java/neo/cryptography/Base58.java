@@ -1,7 +1,9 @@
 package neo.cryptography;
 
 import java.math.BigInteger;
+import java.util.Arrays;
 
+import neo.csharp.BitConverter;
 import neo.log.notr.TR;
 
 public class Base58 {
@@ -66,5 +68,47 @@ public class Base58 {
             }
         }
         return TR.exit(sb.toString());
+    }
+
+    /**
+     * base58 带 sha256 校验码的编码
+     */
+    public static String encodeWithSha256Check(byte[] data) {
+        try {
+            byte[] checksum = Crypto.Default.sha256(Crypto.Default.sha256(data));
+            byte[] buffer = new byte[data.length + 4];
+
+            System.arraycopy(data, 0, buffer, 0, data.length);
+            System.arraycopy(checksum, 0, buffer, data.length, 4);
+            return encode(buffer);
+        } catch (Exception e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * decode checked base58 string
+     */
+    public static byte[] decodeWithSha256Check(String input) {
+        byte[] buffer = decode(input);
+        if (buffer.length < 4) {
+            throw new IllegalArgumentException();
+        }
+
+        byte[] data = BitConverter.subBytes(buffer, 0, buffer.length - 4);
+        try {
+            byte[] checksum = Crypto.Default.sha256(Crypto.Default.sha256(data));
+            checksum = BitConverter.subBytes(checksum, 0, 4);// take 4 bytes.
+            byte[] originCheckSum = BitConverter.subBytes(buffer, buffer.length - 4, buffer.length);
+
+            if (!Arrays.equals(checksum, originCheckSum)) {
+                throw new IllegalArgumentException();
+            }
+            return data;
+        } catch (Exception e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
     }
 }

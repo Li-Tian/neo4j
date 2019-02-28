@@ -3,6 +3,8 @@ package neo;
 import org.junit.Assert;
 import org.junit.Test;
 
+import neo.csharp.BitConverter;
+
 
 public class UInt160Test {
 
@@ -13,7 +15,7 @@ public class UInt160Test {
 
     @Test
     public void parse() {
-        System.out.println(ByteHelper.toHexString(BYTES));
+        System.out.println(BitConverter.toHexString(BYTES));
         UInt160 uInt160 = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
 
         Assert.assertArrayEquals(BYTES, uInt160.toArray());

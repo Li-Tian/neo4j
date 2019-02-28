@@ -1,6 +1,9 @@
 package neo.cryptography;
 
+import org.junit.Assert;
 import org.junit.Test;
+
+import neo.csharp.BitConverter;
 
 import static org.junit.Assert.*;
 
@@ -23,5 +26,20 @@ public class Base58Test {
     @Test
     public void encode() {
         assertEquals(dataStr, Base58.encode(dataArray));
+    }
+
+    @Test
+    public void encodeWithSha256Check() {
+        byte[] input = BitConverter.hexToBytes("0xa8e04dcd1c0531835fb83237a946ae5213cf3f8d");
+        Assert.assertEquals("GPwE8v5H7YqmcWzQABBP5qGCpQt5EH31X", Base58.encodeWithSha256Check(input));
+    }
+
+
+    @Test
+    public void decodeWithSha256Check() {
+        byte[] input = BitConverter.hexToBytes("0xa8e04dcd1c0531835fb83237a946ae5213cf3f8d");
+        String dest = Base58.encodeWithSha256Check(input);
+        byte[] bytes = Base58.decodeWithSha256Check(dest);
+        Assert.assertArrayEquals(input, bytes);
     }
 }
