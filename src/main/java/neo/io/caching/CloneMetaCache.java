@@ -1,7 +1,7 @@
 package neo.io.caching;
 
 import neo.io.ICloneable;
-import neo.io.ISerializable;
+import neo.csharp.io.ISerializable;
 import neo.log.tr.TR;
 
 public class CloneMetaCache<T extends ICloneable<T> & ISerializable> extends MetaDataCache<T> {

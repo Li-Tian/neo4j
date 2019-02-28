@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.function.Supplier;
 
 import neo.io.ICloneable;
-import neo.io.ISerializable;
+import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.io.caching.MetaDataCache;
 import neo.log.tr.TR;

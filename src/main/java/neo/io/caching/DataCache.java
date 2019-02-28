@@ -12,7 +12,7 @@ import neo.exception.KeyAlreadyExistException;
 import neo.exception.KeyNotFoundException;
 import neo.function.FuncAB2T;
 import neo.io.ICloneable;
-import neo.io.ISerializable;
+import neo.csharp.io.ISerializable;
 import neo.log.tr.TR;
 
 import static neo.io.caching.TrackState.ADDED;

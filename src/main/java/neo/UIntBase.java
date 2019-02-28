@@ -7,9 +7,9 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import neo.csharp.Out;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
-import neo.io.ISerializable;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
+import neo.csharp.io.ISerializable;
 import neo.log.tr.TR;
 
 /**

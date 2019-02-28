@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 
 import neo.csharp.BitConverter;
 import neo.io.ICloneable;
-import neo.io.ISerializable;
+import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.io.caching.DataCache;
 import neo.log.tr.TR;

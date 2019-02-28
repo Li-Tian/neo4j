@@ -3,10 +3,10 @@ package neo.network.p2p.payloads;
 import java.io.IOException;
 
 import neo.UInt256;
-import neo.io.BinaryReader;
-import neo.io.BinaryWriter;
+import neo.csharp.io.BinaryReader;
+import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
-import neo.io.ISerializable;
+import neo.csharp.io.ISerializable;
 
 public class TransactionDemo implements IInventory, ICloneable<TransactionDemo>, ISerializable {
 
