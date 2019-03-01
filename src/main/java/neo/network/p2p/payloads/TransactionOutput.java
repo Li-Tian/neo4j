@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
-import neo.csharp.Ushort;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
@@ -36,7 +35,7 @@ public class TransactionOutput implements ISerializable {
         this.scriptHash = reader.readSerializable(() -> new UInt160());
     }
 
-    public JsonObject toJson(Ushort index) {
+    public JsonObject toJson(int index) {
         JsonObject json = new JsonObject();
         json.addProperty("n", index);
         json.addProperty("asset", assetId.toString());
