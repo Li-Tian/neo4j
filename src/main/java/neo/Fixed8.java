@@ -8,6 +8,7 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
+import neo.exception.FormatException;
 import neo.log.tr.TR;
 
 public class Fixed8 implements Comparable<Fixed8>, ISerializable {
@@ -161,7 +162,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
             Fixed8 fixed8Val = fromDecimal(val);
             result.value = fixed8Val.value;
             return TR.exit(true);
-        } catch (NumberFormatException | ArithmeticException ex) {
+        } catch (FormatException | ArithmeticException ex) {
             result.value = 0;
             return TR.exit(false);
         }
@@ -228,7 +229,8 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
         if (rl.compareTo(rml) < 0)
             rh = rh.add(new Ulong(1));
         if (rh.compareTo(new Ulong(D)) >= 0) {
-            throw new NumberFormatException();
+            TR.exit();
+            throw new FormatException();
         }
         Ulong rd = rh.multiply(REM).add(rl);
         if (rd.compareTo(rl) < 0) {
