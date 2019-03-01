@@ -54,6 +54,13 @@ public abstract class Transaction implements IInventory {
     }
 
 
+    public Fixed8 getFeePerByte() {
+        if (feePerByte == Fixed8.negate(Fixed8.SATOSHI)) {
+            feePerByte = Fixed8.divide(getNetworkFee(), size());
+        }
+        return feePerByte;
+    }
+
     @Override
     public UInt256 hash() {
         return hash;
@@ -125,7 +132,7 @@ public abstract class Transaction implements IInventory {
         return deserializeFrom(new BinaryReader(inputStream));
     }
 
-    private static Transaction deserializeFrom(BinaryReader reader) {
+    public static Transaction deserializeFrom(BinaryReader reader) {
         TransactionType type = TransactionType.parse((byte) reader.readByte());
         Transaction transaction = TransactionBuilder.build(type);
         transaction.deserializeUnsignedWithoutType(reader);

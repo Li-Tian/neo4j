@@ -1,0 +1,25 @@
+package neo.smartcontract;
+
+import org.bouncycastle.math.ec.ECPoint;
+
+import neo.log.tr.TR;
+import neo.vm.OpCode;
+import neo.vm.ScriptBuilder;
+
+public class Contract {
+
+    /**
+     * 获取公钥对应的脚本字节码
+     *
+     * @param publicKey 公钥
+     * @return script bytes
+     */
+    public static byte[] createSignatureRedeemScript(ECPoint publicKey) {
+        TR.enter();
+        ScriptBuilder sb = new ScriptBuilder();
+        sb.emitPush(publicKey.getEncoded(true));
+        sb.emit(OpCode.CHECKSIG);
+        return TR.exit(sb.toArray());
+    }
+
+}

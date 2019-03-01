@@ -66,7 +66,6 @@ public class RegisterTransaction extends Transaction {
         results[0] = ownerHash;
         System.arraycopy(hashes, 0, results, 1, hashes.length);
         Arrays.sort(results);
-
         return results;
     }
 
