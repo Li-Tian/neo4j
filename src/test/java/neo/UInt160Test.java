@@ -43,4 +43,12 @@ public class UInt160Test {
         Assert.assertEquals("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01", uInt160.toString());
         Assert.assertArrayEquals(BYTES, uInt160.toArray());
     }
+
+    @Test
+    public void parseScriptHash() {
+        byte[] script = BitConverter.hexToBytes("21031f64da8a38e6c1e5423a72ddd6d4fc4a777abe537e5cb5aa0425685cda8e063bac");
+        UInt160 uInt160 = UInt160.parseToScriptHash(script);
+        Assert.assertEquals("0xa8e04dcd1c0531835fb83237a946ae5213cf3f8d", uInt160.toString());
+
+    }
 }

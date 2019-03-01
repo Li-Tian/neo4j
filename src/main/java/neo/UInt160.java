@@ -1,5 +1,6 @@
 package neo;
 
+import neo.cryptography.Crypto;
 import neo.csharp.BitConverter;
 import neo.log.tr.TR;
 
@@ -49,6 +50,15 @@ public class UInt160 extends UIntBase implements Cloneable {
         return TR.exit(new UInt160(bytes));
     }
 
+    /**
+     * 从script 脚本中，获取 scripthash
+     *
+     * @param script 脚本字节数组
+     * @return UInt160 脚本hash
+     */
+    public static UInt160 parseToScriptHash(byte[] script) {
+        return new UInt160(Crypto.Default.hash160(script));
+    }
 
     /**
      * Try to parse string into UInt256
