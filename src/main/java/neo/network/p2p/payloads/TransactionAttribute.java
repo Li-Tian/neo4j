@@ -30,17 +30,26 @@ public class TransactionAttribute implements ISerializable {
      */
     @Override
     public int size() {
-        // C#
-//        if (Usage == TransactionAttributeUsage.ContractHash || Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03 || Usage == TransactionAttributeUsage.Vote || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
-//            return sizeof(TransactionAttributeUsage) + 32;
-//        else if (Usage == TransactionAttributeUsage.Script)
-//            return sizeof(TransactionAttributeUsage) + 20;
-//        else if (Usage == TransactionAttributeUsage.DescriptionUrl)
-//            return sizeof(TransactionAttributeUsage) + sizeof(byte) + Data.Length;
-//                else
-//        return sizeof(TransactionAttributeUsage) + Data.GetVarSize();
-        // TODO getVarSize()....
-        return 0;
+        // C# code:
+        //        if (Usage == TransactionAttributeUsage.ContractHash || Usage == TransactionAttributeUsage.ECDH02 || Usage == TransactionAttributeUsage.ECDH03 || Usage == TransactionAttributeUsage.Vote || (Usage >= TransactionAttributeUsage.Hash1 && Usage <= TransactionAttributeUsage.Hash15))
+        //            return sizeof(TransactionAttributeUsage) + 32;
+        //        else if (Usage == TransactionAttributeUsage.Script)
+        //            return sizeof(TransactionAttributeUsage) + 20;
+        //        else if (Usage == TransactionAttributeUsage.DescriptionUrl)
+        //            return sizeof(TransactionAttributeUsage) + sizeof(byte) + Data.Length;
+        //                else
+        //        return sizeof(TransactionAttributeUsage) + Data.GetVarSize();
+        if (usage == TransactionAttributeUsage.ContractHash || usage == TransactionAttributeUsage.ECDH02
+                || usage == TransactionAttributeUsage.ECDH03 || usage == TransactionAttributeUsage.Vote
+                || (usage.value() >= TransactionAttributeUsage.Hash1.value() && usage.value() <= TransactionAttributeUsage.Hash15.value())) {
+            return TransactionAttributeUsage.BYTES + 32;
+        } else if (usage == TransactionAttributeUsage.Script) {
+            return TransactionAttributeUsage.BYTES + 20;
+        } else if (usage == TransactionAttributeUsage.DescriptionUrl) {
+            return TransactionAttributeUsage.BYTES + Byte.BYTES + data.length;
+        } else {
+            return TransactionAttributeUsage.BYTES + BitConverter.getVarSize(data);
+        }
     }
 
 

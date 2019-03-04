@@ -5,7 +5,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import org.bouncycastle.math.ec.ECPoint;
 
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
@@ -21,33 +20,98 @@ import neo.io.ICloneable;
 
 import neo.log.tr.TR;
 import neo.network.p2p.payloads.AssetType;
+import neo.cryptography.ECC.ECPoint;
 
+/**
+ * 资产状态
+ */
 public class AssetState extends StateBase implements ICloneable<AssetState> {
+    /**
+     * 资产Id
+     */
     public UInt256 assetId;
+
+    /**
+     * 资产类型
+     */
     public AssetType assetType;
+
+    /**
+     * 资产名称
+     */
     public String name;
+
+    /**
+     * 资产总量
+     */
     public Fixed8 amount;
+
+    /**
+     * 资产可用额度
+     */
     public Fixed8 available;
+
+    /**
+     * 精度
+     */
     public byte precision;
+
+    /**
+     * 收费模式
+     */
     public final byte feeMode = 0;
+
+    /**
+     * 费用
+     */
     public Fixed8 fee;
+
+    /**
+     * 收费地址
+     */
     public UInt160 feeAddress;
+
+    /**
+     * 所有者地址
+     */
     public ECPoint owner;
+
+    /**
+     * 管理员地址
+     */
     public UInt160 admin;
+
+    /**
+     * 发行者地址
+     */
     public UInt160 issuer;
+
+    /**
+     * 资产过期时间（允许上链的最后区块高度）
+     */
     public Uint expiration;
+
+    /**
+     * 资产是否冻结
+     */
     public boolean isFrozen;
 
+    /**
+     * 存储大小
+     */
     @Override
     public int size() {
         TR.enter();
-        return super.size();
-        // TODO waiting ECPoint
-//        return TR.exit(super.size() + assetId.size() + Byte.BYTES + name.length() +
-//                amount.size() + available.size() + Byte.BYTES + Byte.BYTES + fee.size() +
-//                feeAddress.size() + owner.size() + admin.size() + issuer.size() + Uint.BYTES + Byte.BYTES);
+        return TR.exit(super.size() + assetId.size() + Byte.BYTES + name.length() +
+                amount.size() + available.size() + Byte.BYTES + Byte.BYTES + fee.size() +
+                feeAddress.size() + owner.size() + admin.size() + issuer.size() + Uint.BYTES + Byte.BYTES);
     }
 
+    /**
+     * 克隆
+     *
+     * @return 克隆对象
+     */
     @Override
     public AssetState copy() {
         TR.enter();
@@ -70,6 +134,11 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         return TR.exit(result);
     }
 
+    /**
+     * 反序列化
+     *
+     * @param reader 二进制输入流
+     */
     @Override
     public void deserialize(BinaryReader reader) {
         TR.enter();
@@ -83,8 +152,7 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         reader.readByte(); //FeeMode
         fee = reader.readSerializable(Fixed8::new); //Fee
         feeAddress = reader.readSerializable(UInt160::new);
-        //TODO
-        //owner = ECPoint.deserializeFrom(reader, ECCurve.secp256r1);
+        owner = ECPoint.deserializeFrom(reader, ECPoint.secp256r1.getCurve());
         admin = reader.readSerializable(UInt160::new);
         issuer = reader.readSerializable(UInt160::new);
         expiration = reader.readUint();
@@ -92,6 +160,11 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         TR.exit();
     }
 
+    /**
+     * 从指定参数的副本复制信息到将当前资产
+     *
+     * @param replica 资产的拷贝副本
+     */
     @Override
     public void fromReplica(AssetState replica) {
         TR.enter();
@@ -115,11 +188,22 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
 
     private ConcurrentHashMap<Locale, String> nameMap;
 
+    /**
+     * 查询资产名称
+     *
+     * @return 资产名
+     */
     public String getName() {
         TR.enter();
         return TR.exit(getName(null));
     }
 
+    /**
+     * 查询资产名称
+     *
+     * @param culture 语言环境
+     * @return 资产名
+     */
     public String getName(Locale culture) {
         // TODO 有待验证
         TR.enter();
@@ -162,6 +246,29 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
 
     private static final Locale en = Locale.ENGLISH;
 
+    /**
+     * 序列化
+     * <p>序列化字段</p>
+     * <ul>
+     * <li>stateVersion: 状态版本号</li>
+     * <li>assetId: 资产id</li>
+     * <li>assetType: 资产类型</li>
+     * <li>name: 资产名称</li>
+     * <li>amount: 总量</li>
+     * <li>available: 可用量</li>
+     * <li>precision: 精度</li>
+     * <li>feeMode: 费用模式，目前为0</li>
+     * <li>fee: 费用</li>
+     * <li>feeAddress: 收费地址</li>
+     * <li>owner: 所有者地址</li>
+     * <li>admin: 管理员地址</li>
+     * <li>issuer: 发行者地址</li>
+     * <li>expiration: 资产过期时间</li>
+     * <li>isFrozen: 资产是否冻结</li>
+     * </ul>
+     *
+     * @param writer 二进制输出流
+     */
     @Override
     public void serialize(BinaryWriter writer) {
         TR.enter();
@@ -175,7 +282,7 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         writer.writeByte(feeMode);
         writer.writeSerializable(fee);
         writer.writeSerializable(feeAddress);
-//        writer.writeSerializable(owner); // TODO waiting ECPoint
+        writer.writeSerializable(owner);
         writer.writeSerializable(admin);
         writer.writeSerializable(issuer);
         writer.writeUint(expiration);
@@ -183,6 +290,11 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         TR.exit();
     }
 
+    /**
+     * 将这个AssetState转成json对象返回
+     *
+     * @return 转换好的json对象
+     */
     @Override
     public JsonObject toJson() {
         TR.enter();
@@ -190,24 +302,27 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         json.addProperty("id", assetId.toString());
         json.addProperty("type", assetType.value());
         try {
-            // TODO waiting for Gson parse
-//            json["name"] = name == "" ? null : JObject.Parse(name);
+            JsonElement element = name == "" ? null : new JsonParser().parse(name);
+            json.add("name", element);
         } catch (FormatException e) {
             json.addProperty("name", name);
         }
         json.addProperty("amount", amount.toString());
         json.addProperty("available", available.toString());
         json.addProperty("precision", precision);
-        // TODO waiting ECPoint
-//        json.addProperty("owner", owner); owner.ToString();
-//        json.addProperty("admin", admin); admin.ToAddress();
-//        json.addProperty("issuer", issuer); issuer.ToAddress();
+        json.addProperty("owner", owner.toString());
+        json.addProperty("admin", admin.toAddress());
+        json.addProperty("issuer", issuer.toAddress());
         json.addProperty("expiration", expiration);
         json.addProperty("frozen", isFrozen);
-
         return TR.exit(json);
     }
 
+    /**
+     * 转成String
+     *
+     * @return 返回资产名字
+     */
     @Override
     public String toString() {
         return getName();

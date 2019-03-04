@@ -10,7 +10,7 @@ import neo.ledger.Blockchain;
 
 public class MinerTransaction extends Transaction {
 
-    public Uint nonce;
+    public Uint nonce = Uint.ZERO;
 
     public MinerTransaction() {
         super(TransactionType.MinerTransaction);

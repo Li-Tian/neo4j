@@ -1,12 +1,12 @@
 package neo.network.p2p.payloads;
 
 
-import neo.exception.TypeNotExistException;
+import neo.common.ByteEnum;
 
 /**
  * Inventory类型
  */
-public enum InventoryType {
+public enum InventoryType implements ByteEnum {
 
     /**
      * 交易
@@ -32,29 +32,19 @@ public enum InventoryType {
     /**
      * 获取类别存储的byte值
      */
+    @Override
     public byte value() {
         return this.value;
     }
-
-
-    /**
-     * 占用字节数大小
-     */
-    public static final int BYTES = 1;
 
     /**
      * 从byte中解析类型
      *
      * @param type 待解析的Inventory类型值
      * @return InventoryType
-     * @throws TypeNotExistException 当类型不存在时，抛出该异常
+     * @throws IllegalArgumentException 当类型不存在时，抛出该异常
      */
     public static InventoryType parse(byte type) {
-        for (InventoryType t : InventoryType.values()) {
-            if (t.value == type) {
-                return t;
-            }
-        }
-        throw new TypeNotExistException();
+        return ByteEnum.parse(InventoryType.values(), type);
     }
 }

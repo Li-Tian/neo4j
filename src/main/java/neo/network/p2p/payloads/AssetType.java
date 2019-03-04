@@ -1,12 +1,12 @@
 package neo.network.p2p.payloads;
 
 
-import neo.exception.TypeNotExistException;
+import neo.common.ByteEnum;
 
 /**
  * 资产类型
  */
-public enum AssetType {
+public enum AssetType implements ByteEnum {
     /**
      * 带有信任类型资产
      */
@@ -61,6 +61,7 @@ public enum AssetType {
     /**
      * 查询资产类型的具体byte值
      */
+    @Override
     public byte value() {
         return this.value;
     }
@@ -71,15 +72,10 @@ public enum AssetType {
      *
      * @param type 待解析的资产类型
      * @return AssetType
-     * @throws TypeNotExistException 当类型不存在时，抛出该异常
+     * @throws IllegalArgumentException 当类型不存在时，抛出该异常
      */
     public static AssetType parse(byte type) {
-        for (AssetType t : AssetType.values()) {
-            if (t.value == type) {
-                return t;
-            }
-        }
-        throw new TypeNotExistException();
+        return ByteEnum.parse(AssetType.values(), type);
     }
 
 }

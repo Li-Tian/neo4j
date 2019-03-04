@@ -1,11 +1,11 @@
 package neo.network.p2p.payloads;
 
-import neo.exception.TypeNotExistException;
+import neo.common.ByteEnum;
 
 /**
  * 交易属性用途。新增的交易属性参考 NEP-9
  */
-public enum TransactionAttributeUsage {
+public enum TransactionAttributeUsage implements ByteEnum {
 
     /**
      * 外部合同的散列值
@@ -199,7 +199,7 @@ public enum TransactionAttributeUsage {
     /**
      * 占用字节数大小
      */
-    public static final int BYTES = 1;
+    public static final int BYTES = Byte.BYTES;
 
     private byte value;
 
@@ -210,6 +210,7 @@ public enum TransactionAttributeUsage {
     /**
      * 查询TransactionAttributeUsage类型的具体byte值
      */
+    @Override
     public byte value() {
         return this.value;
     }
@@ -220,15 +221,10 @@ public enum TransactionAttributeUsage {
      *
      * @param type TransactionAttributeUsage类型
      * @return TransactionAttributeUsage
-     * @throws TypeNotExistException 当类型不存在时，抛出该异常
+     * @throws IllegalArgumentException 当类型不存在时，抛出该异常
      */
     public static TransactionAttributeUsage parse(byte type) {
-        for (TransactionAttributeUsage t : TransactionAttributeUsage.values()) {
-            if (t.value == type) {
-                return t;
-            }
-        }
-        throw new TypeNotExistException();
+        return ByteEnum.parse(TransactionAttributeUsage.values(), type);
     }
 
 }

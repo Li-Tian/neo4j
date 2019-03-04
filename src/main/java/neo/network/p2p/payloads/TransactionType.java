@@ -1,12 +1,13 @@
 package neo.network.p2p.payloads;
 
 
+import neo.common.ByteEnum;
 import neo.exception.TypeNotExistException;
 
 /**
  * 交易枚举类型
  */
-public enum TransactionType {
+public enum TransactionType implements ByteEnum {
 
     /**
      * 挖矿交易，值 0x00
@@ -64,6 +65,7 @@ public enum TransactionType {
      *
      * @return byte
      */
+    @Override
     public byte value() {
         return this.value;
     }
@@ -73,19 +75,14 @@ public enum TransactionType {
      *
      * @param type 交易类型值
      * @return TransactionType
-     * @throws TypeNotExistException 若交易类型不存在
+     * @throws IllegalArgumentException 若交易类型不存在
      */
     public static TransactionType parse(byte type) {
-        for (TransactionType t : TransactionType.values()) {
-            if (t.value == type) {
-                return t;
-            }
-        }
-        throw new TypeNotExistException();
+        return ByteEnum.parse(TransactionType.values(), type);
     }
 
     /**
      * 占用字节数大小
      */
-    public static final int BYTES = 1;
+    public static final int BYTES = Byte.BYTES;
 }

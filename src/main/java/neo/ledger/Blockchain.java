@@ -50,6 +50,9 @@ public final class Blockchain extends UntypedActor {
 
 //    public static final ECPoint[] StandbyValidators = ProtocolSettings.Default.standbyValidators.stream().map(p -> PublicKeyIm.);
 
+    /**
+     * NEO代币定义
+     */
     public static final RegisterTransaction GoverningToken = new RegisterTransaction() {
         {
             assetType = AssetType.GoverningToken;
@@ -65,6 +68,9 @@ public final class Blockchain extends UntypedActor {
         }
     };
 
+    /**
+     * GAS代币定义
+     */
     public static final RegisterTransaction UtilityToken = new RegisterTransaction() {
         {
             assetType = AssetType.UtilityToken;

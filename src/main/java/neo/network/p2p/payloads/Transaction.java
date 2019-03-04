@@ -20,6 +20,7 @@ import neo.Fixed8;
 import neo.ProtocolSettings;
 import neo.UInt160;
 import neo.UInt256;
+import neo.cryptography.Crypto;
 import neo.csharp.BitConverter;
 import neo.csharp.Ushort;
 import neo.csharp.io.BinaryReader;
@@ -56,22 +57,22 @@ public abstract class Transaction implements IInventory {
     /**
      * 交易属性
      */
-    public TransactionAttribute[] attributes;
+    public TransactionAttribute[] attributes = {};
 
     /**
      * 交易输入
      */
-    public CoinReference[] inputs;
+    public CoinReference[] inputs = {};
 
     /**
      * 交易输出
      */
-    public TransactionOutput[] outputs;
+    public TransactionOutput[] outputs = {};
 
     /**
      * 验证脚本的数组
      */
-    public Witness[] witnesses;
+    public Witness[] witnesses = {};
 
     private Fixed8 feePerByte = Fixed8.negate(Fixed8.SATOSHI);
     private Fixed8 networkFee = Fixed8.negate(Fixed8.SATOSHI);
@@ -92,6 +93,9 @@ public abstract class Transaction implements IInventory {
 
     @Override
     public UInt256 hash() {
+        if (hash == null) {
+            hash = new UInt256(Crypto.Default.hash256(this.getHashData()));
+        }
         return hash;
     }
 
@@ -110,10 +114,13 @@ public abstract class Transaction implements IInventory {
         this.witnesses = witnesses;
     }
 
+    /**
+     * 存储大小
+     */
     @Override
     public int size() {
-        // TODO 计算size
-        return 0;
+        return TransactionType.BYTES + Byte.BYTES + BitConverter.getVarSize(attributes)
+                + BitConverter.getVarSize(inputs) + BitConverter.getVarSize(witnesses);
     }
 
     @Override

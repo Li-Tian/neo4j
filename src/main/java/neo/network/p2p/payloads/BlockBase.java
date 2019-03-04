@@ -101,7 +101,10 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public int size() {
-        return 0;
+        // C# code  Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + sizeof(ulong) + NextConsensus.Size + 1 + Witness.Size;
+        // 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + （1+2+1+2） =105 + 6 => 111
+        return Uint.BYTES + prevHash.size() + merkleRoot.size() + Uint.BYTES
+                + Uint.BYTES + Ulong.BYTES + nextConsensus.size() + 1 + witness.size();
     }
 
     /**

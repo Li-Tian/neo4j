@@ -18,15 +18,15 @@ public class Witness implements ISerializable {
 
     public UInt160 scriptHash() {
         if (scriptHash == null) {
-            // TODO...
+            scriptHash = UInt160.parseToScriptHash(verificationScript);
         }
         return scriptHash;
     }
 
     @Override
     public int size() {
-        // TODO size 计算  还需要加上 GetValueSize
-        return invocationScript.length + verificationScript.length;
+        // InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
+        return BitConverter.getVarSize(invocationScript) + BitConverter.getVarSize(verificationScript);
     }
 
     @Override
