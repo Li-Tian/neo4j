@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 
-import neo.Helper;
+import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
@@ -127,6 +127,16 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
         int result = getXCoord().toBigInteger().compareTo(other.getXCoord().toBigInteger());
         if (result != 0) return TR.exit(result);
         return TR.exit(getYCoord().toBigInteger().compareTo(other.getYCoord().toBigInteger()));
+    }
+
+    /**
+     * 将这个ECPoint编码后转换为16进制的字符串（使用压缩格式）
+     *
+     * @return 转换之后的字符串
+     */
+    @Override
+    public String toString() {
+        return BitConverter.toHexString(getEncoded(true));
     }
 
     //TODO
