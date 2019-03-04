@@ -27,8 +27,14 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.InvalidOperationException;
 import neo.persistence.Snapshot;
 
+/**
+ * 所有交易的父类
+ */
 public abstract class Transaction implements IInventory {
 
+    /**
+     * 交易最大存储字节数。如果收到的交易数超过这个限制将被直接抛弃。
+     */
     public static final int MaxTransactionSize = 102400;
 
     /**
@@ -37,11 +43,34 @@ public abstract class Transaction implements IInventory {
     private static final int MaxTransactionAttributes = 16;
 
 
+    /**
+     * 交易类型
+     */
     public final TransactionType type;
+
+    /**
+     * 交易版本号。在各个子类中定义。
+     */
     public byte version;
+
+    /**
+     * 交易属性
+     */
     public TransactionAttribute[] attributes;
+
+    /**
+     * 交易输入
+     */
     public CoinReference[] inputs;
+
+    /**
+     * 交易输出
+     */
     public TransactionOutput[] outputs;
+
+    /**
+     * 验证脚本的数组
+     */
     public Witness[] witnesses;
 
     private Fixed8 feePerByte = Fixed8.negate(Fixed8.SATOSHI);

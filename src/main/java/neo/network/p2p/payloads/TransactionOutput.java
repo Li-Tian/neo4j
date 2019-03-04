@@ -9,17 +9,39 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
+/**
+ * 交易输出
+ */
 public class TransactionOutput implements ISerializable {
 
+    /**
+     * 资产Id
+     */
     public UInt256 assetId;
+
+    /**
+     * 转账金额
+     */
     public Fixed8 value;
+
+    /**
+     * 收款人地址脚本hash
+     */
     public UInt160 scriptHash;
 
+    /**
+     * 存储大小
+     */
     @Override
     public int size() {
         return assetId.size() + value.size() + scriptHash.size();
     }
 
+    /**
+     * 序列化
+     *
+     * @param writer 二进制输入
+     */
     @Override
     public void serialize(BinaryWriter writer) {
         writer.writeSerializable(assetId);
@@ -27,6 +49,11 @@ public class TransactionOutput implements ISerializable {
         writer.writeSerializable(scriptHash);
     }
 
+    /**
+     * 反序列化
+     *
+     * @param reader 二进制输出
+     */
     @Override
     public void deserialize(BinaryReader reader) {
         this.assetId = reader.readSerializable(() -> new UInt256());
@@ -35,6 +62,12 @@ public class TransactionOutput implements ISerializable {
         this.scriptHash = reader.readSerializable(() -> new UInt160());
     }
 
+    /**
+     * 转成json数据
+     *
+     * @param index 此UTXO在交易的output列表中的index。从0开始。
+     * @return json对象
+     */
     public JsonObject toJson(int index) {
         JsonObject json = new JsonObject();
         json.addProperty("n", index);

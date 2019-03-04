@@ -12,12 +12,11 @@ import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
-import neo.exception.TypeNotExistException;
 import neo.persistence.Snapshot;
 
 public class StateDescriptor implements ISerializable {
 
-    public byte type;
+    public StateType type;
     public byte[] key;
     public String field;
     public byte[] value;
@@ -31,7 +30,7 @@ public class StateDescriptor implements ISerializable {
 
     @Override
     public void serialize(BinaryWriter writer) {
-        writer.writeByte(type);
+        writer.writeByte(type.value());
         writer.writeVarBytes(key);
         writer.writeVarString(field);
         writer.writeVarBytes(value);
@@ -39,18 +38,15 @@ public class StateDescriptor implements ISerializable {
 
     @Override
     public void deserialize(BinaryReader reader) {
-        type = (byte) reader.readByte();
-        if (!StateType.contain(type))
-            throw new TypeNotExistException();
-
+        type = StateType.parse((byte) reader.readByte());
         key = reader.readVarBytes(100);
         field = reader.readVarString(32);
         value = reader.readVarBytes(65535);
         switch (type) {
-            case StateType.Account:
+            case Account:
                 checkAccountState();
                 break;
-            case StateType.Validator:
+            case Validator:
                 checkValidatorState();
                 break;
         }
@@ -58,7 +54,7 @@ public class StateDescriptor implements ISerializable {
 
     public Fixed8 getSystemFee() {
         switch (type) {
-            case StateType.Validator:
+            case Validator:
                 return getSystemFeeValidator();
             default:
                 return Fixed8.ZERO;
@@ -91,9 +87,9 @@ public class StateDescriptor implements ISerializable {
 
     protected boolean verify(Snapshot snapshot) {
         switch (type) {
-            case StateType.Account:
+            case Account:
                 return verifyAccountState(snapshot);
-            case StateType.Validator:
+            case Validator:
                 return verifyValidatorState();
             default:
                 return false;
@@ -139,7 +135,7 @@ public class StateDescriptor implements ISerializable {
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.addProperty("type", type);
+        json.addProperty("type", type.value());
         json.addProperty("key", BitConverter.toHexString(key));
         json.addProperty("field", field);
         json.addProperty("value", BitConverter.toHexString(value));

@@ -14,7 +14,6 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
 
-import neo.cryptography.ecc.ECC;
 import neo.log.tr.TR;
 import neo.vm.ICrypto;
 
@@ -57,7 +56,7 @@ public class Crypto implements ICrypto {
         TR.enter();
         if (pubkey.length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03)) {
             try {
-                pubkey = ECC.secp256r1.getCurve().decodePoint(pubkey).getEncoded(false);
+                pubkey = neo.cryptography.ECC.ECPoint.secp256r1.getCurve().decodePoint(pubkey).getEncoded(false);
                 byte[] tmp = new byte[pubkey.length - 1];
                 System.arraycopy(pubkey, 1, tmp, 0, pubkey.length - 1);
                 pubkey = tmp;

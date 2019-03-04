@@ -9,11 +9,25 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
+
+/**
+ * 交易属性
+ */
 public class TransactionAttribute implements ISerializable {
 
-    public byte usage;
+    /**
+     * 属性用途
+     */
+    public TransactionAttributeUsage usage;
+
+    /**
+     * 属性值
+     */
     public byte[] data;
 
+    /**
+     * 存储大小
+     */
     @Override
     public int size() {
         // C#
@@ -30,21 +44,26 @@ public class TransactionAttribute implements ISerializable {
     }
 
 
+    /**
+     * 反序列化
+     *
+     * @param reader 二进制输入
+     */
     @Override
     public void deserialize(BinaryReader reader) {
-        usage = (byte) reader.readByte();
+        usage = TransactionAttributeUsage.parse((byte) reader.readByte());
         if (usage == TransactionAttributeUsage.ContractHash
                 || usage == TransactionAttributeUsage.Vote
-                || (usage >= TransactionAttributeUsage.Hash1
-                && usage <= TransactionAttributeUsage.Hash15)) {
+                || (usage.value() >= TransactionAttributeUsage.Hash1.value()
+                && usage.value() <= TransactionAttributeUsage.Hash15.value())) {
             data = reader.readFully(32);
         } else if (usage == TransactionAttributeUsage.ECDH02 || usage == TransactionAttributeUsage.ECDH03) {
-            data = BitConverter.merge(usage, reader.readFully(32));
+            data = BitConverter.merge(usage.value(), reader.readFully(32));
         } else if (usage == TransactionAttributeUsage.Script) {
             data = reader.readFully(20);
         } else if (usage == TransactionAttributeUsage.DescriptionUrl) {
             data = reader.readFully(reader.readByte());
-        } else if (usage == TransactionAttributeUsage.Description || usage >= TransactionAttributeUsage.Remark) {
+        } else if (usage == TransactionAttributeUsage.Description || usage.value() >= TransactionAttributeUsage.Remark.value()) {
             data = reader.readVarBytes(Ushort.MAX_VALUE_2.intValue());
         } else {
             throw new IllegalArgumentException();
@@ -52,13 +71,18 @@ public class TransactionAttribute implements ISerializable {
     }
 
 
+    /**
+     * 序列化
+     *
+     * @param writer 二进制输出
+     */
     @Override
     public void serialize(BinaryWriter writer) {
-        writer.writeByte(usage);
+        writer.writeByte(usage.value());
 
         if (usage == TransactionAttributeUsage.DescriptionUrl)
             writer.writeByte((byte) data.length);
-        else if (usage == TransactionAttributeUsage.Description || usage >= TransactionAttributeUsage.Remark)
+        else if (usage == TransactionAttributeUsage.Description || usage.value() >= TransactionAttributeUsage.Remark.value())
             writer.writeVarInt(data.length);
         if (usage == TransactionAttributeUsage.ECDH02 || usage == TransactionAttributeUsage.ECDH03)
             writer.write(data, 1, 32);
@@ -67,9 +91,14 @@ public class TransactionAttribute implements ISerializable {
 
     }
 
+    /**
+     * 转成json对象
+     *
+     * @return 转换的Json对象
+     */
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
-        json.addProperty("usage", usage);
+        json.addProperty("usage", usage.value());
         json.addProperty("data", BitConverter.toHexString(data));
         return json;
     }

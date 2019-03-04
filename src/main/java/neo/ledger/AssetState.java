@@ -24,7 +24,7 @@ import neo.network.p2p.payloads.AssetType;
 
 public class AssetState extends StateBase implements ICloneable<AssetState> {
     public UInt256 assetId;
-    public byte assetType;
+    public AssetType assetType;
     public String name;
     public Fixed8 amount;
     public Fixed8 available;
@@ -75,7 +75,7 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         TR.enter();
         super.deserialize(reader);
         assetId = reader.readSerializable(UInt256::new);
-        assetType = (byte) reader.readByte();
+        assetType = AssetType.parse((byte) reader.readByte());
         name = reader.readVarString();
         amount = reader.readSerializable(Fixed8::new);
         available = reader.readSerializable(Fixed8::new);
@@ -167,7 +167,7 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         TR.enter();
         super.serialize(writer);
         writer.writeSerializable(assetId);
-        writer.writeByte(assetType);
+        writer.writeByte(assetType.value());
         writer.writeVarString(name);
         writer.writeSerializable(amount);
         writer.writeSerializable(available);
@@ -188,7 +188,7 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         TR.enter();
         JsonObject json = super.toJson();
         json.addProperty("id", assetId.toString());
-        json.addProperty("type", assetType);
+        json.addProperty("type", assetType.value());
         try {
             // TODO waiting for Gson parse
 //            json["name"] = name == "" ? null : JObject.Parse(name);

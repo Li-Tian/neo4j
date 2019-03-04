@@ -1,21 +1,85 @@
 package neo.network.p2p.payloads;
 
 
-public class AssetType {
+import neo.exception.TypeNotExistException;
 
-    public static final byte CreditFlag = (byte) 0x40;
-    public static final byte DutyFlag = (byte) 0x80;
+/**
+ * 资产类型
+ */
+public enum AssetType {
+    /**
+     * 带有信任类型资产
+     */
+    CreditFlag((byte) 0x40),
+    /**
+     * 带有权益类型资产, 转账时还需要收款人进行签名
+     */
+    DutyFlag((byte) 0x80),
 
-    public static final byte GoverningToken = (byte) 0x00;
-    public static final byte UtilityToken = (byte) 0x01;
-    public static final byte Currency = (byte) 0x08;
-    public static final byte Share = DutyFlag | (byte) 0x10;
-    public static final byte Invoice = DutyFlag | (byte) 0x18;
-    public static final byte Token = DutyFlag | (byte) 0x20;
+    /**
+     * NEO 资产
+     */
+    GoverningToken((byte) 0x00),
 
+    /**
+     * GAS 资产
+     */
+    UtilityToken((byte) 0x01),
+
+    /**
+     * 未使用（保留）
+     */
+    Currency((byte) 0x08),
+
+    /**
+     * 股权类资产
+     */
+    Share((byte) (DutyFlag.value | (byte) 0x10)),
+
+    /**
+     * 票据类资产（保留）
+     */
+    Invoice((byte) (DutyFlag.value | (byte) 0x18)),
+
+
+    /**
+     * Token类资产
+     */
+    Token((byte) (DutyFlag.value | (byte) 0x20));
 
     /**
      * 占用字节数大小
      */
     public static final int BYTES = 1;
+
+    private byte value;
+
+    AssetType(byte val) {
+        this.value = val;
+    }
+
+    /**
+     * 查询资产类型的具体byte值
+     */
+    public byte value() {
+        return this.value;
+    }
+
+
+    /**
+     * 从byte中解析资产类型
+     *
+     * @param type 待解析的资产类型
+     * @return AssetType
+     * @throws TypeNotExistException 当类型不存在时，抛出该异常
+     */
+    public static AssetType parse(byte type) {
+        for (AssetType t : AssetType.values()) {
+            if (t.value == type) {
+                return t;
+            }
+        }
+        throw new TypeNotExistException();
+    }
+
 }

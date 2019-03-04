@@ -15,6 +15,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.InvalidOperationException;
 import neo.persistence.Snapshot;
 
+
 public class StateTransaction extends Transaction {
 
     public StateDescriptor[] descriptors;
@@ -70,10 +71,10 @@ public class StateTransaction extends Transaction {
 
         for (StateDescriptor descriptor : descriptors) {
             switch (descriptor.type) {
-                case StateType.Account:
+                case Account:
                     list.addAll(getScriptHashesForVerifyingAccount(descriptor));
                     break;
-                case StateType.Validator:
+                case Validator:
                     list.addAll(getScriptHashesForVerifying_Validator(descriptor));
                     break;
                 default:
