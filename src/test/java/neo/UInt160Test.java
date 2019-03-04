@@ -51,4 +51,11 @@ public class UInt160Test {
         Assert.assertEquals("0xa8e04dcd1c0531835fb83237a946ae5213cf3f8d", uInt160.toString());
 
     }
+
+    @Test
+    public void toAddress() {
+        UInt160 uInt160 = new UInt160();
+        UInt160.tryParse("0xa8e04dcd1c0531835fb83237a946ae5213cf3f8d", uInt160);
+        Assert.assertEquals("AUejN4mLdGA8Yyhmj1NwqURwE3FrMjZ4e9", uInt160.toAddress());
+    }
 }

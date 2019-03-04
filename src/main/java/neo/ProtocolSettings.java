@@ -32,25 +32,25 @@ public class ProtocolSettings {
     }
 
     private ProtocolSettings(Config config) {
-        Config protolConfig = config.getConfig("ProtocolConfiguration");
-        magic = protolConfig.getInt("Magic");
-        addressVersion = Byte.parseByte(protolConfig.getString("AddressVersion"));
-        standbyValidators = protolConfig.getStringList("Magic");
-        seedList = protolConfig.getStringList("Magic");
+        Config protocolConfig = config.getConfig("ProtocolConfiguration");
+        magic = protocolConfig.getInt("Magic");
+        addressVersion = Byte.parseByte(protocolConfig.getString("AddressVersion"));
+        standbyValidators = protocolConfig.getStringList("StandbyValidators");
+        seedList = protocolConfig.getStringList("SeedList");
 
-        lowPriorityThreshold = protolConfig.hasPathOrNull("SecondsPerBlock") ?
+        lowPriorityThreshold = protocolConfig.hasPathOrNull("SecondsPerBlock") ?
                 Fixed8.fromDecimal(BigDecimal.valueOf(0.001)) :
-                Fixed8.fromDecimal(BigDecimal.valueOf(protolConfig.getDouble("LowPriorityThreshold")));
-        secondsPerBlock = protolConfig.hasPathOrNull("SecondsPerBlock") ?
+                Fixed8.fromDecimal(BigDecimal.valueOf(protocolConfig.getDouble("LowPriorityThreshold")));
+        secondsPerBlock = protocolConfig.hasPathOrNull("SecondsPerBlock") ?
                 15 :
-                protolConfig.getInt("SecondsPerBlock");
+                protocolConfig.getInt("SecondsPerBlock");
 
         systemFee = new HashMap<>();
-        Config feeConfig = config.getConfig("SystemFee");
+        Config feeConfig = protocolConfig.getConfig("SystemFee");
         for (Map.Entry<String, ConfigValue> entry : feeConfig.entrySet()) {
             String key = entry.getKey();
             TransactionType transactionType = TransactionType.valueOf(key);
-            Fixed8 fee = Fixed8.fromDecimal(BigDecimal.valueOf(protolConfig.getDouble(key)));
+            Fixed8 fee = Fixed8.fromDecimal(BigDecimal.valueOf(feeConfig.getDouble(key)));
             systemFee.put(transactionType, fee);
         }
     }

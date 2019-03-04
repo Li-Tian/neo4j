@@ -1,5 +1,6 @@
 package neo;
 
+import neo.cryptography.Base58;
 import neo.cryptography.Crypto;
 import neo.csharp.BitConverter;
 import neo.log.tr.TR;
@@ -88,4 +89,14 @@ public class UInt160 extends UIntBase implements Cloneable {
         return TR.exit(new UInt160(tmp));
     }
 
+
+    /**
+     * 将UInt160 转化成地址
+     */
+    public String toAddress() {
+        byte[] data = new byte[21];
+        data[0] = ProtocolSettings.Default.addressVersion;
+        System.arraycopy(dataBytes, 0, data, 1, 20);
+        return Base58.encodeWithSha256Check(data);
+    }
 }
