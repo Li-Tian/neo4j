@@ -19,7 +19,10 @@ class MerkleTree {
 
     MerkleTree(UInt256[] hashes) {
         TR.enter();
-        if (hashes.length == 0) throw new IllegalArgumentException();
+        if (hashes.length == 0) {
+            TR.exit();
+            throw new IllegalArgumentException();
+        }
         //this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
         this.root = build((MerkleTreeNode[]) Arrays.stream(hashes).map(x -> new MerkleTreeNode(x)).toArray());
         int depth = 1;
@@ -101,8 +104,15 @@ class MerkleTree {
     }
 
     private static void trim(MerkleTreeNode node, int index, int depth, BitSet flags) {
-        if (depth == 1) return;
-        if (node.leftChild == null) return; // if left is null, then right must be null
+        TR.enter();
+        if (depth == 1) {
+            TR.exit();
+            return;
+        }
+        if (node.leftChild == null) {
+            TR.exit();
+            return; // if left is null, then right must be null
+        }
         if (depth == 2) {
             if (!flags.get(index * 2) && !flags.get(index * 2 + 1)) {
                 node.leftChild = null;
@@ -116,5 +126,6 @@ class MerkleTree {
                 node.rightChild = null;
             }
         }
+        TR.exit();
     }
 }
