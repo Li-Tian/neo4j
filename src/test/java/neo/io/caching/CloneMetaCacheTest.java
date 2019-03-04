@@ -23,7 +23,7 @@ public class CloneMetaCacheTest {
 
     @Test
     public void commit() {
-        TestMetaDataCache metaDataCache = new TestMetaDataCache();
+        MetaDataCacheTest metaDataCache = new MetaDataCacheTest();
         CloneMetaCache<TransactionDemo> cloneMetaCache = new CloneMetaCache<>(metaDataCache);
         cloneMetaCache.get();
         cloneMetaCache.commit();
@@ -33,14 +33,14 @@ public class CloneMetaCacheTest {
 
     @Test
     public void createSnapshot() {
-        TestMetaDataCache metaDataCache = new TestMetaDataCache();
+        MetaDataCacheTest metaDataCache = new MetaDataCacheTest();
         MetaDataCache<TransactionDemo> cache = metaDataCache.createSnapshot();
         Assert.assertNotNull(cache);
     }
 
     @Test
     public void get() {
-        TestMetaDataCache metaDataCache = new TestMetaDataCache();
+        MetaDataCacheTest metaDataCache = new MetaDataCacheTest();
         CloneMetaCache<TransactionDemo> cloneMetaCache = new CloneMetaCache<>(metaDataCache);
         cloneMetaCache.get();
         cloneMetaCache.commit();
@@ -50,14 +50,14 @@ public class CloneMetaCacheTest {
 
     @Test
     public void getAndChange() {
-        TestMetaDataCache metaDataCache = new TestMetaDataCache();
+        MetaDataCacheTest metaDataCache = new MetaDataCacheTest();
         CloneMetaCache<TransactionDemo> cloneMetaCache = new CloneMetaCache<>(metaDataCache);
         cloneMetaCache.get();
         cloneMetaCache.commit();
         TransactionDemo t = cloneMetaCache.get();
         Assert.assertNull(t);
 
-        metaDataCache = new TestMetaDataCache(() -> t1);
+        metaDataCache = new MetaDataCacheTest(() -> t1);
         cloneMetaCache = (CloneMetaCache<TransactionDemo>) metaDataCache.createSnapshot();
         cloneMetaCache.get();
         cloneMetaCache.commit();
