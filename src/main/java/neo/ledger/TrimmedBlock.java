@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.Arrays;
+import java.util.stream.Collectors;
 
 import neo.UInt256;
 import neo.csharp.BitConverter;
@@ -52,7 +53,10 @@ public class TrimmedBlock extends BlockBase {
         block.nextConsensus = nextConsensus;
         block.witness = witness;
         // C# code:  Transactions = Hashes.Select(p => cache[p].Transaction).ToArray()
-        block.transactions = (Transaction[]) Arrays.stream(hashes).map(p -> cache.get(p).transaction).toArray();
+        block.transactions = new Transaction[hashes.length];
+        for (int i = 0; i < hashes.length; i++) {
+            block.transactions[i] = cache.get(hashes[i]).transaction;
+        }
         return block;
     }
 
