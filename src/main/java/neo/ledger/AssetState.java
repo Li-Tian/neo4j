@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import neo.UInt160;
 import neo.UInt256;
 import neo.Fixed8;
+import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -102,7 +103,8 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
     @Override
     public int size() {
         TR.enter();
-        return TR.exit(super.size() + assetId.size() + Byte.BYTES + name.length() +
+        // 1 + 32 + 1 +  1+ name.length + 8 + 8 + 1 +1 + 8 + 20 + 1 + 20 + 20 + 4 +1
+        return TR.exit(super.size() + assetId.size() + AssetType.BYTES + BitConverter.getVarSize(name) +
                 amount.size() + available.size() + Byte.BYTES + Byte.BYTES + fee.size() +
                 feeAddress.size() + owner.size() + admin.size() + issuer.size() + Uint.BYTES + Byte.BYTES);
     }
@@ -205,14 +207,17 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
      * @return 资产名
      */
     public String getName(Locale culture) {
-        // TODO 有待验证
         TR.enter();
         if (assetType == AssetType.GoverningToken) return "NEO";
         if (assetType == AssetType.UtilityToken) return "NeoGas";
         if (nameMap == null) {
+            nameMap = new ConcurrentHashMap<>();
             JsonElement nameJsonElement;
             try {
                 nameJsonElement = new JsonParser().parse(name);
+                System.out.println(name);
+                System.out.println(nameJsonElement);
+
                 if (nameJsonElement.isJsonArray()) {
                     JsonArray array = nameJsonElement.getAsJsonArray();
                     for (int i = 0; i < array.size(); i++) {
@@ -224,10 +229,11 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
                             nameMap.put(langType, realName);
                         }
                     }
-                } else if (nameJsonElement.isJsonObject()) {
+                } else {
                     nameMap.put(Locale.ENGLISH, nameJsonElement.getAsString());
                 }
             } catch (Exception e) {
+                TR.error(e);
                 nameMap.put(Locale.ENGLISH, name);
             }
         }
