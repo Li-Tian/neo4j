@@ -118,7 +118,11 @@ public class AccountStateTest {
 
         JsonArray array = jsonObject.getAsJsonArray("balances");
         JsonObject asset1 = array.get(0).getAsJsonObject();
-        Assert.assertEquals(Blockchain.UtilityToken.hash().toString(), asset1.get("asset").getAsString());
-        Assert.assertEquals(new Fixed8(200), Fixed8.fromDecimal(asset1.get("value").getAsBigDecimal()));
+        String assetId = asset1.get("asset").getAsString();
+        if (assetId.equals(Blockchain.UtilityToken.hash())) {
+            Assert.assertEquals(new Fixed8(200), Fixed8.fromDecimal(asset1.get("value").getAsBigDecimal()));
+        } else {
+            Assert.assertEquals(new Fixed8(100), Fixed8.fromDecimal(asset1.get("value").getAsBigDecimal()));
+        }
     }
 }

@@ -59,7 +59,7 @@ public final class Blockchain extends UntypedActor {
             name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]";
             amount = Fixed8.fromDecimal(new BigDecimal(100000000));
             precision = 0;
-            owner = ECPoint.secp256r1.getCurve().getInfinity();
+            owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
             admin = UInt160.parseToScriptHash(new byte[]{OpCode.PUSHT.getCode()});
             attributes = new TransactionAttribute[0];
             inputs = new CoinReference[0];
@@ -77,7 +77,7 @@ public final class Blockchain extends UntypedActor {
             name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]";
             amount = Fixed8.fromDecimal(BigDecimal.valueOf(Arrays.stream(GenerationAmount).mapToLong(p -> p * DecrementInterval).sum()));
             precision = 8;
-            owner = ECPoint.secp256r1.getCurve().getInfinity();
+            owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
             admin = UInt160.parseToScriptHash(new byte[]{OpCode.PUSHT.getCode()});
             attributes = new TransactionAttribute[0];
             inputs = new CoinReference[0];

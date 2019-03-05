@@ -28,6 +28,11 @@ public class TransactionDemo implements IInventory, ICloneable<TransactionDemo> 
     }
 
     @Override
+    public boolean verify(Snapshot snapshot) {
+        return false;
+    }
+
+    @Override
     public int size() {
         return 0;
     }

@@ -14,20 +14,54 @@ import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
 import neo.persistence.Snapshot;
 
+/**
+ * 投票状态描述：投票，申请
+ */
 public class StateDescriptor implements ISerializable {
 
+    /**
+     * 类型：投票或者登记成为候选人。
+     */
     public StateType type;
+
+    /**
+     * <ul>
+     * <li>当Field = "Votes"时， 存放投票人地址的脚本hash， Key代表投票人;</li>
+     * <li>当Field = "Registered"时， 存放公钥， Key代表申请人</li>
+     * </ul>
+     */
     public byte[] key;
+
+    /**
+     * <ul>
+     * <li>当Type = 0x40时， Field = "Votes";</li>
+     * <li>当Type = 0x48时， Field = "Registered";</li>
+     * </ul>
+     */
     public String field;
+
+    /**
+     * <ul>
+     * <li>当Type = 0x40时， 代表投票地址列表；</li>
+     * <li>当Type = 0x48时， 代表取消或申请验证人的布尔值</li>
+     * </ul>
+     */
     public byte[] value;
 
+    /**
+     * 存储大小
+     */
     @Override
     public int size() {
-//        sizeof(StateType) + Key.GetVarSize() + Field.GetVarSize() + Value.GetVarSize();
-        // TODO waiting getvarsize
-        return 0;
+        //  C# code sizeof(StateType) + Key.GetVarSize() + Field.GetVarSize() + Value.GetVarSize();
+        return StateType.BYTES + BitConverter.getVarSize(key) + BitConverter.getVarSize(field) + BitConverter.getVarSize(value);
     }
 
+    /**
+     * 序列化
+     *
+     * @param writer 二进制输出器
+     */
     @Override
     public void serialize(BinaryWriter writer) {
         writer.writeByte(type.value());
@@ -36,6 +70,12 @@ public class StateDescriptor implements ISerializable {
         writer.writeVarBytes(value);
     }
 
+
+    /**
+     * 反序列化
+     *
+     * @param reader 二进制读入器
+     */
     @Override
     public void deserialize(BinaryReader reader) {
         type = StateType.parse((byte) reader.readByte());
@@ -52,6 +92,9 @@ public class StateDescriptor implements ISerializable {
         }
     }
 
+    /**
+     * 交易手续费  若是申请见证人，需要1000个GAS， 否则为0
+     */
     public Fixed8 getSystemFee() {
         switch (type) {
             case Validator:
@@ -120,7 +163,7 @@ public class StateDescriptor implements ISerializable {
 //            default:
 //                return false;
 //        }
-        // TODO waiting ECPoint
+        // TODO waiting db
         return true;
     }
 
@@ -133,6 +176,9 @@ public class StateDescriptor implements ISerializable {
         }
     }
 
+    /**
+     * 转成json对象
+     */
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("type", type.value());

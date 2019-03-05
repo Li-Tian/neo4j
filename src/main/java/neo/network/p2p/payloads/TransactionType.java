@@ -2,7 +2,6 @@ package neo.network.p2p.payloads;
 
 
 import neo.common.ByteEnum;
-import neo.exception.TypeNotExistException;
 
 /**
  * 交易枚举类型

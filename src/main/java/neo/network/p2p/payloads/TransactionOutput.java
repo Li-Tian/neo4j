@@ -8,6 +8,7 @@ import neo.UInt256;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.exception.FormatException;
 
 /**
  * 交易输出
@@ -53,13 +54,14 @@ public class TransactionOutput implements ISerializable {
      * 反序列化
      *
      * @param reader 二进制输出
-     */
-    @Override
-    public void deserialize(BinaryReader reader) {
-        this.assetId = reader.readSerializable(() -> new UInt256());
-        this.value = reader.readSerializable(() -> new Fixed8());
-        if (value.compareTo(Fixed8.ZERO) <= 0) throw new IllegalArgumentException();
-        this.scriptHash = reader.readSerializable(() -> new UInt160());
+                * @throws FormatException 若转账小于0时，抛出该异常
+                */
+        @Override
+        public void deserialize(BinaryReader reader) {
+            this.assetId = reader.readSerializable(UInt256::new);
+            this.value = reader.readSerializable(Fixed8::new);
+        if (value.compareTo(Fixed8.ZERO) <= 0) throw new FormatException();
+        this.scriptHash = reader.readSerializable(UInt160::new);
     }
 
     /**
@@ -73,7 +75,7 @@ public class TransactionOutput implements ISerializable {
         json.addProperty("n", index);
         json.addProperty("asset", assetId.toString());
         json.addProperty("value", value.toString());
-        json.addProperty("address", scriptHash.toString()); // TODO ScriptHash.ToAddress();
+        json.addProperty("address", scriptHash.toAddress());
         return json;
     }
 }

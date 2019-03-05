@@ -1,20 +1,22 @@
 package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import org.bouncycastle.math.ec.ECPoint;
 
 import java.util.Arrays;
 import java.util.Collection;
 
 import neo.Fixed8;
 import neo.UInt160;
+import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.ledger.Blockchain;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
+import neo.cryptography.ECC.ECPoint;
 
 
 /**
@@ -38,7 +40,6 @@ public class RegisterTransaction extends Transaction {
      */
     public Fixed8 amount;
 
-
     /**
      * 精度
      */
@@ -56,10 +57,16 @@ public class RegisterTransaction extends Transaction {
 
     private UInt160 scriptHash = null;
 
+    /**
+     * 创建智能合约发布交易
+     */
     public RegisterTransaction() {
         super(TransactionType.RegisterTransaction);
     }
 
+    /**
+     * 获取所有者脚本hash
+     */
     public UInt160 getOwnerScriptHash() {
         if (scriptHash == null) {
             scriptHash = UInt160.parseToScriptHash(Contract.createSignatureRedeemScript(owner));
@@ -72,9 +79,8 @@ public class RegisterTransaction extends Transaction {
      */
     @Override
     public int size() {
-        // TODO
-//        Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + sizeof(byte) + Owner.Size + Admin.Size;
-        return super.size();
+        // C# code: Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + sizeof(byte) + Owner.Size + Admin.Size;
+        return super.size() + AssetType.BYTES + BitConverter.getVarSize(name) + amount.size() + Byte.BYTES + owner.size() + admin.size();
     }
 
     /**
@@ -139,8 +145,7 @@ public class RegisterTransaction extends Transaction {
         name = reader.readVarString(1024);
         amount = reader.readSerializable(Fixed8::new);
         precision = (byte) reader.readByte();
-        // TODO 序列化
-//        Owner = ECPoint.DeserializeFrom(reader, ECCurve.Secp256r1);
+        owner = ECPoint.deserializeFrom(reader, ECPoint.secp256r1.getCurve());
         if (owner.isInfinity() && assetType != AssetType.GoverningToken && assetType != AssetType.UtilityToken)
             throw new FormatException();
         admin = reader.readSerializable(UInt160::new);
@@ -168,7 +173,7 @@ public class RegisterTransaction extends Transaction {
         writer.writeVarString(name);
         writer.writeSerializable(amount);
         writer.writeByte(precision);
-//        writer.Write(Owner); // TODO
+        writer.writeSerializable(owner); // TODO
         writer.writeSerializable(admin);
     }
 
@@ -186,19 +191,14 @@ public class RegisterTransaction extends Transaction {
 
         asset.addProperty("type", assetType.value());
         try {
-//            asset.addProperty("name", ); = name == "" ? null : JObject.Parse(name);
+            asset.add("name", name == "" ? null : new JsonParser().parse(name));
         } catch (FormatException e) {
             asset.addProperty("name", name);
         }
         asset.addProperty("amount", amount.toString());
         asset.addProperty("precision", precision);
         asset.addProperty("owner", owner.toString());
-        asset.addProperty("admin", admin.toString());
-// TODO
-//        json["asset"]["amount"] = Amount.ToString();
-//        json["asset"]["precision"] = precision;
-//        json["asset"]["owner"] = Owner.ToString();
-//        json["asset"]["admin"] = Admin.ToAddress();
+        asset.addProperty("admin", admin.toAddress());
         return json;
     }
 

@@ -1,10 +1,10 @@
 package neo.smartcontract;
 
-import org.bouncycastle.math.ec.ECPoint;
 
 import neo.log.tr.TR;
 import neo.vm.OpCode;
 import neo.vm.ScriptBuilder;
+import neo.cryptography.ECC.ECPoint;
 
 public class Contract {
 
