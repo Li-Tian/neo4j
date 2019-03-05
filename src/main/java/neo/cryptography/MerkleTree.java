@@ -7,7 +7,7 @@ import java.util.BitSet;
 import neo.UInt256;
 import neo.log.tr.TR;
 
-class MerkleTree {
+public class MerkleTree {
     private MerkleTreeNode root;
 
     private int depth;
@@ -17,7 +17,7 @@ class MerkleTree {
         return TR.exit(depth);
     }
 
-    MerkleTree(UInt256[] hashes) {
+    public MerkleTree(UInt256[] hashes) {
         TR.enter();
         if (hashes.length == 0) {
             TR.exit();
