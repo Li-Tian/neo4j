@@ -6,6 +6,9 @@ import neo.vm.OpCode;
 import neo.vm.ScriptBuilder;
 import neo.cryptography.ECC.ECPoint;
 
+/**
+ * 合约类，提供了合约的构造方法，以及创建多方签名和单签合约的方法
+ */
 public class Contract {
 
     /**
