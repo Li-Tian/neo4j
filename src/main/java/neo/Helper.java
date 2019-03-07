@@ -2,11 +2,17 @@ package neo;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Properties;
 
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
+import neo.function.FuncA2T;
+import neo.function.FuncAB2T;
 import neo.log.notr.TR;
 
 public class Helper {
@@ -148,24 +154,25 @@ public class Helper {
 //        return new BigInteger(b);
 //    }
 //
-//    public static Fixed8 Sum(this IEnumerable<Fixed8> source)
-//    {
-//        long sum = 0;
-//        checked
-//        {
-//            foreach (Fixed8 item in source)
-//            {
-//                sum += item.value;
-//            }
-//        }
-//        return new Fixed8(sum);
-//    }
-//
-//    public static Fixed8 Sum<TSource>(this IEnumerable<TSource> source, Func<TSource, Fixed8> selector)
-//    {
-//        return source.Select(selector).Sum();
-//    }
-//
+
+    /**
+     * 传入一个实现了IEnumerable接口的任意TSource泛型对象集合，<br/> 和一个能够将TSource转化为Fixed8对象的转换函数<br/>
+     * 每个Tsource元素转换成Fixed8对象，然后求和后返回.
+     *
+     * @param source   一个包含多个TSource对象,实现了IEnumerable接口的集合
+     * @param selector 转换方法,能够将source中的每个TSource对象转化为Fixed8对象
+     * @param <T>      该方法所需要处理的数值表达式类型
+     * @return 集合中所有对象经过转换后的值的和
+     */
+    public static <T> Fixed8 sum(Collection<T> source, FuncA2T<T, Fixed8> selector) {
+        Fixed8 sum = Fixed8.ZERO;
+        for (T item : source) {
+            sum = Fixed8.add(sum, selector.get(item));
+        }
+        return sum;
+    }
+
+    //
 //    internal static bool TestBit(this BigInteger i, int index)
 //    {
 //        return (i & (BigInteger.One << index)) > BigInteger.Zero;
@@ -227,7 +234,7 @@ public class Helper {
         return TR.exit(BitConverter.toUint(temp));
     }
 
-//        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //        [MethodImpl(MethodImplOptions.AggressiveInlining)]
 //    unsafe internal static ulong ToUInt64(this byte[] value, int startIndex)
 //    {
 //        fixed (byte* pbyte = &value[startIndex])
@@ -250,55 +257,135 @@ public class Helper {
 //        return new IPEndPoint(endPoint.Address.Unmap(), endPoint.Port);
 //    }
 //
-//    internal static long WeightedAverage<T>(this IEnumerable<T> source, Func<T, long> valueSelector, Func<T, long> weightSelector)
-//    {
-//        long sum_weight = 0;
-//        long sum_value = 0;
-//        foreach (T item in source)
-//        {
-//            long weight = weightSelector(item);
-//            sum_weight += weight;
-//            sum_value += valueSelector(item) * weight;
-//        }
-//        if (sum_value == 0) return 0;
-//        return sum_value / sum_weight;
-//    }
-//
-//    internal static IEnumerable<TResult> WeightedFilter<T, TResult>(this IList<T> source, double start, double end, Func<T, long> weightSelector, Func<T, long, TResult> resultSelector)
-//    {
-//        if (source == null) throw new ArgumentNullException(nameof(source));
-//        if (start < 0 || start > 1) throw new ArgumentOutOfRangeException(nameof(start));
-//        if (end < start || start + end > 1) throw new ArgumentOutOfRangeException(nameof(end));
-//        if (weightSelector == null) throw new ArgumentNullException(nameof(weightSelector));
-//        if (resultSelector == null) throw new ArgumentNullException(nameof(resultSelector));
-//        if (source.Count == 0 || start == end) yield break;
-//        double amount = source.Sum(weightSelector);
-//        long sum = 0;
-//        double current = 0;
-//        foreach (T item in source)
-//        {
-//            if (current >= end) break;
-//            long weight = weightSelector(item);
-//            sum += weight;
-//            double old = current;
-//            current = sum / amount;
-//            if (current <= start) continue;
-//            if (old < start)
-//            {
-//                if (current > end)
-//                {
-//                    weight = (long)((end - start) * amount);
-//                }
-//                else
-//                {
-//                    weight = (long)((current - start) * amount);
-//                }
-//            }
-//            else if (current > end)
-//            {
-//                weight = (long)((end - old) * amount);
-//            }
-//            yield return resultSelector(item, weight);
-//        }
-//    }
+
+    /**
+     * 计算加权平均值
+     *
+     * @param source         待计算集合
+     * @param valueSelector  值选择器
+     * @param weightSelector 权重选择器
+     * @param <T>            对象泛型
+     * @return long 加权平均值
+     */
+    public static <T> long weightedAverage(Collection<T> source, FuncA2T<T, Long> valueSelector, FuncA2T<T, Long> weightSelector) {
+        /*
+            C# code
+            long sum_weight = 0;
+            long sum_value = 0;
+            foreach (T item in source)
+            {
+                long weight = weightSelector(item);
+                sum_weight += weight;
+                sum_value += valueSelector(item) * weight;
+            }
+            if (sum_value == 0) return 0;
+            return sum_value / sum_weight;
+         */
+
+        long sum_weight = 0;
+        long sum_value = 0;
+        for (T item : source) {
+            long weight = valueSelector.get(item);
+            sum_weight += weight;
+            sum_value += valueSelector.get(item) * weight;
+        }
+        if (sum_value == 0) return 0;
+        return sum_value / sum_weight;
+    }
+
+
+    /**
+     * 按照权重范围进行过滤
+     *
+     * @param source         待过滤集合
+     * @param start          起始权重范围，不包括
+     * @param end            截止权重范围，不包括
+     * @param weightSelector 权重选择器
+     * @param resultSelector 结果值选择器
+     * @param <T>            集合对象泛型
+     * @param <R>            返回值泛型
+     * @return Collection<R>
+     */
+    public static <T, R> Collection<R> weightedFilter(Collection<T> source, double start, double end, FuncA2T<T, Fixed8> weightSelector, FuncAB2T<T, Long, R> resultSelector) {
+        /*
+            C# code
+            double amount = source.Sum(weightSelector);
+            long sum = 0;
+            double current = 0;
+            foreach (T item in source)
+            {
+                if (current >= end) break;
+                long weight = weightSelector(item);
+                sum += weight;
+                double old = current;
+                current = sum / amount;
+                if (current <= start) continue;
+                if (old < start)
+                {
+                    if (current > end)
+                    {
+                        weight = (long)((end - start) * amount);
+                    }
+                    else
+                    {
+                        weight = (long)((current - start) * amount);
+                    }
+                }
+                else if (current > end)
+                {
+                    weight = (long)((end - old) * amount);
+                }
+                yield return resultSelector(item, weight);
+            }
+         */
+
+        if (source == null) throw new NullPointerException();
+        if (start < 0 || start > 1) throw new IndexOutOfBoundsException();
+        if (end < start || start + end > 1) throw new IndexOutOfBoundsException();
+        if (weightSelector == null) throw new NullPointerException();
+        if (resultSelector == null) throw new NullPointerException();
+
+        if (source.size() == 0 || start == end) {
+            return Collections.emptyList();
+        }
+        long amount = sum(source, weightSelector).getData();// source.Sum(weightSelector);
+        long sum = 0;
+        double current = 0;
+        ArrayList<R> results = new ArrayList<>();
+
+        for (T item : source) {
+            if (current >= end) break;
+            long weight = weightSelector.get(item).getData();
+            sum += weight;
+            double old = current;
+            current = sum / amount;
+            if (current <= start) continue;
+            if (old < start) {
+                if (current > end) {
+                    weight = (long) ((end - start) * amount);
+                } else {
+                    weight = (long) ((current - start) * amount);
+                }
+            } else if (current > end) {
+                weight = (long) ((end - old) * amount);
+            }
+            results.add(resultSelector.get(item, weight));
+        }
+        return results;
+    }
+
+    /**
+     * 将 Array转成 HashSet
+     *
+     * @param array 待转化的数组
+     * @param <T>   泛型
+     * @return HashSet<T>
+     */
+    public static <T> HashSet<T> array2HashSet(T[] array) {
+        HashSet<T> set = new HashSet<>();
+        for (T item : array) {
+            set.add(item);
+        }
+        return set;
+    }
 }

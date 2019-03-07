@@ -1,6 +1,9 @@
 package neo.persistence;
 
-public abstract class Store implements IPersistence {
+public abstract class Store extends AbstractPersistence {
 
-    public abstract Snapshot GetSnapshot();
+    /**
+     * 获取快照
+     */
+    public abstract Snapshot getSnapshot();
 }

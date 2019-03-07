@@ -27,6 +27,8 @@ public class ValidatorStateTest {
         Assert.assertEquals(validatorState.publicKey, copy.publicKey);
         Assert.assertEquals(validatorState.registered, copy.registered);
         Assert.assertEquals(validatorState.votes, copy.votes);
+        Assert.assertEquals(validatorState.publicKey, validatorState.getPublicKey());
+        Assert.assertEquals(validatorState.votes, validatorState.getVotes());
     }
 
     @Test

@@ -141,6 +141,11 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
         TR.exit();
     }
 
+    public Collection<Map.Entry<TKey, TValue>> find() {
+        return find(new byte[0]);
+    }
+
+
     public Collection<Map.Entry<TKey, TValue>> find(byte[] keyPrefix) {
         TR.enter();
 

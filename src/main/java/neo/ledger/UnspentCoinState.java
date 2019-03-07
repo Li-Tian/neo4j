@@ -60,7 +60,7 @@ public class UnspentCoinState extends StateBase implements ICloneable<UnspentCoi
         byte[] bytes = reader.readVarBytes();
         items = new CoinState[bytes.length];
         for (int i = 0; i < bytes.length; i++) {
-            items[i] = CoinState.parse(bytes[i]);
+            items[i] = new CoinState(bytes[i]);
         }
     }
 

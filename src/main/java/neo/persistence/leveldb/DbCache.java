@@ -17,7 +17,7 @@ import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.io.caching.DataCache;
 
-public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {
+public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {
 
     private final DB db;
     private final ReadOptions options;
@@ -26,7 +26,7 @@ public class DBCache<TKey extends ISerializable, TValue extends ICloneable<TValu
     private final Supplier<TKey> keyGenerator;
     private final Supplier<TValue> valueGenerator;
 
-    public DBCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, Supplier<TKey> keyGenerator, Supplier<TValue> valueGenerator) {
+    public DbCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, Supplier<TKey> keyGenerator, Supplier<TValue> valueGenerator) {
         this.db = db;
         this.options = options;
         this.batch = batch;

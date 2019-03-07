@@ -118,4 +118,18 @@ public class ValidatorState extends StateBase implements ICloneable<ValidatorSta
     }
 
 
+    /**
+     * 获取公钥
+     */
+    public ECPoint getPublicKey() {
+        return publicKey;
+    }
+
+    /**
+     * 获取投票数
+     */
+    public Fixed8 getVotes() {
+        return votes;
+    }
+
 }

@@ -3,19 +3,27 @@ package neo.ledger;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import akka.actor.UntypedActor;
 import neo.Fixed8;
 import neo.ProtocolSettings;
 import neo.UInt160;
+import neo.UInt256;
+import neo.csharp.BitConverter;
+import neo.csharp.Uint;
+import neo.io.SerializeHelper;
+import neo.log.tr.TR;
 import neo.network.p2p.payloads.AssetType;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.RegisterTransaction;
+import neo.network.p2p.payloads.StateDescriptor;
 import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
 import neo.cryptography.ECC.ECPoint;
+import neo.persistence.Snapshot;
 import neo.vm.OpCode;
 
 /**
@@ -48,7 +56,10 @@ public final class Blockchain extends UntypedActor {
      */
     public static final Duration TimePerBlock = Duration.ofSeconds(SecondsPerBlock);
 
-//    public static final ECPoint[] StandbyValidators = ProtocolSettings.Default.standbyValidators.stream().map(p -> PublicKeyIm.);
+    /**
+     * 备用验证人列表
+     */
+    public static final ECPoint[] StandbyValidators = ProtocolSettings.Default.standbyValidators.stream().map(p -> ECPoint.fromBytes(BitConverter.hexToBytes(p), ECPoint.secp256r1.getCurve())).toArray(ECPoint[]::new);
 
     /**
      * NEO代币定义
@@ -85,6 +96,88 @@ public final class Blockchain extends UntypedActor {
             witnesses = new Witness[0];
         }
     };
+
+
+    private static Blockchain singleton;
+
+    public static Blockchain singleton() {
+        // TODO 有待改进
+        while (singleton == null) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                TR.error(e);
+            }
+        }
+        return singleton;
+    }
+
+
+    private ArrayList<UInt256> headerIndex = new ArrayList<>();
+
+
+    /**
+     * 根据区块高度查询区块
+     *
+     * @param index 区块高度
+     * @return 区块
+     */
+    public UInt256 getBlockHash(Uint index) {
+        if (headerIndex.size() <= index.intValue()) {
+            return null;
+        }
+        return headerIndex.get(index.intBits());
+    }
+
+    public static void processAccountStateDescriptor(StateDescriptor descriptor, Snapshot snapshot) {
+        UInt160 hash = new UInt160(descriptor.key);
+        AccountState account = snapshot.getAccounts().getAndChange(hash, () -> new AccountState(hash));
+        switch (descriptor.field) {
+            case "Votes":
+                Fixed8 balance = account.getBalance(GoverningToken.hash());
+                for (ECPoint pubkey : account.votes) {
+                    ValidatorState validator = snapshot.getValidators().getAndChange(pubkey);
+                    validator.votes = Fixed8.subtract(validator.votes, balance);
+                    if (!validator.registered && validator.votes.equals(Fixed8.ZERO)) {
+                        snapshot.getValidators().delete(pubkey);
+                    }
+                }
+
+                ECPoint[] votes = SerializeHelper.asAsSerializableArray(descriptor.value, ECPoint[]::new, ECPoint::new);
+                votes = Arrays.stream(votes).distinct().toArray(ECPoint[]::new);
+                //   ECPoint[] votes = descriptor.value.AsSerializableArray < ECPoint > ().Distinct().ToArray();
+
+                if (votes.length != account.votes.length) {
+                    ValidatorsCountState count_state = snapshot.getValidatorsCount().getAndChange();
+                    if (account.votes.length > 0) {
+                        count_state.votes[account.votes.length - 1] = Fixed8.subtract(count_state.votes[account.votes.length - 1], balance);
+                        // count_state.votes[account.votes.length - 1] -= balance;
+                    }
+                    if (votes.length > 0) {
+                        count_state.votes[votes.length - 1] = Fixed8.add(count_state.votes[votes.length - 1], balance);
+                        // count_state.votes[votes.length - 1] += balance;
+                    }
+                }
+                account.votes = votes;
+                for (ECPoint pubkey : account.votes) {
+                    ValidatorState state = snapshot.getValidators().getAndChange(pubkey, () -> new ValidatorState(pubkey));
+                    state.votes = Fixed8.add(state.votes, balance);
+                }
+                break;
+        }
+    }
+
+    public static void processValidatorStateDescriptor(StateDescriptor descriptor, Snapshot snapshot) {
+        ECPoint pubkey = ECPoint.fromBytes(descriptor.key, ECPoint.secp256r1.getCurve());
+        ValidatorState validator = snapshot.getValidators().getAndChange(pubkey, () -> new ValidatorState(pubkey));
+        switch (descriptor.field) {
+            case "Registered":
+                validator.registered = BitConverter.toBoolean(descriptor.value, 0);
+                break;
+            default:
+                break;
+        }
+    }
 
 
     @Override

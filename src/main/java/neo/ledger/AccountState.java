@@ -148,6 +148,15 @@ public class AccountState extends StateBase implements ICloneable<AccountState> 
         return TR.exit(value);
     }
 
+    public synchronized void increaseBalance(UInt256 asset_id, Fixed8 amount) {
+        Fixed8 total = amount;
+        if (balances.containsKey(asset_id)) {
+            Fixed8 rest = balances.get(asset_id);
+            total = Fixed8.add(amount, rest);
+        }
+        balances.put(asset_id, total);
+    }
+
     /**
      * 序列化
      * <p>序列化字段</p>
