@@ -6,7 +6,6 @@ import sun.security.ec.ECPrivateKeyImpl;
 import sun.security.ec.ECPublicKeyImpl;
 
 import java.security.InvalidKeyException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -16,6 +15,9 @@ import java.security.SignatureException;
 
 import neo.log.tr.TR;
 import neo.vm.ICrypto;
+
+import static neo.cryptography.Helper.ripeMD160;
+import static neo.cryptography.Helper.sha256;
 
 public class Crypto implements ICrypto {
 
@@ -56,7 +58,7 @@ public class Crypto implements ICrypto {
         TR.enter();
         if (pubkey.length == 33 && (pubkey[0] == 0x02 || pubkey[0] == 0x03)) {
             try {
-                pubkey = neo.cryptography.ECC.ECPoint.secp256r1.getCurve().decodePoint(pubkey).getEncoded(false);
+                pubkey = neo.cryptography.ecc.ECPoint.secp256r1.getCurve().decodePoint(pubkey).getEncoded(false);
                 byte[] tmp = new byte[pubkey.length - 1];
                 System.arraycopy(pubkey, 1, tmp, 0, pubkey.length - 1);
                 pubkey = tmp;

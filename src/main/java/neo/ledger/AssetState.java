@@ -21,7 +21,7 @@ import neo.io.ICloneable;
 
 import neo.log.tr.TR;
 import neo.network.p2p.payloads.AssetType;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 
 /**
  * 资产状态

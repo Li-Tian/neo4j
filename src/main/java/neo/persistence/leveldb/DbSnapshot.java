@@ -23,7 +23,7 @@ import neo.ledger.UnspentCoinState;
 import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
 import neo.persistence.Snapshot;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 
 public class DbSnapshot extends Snapshot {
 
@@ -61,6 +61,7 @@ public class DbSnapshot extends Snapshot {
         db.write(batch);
     }
 
+    @Override
     public void close() throws IOException {
         snapshot.close();
     }

@@ -1,9 +1,12 @@
 package neo.persistence;
 
+/**
+ * Abstract persistent storage
+ */
 public abstract class Store extends AbstractPersistence {
 
     /**
-     * 获取快照
+     * Get snapshot
      */
     public abstract Snapshot getSnapshot();
 }

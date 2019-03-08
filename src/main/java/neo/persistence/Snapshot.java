@@ -1,5 +1,6 @@
 package neo.persistence;
 
+import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +26,7 @@ import neo.ledger.AccountState;
 import neo.ledger.AssetState;
 import neo.ledger.BlockState;
 import neo.ledger.Blockchain;
+import neo.ledger.CoinState;
 import neo.ledger.ContractState;
 import neo.ledger.HashIndexState;
 import neo.ledger.HeaderHashList;
@@ -38,7 +40,7 @@ import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 import neo.network.p2p.payloads.EnrollmentTransaction;
 import neo.network.p2p.payloads.StateDescriptor;
 import neo.network.p2p.payloads.StateTransaction;
@@ -47,7 +49,7 @@ import neo.network.p2p.payloads.TransactionOutput;
 
 
 /**
- * 快照
+ * Snapshot
  */
 public abstract class Snapshot extends AbstractPersistence {
 
@@ -66,82 +68,128 @@ public abstract class Snapshot extends AbstractPersistence {
     protected MetaDataCache<HashIndexState> blockHashIndex;
     protected MetaDataCache<HashIndexState> headerHashIndex;
 
+
+    /**
+     * free resource
+     */
+    public void close() throws IOException {
+    }
+
+    /**
+     * get block cache
+     */
     @Override
     public DataCache<UInt256, BlockState> getBlocks() {
         return this.blocks;
     }
 
+    /**
+     * get transaction cache
+     */
     @Override
     public DataCache<UInt256, TransactionState> getTransactions() {
         return this.transactions;
     }
 
+    /**
+     * get account cache
+     */
     @Override
     public DataCache<UInt160, AccountState> getAccounts() {
         return this.accounts;
     }
 
+    /**
+     * get utxo cache
+     */
     @Override
     public DataCache<UInt256, UnspentCoinState> getUnspentCoins() {
         return this.unspentCoins;
     }
 
+    /**
+     * get spent transaction cache
+     */
     @Override
     public DataCache<UInt256, SpentCoinState> getSpentCoins() {
         return this.spentCoins;
     }
 
+    /**
+     * get validators cache
+     */
     @Override
     public DataCache<ECPoint, ValidatorState> getValidators() {
         return this.validators;
     }
 
+    /**
+     * get asset cache
+     */
     @Override
     public DataCache<UInt256, AssetState> getAssets() {
         return this.assets;
     }
 
+    /**
+     * get contract cache
+     */
     @Override
     public DataCache<UInt160, ContractState> getContracts() {
         return this.contracts;
     }
 
+    /**
+     * get contact's storage cache
+     */
     @Override
     public DataCache<StorageKey, StorageItem> getStorages() {
         return this.storages;
     }
 
+    /**
+     * get header hash list cache
+     */
     @Override
     public DataCache<UInt32Wrapper, HeaderHashList> getHeaderHashList() {
         return this.headerHashList;
     }
 
+    /**
+     * get validator count cache
+     */
     @Override
     public MetaDataCache<ValidatorsCountState> getValidatorsCount() {
         return this.validatorsCount;
     }
 
+    /**
+     * get block hash cache
+     */
     @Override
     public MetaDataCache<HashIndexState> getBlockHashIndex() {
         return this.blockHashIndex;
     }
 
+    /**
+     * get header hash cache
+     */
     @Override
     public MetaDataCache<HashIndexState> getHeaderHashIndex() {
         return this.headerHashIndex;
     }
 
     /**
-     * 当前正在持久化的区块
+     * Get the block being persisted currently
      */
     public Block getPersistingBlock() {
         return this.persistingBlock;
     }
 
     /**
-     * 设置正在持久化的区块
+     * Set the block being persisted currently
      *
-     * @param block 待持久化的区块
+     * @param block the persisting block
      */
     public void setPersistingBlock(Block block) {
         this.persistingBlock = block;
@@ -149,37 +197,37 @@ public abstract class Snapshot extends AbstractPersistence {
 
 
     /**
-     * 当前区块高度
+     * Current block height
      */
     public Uint getHeight() {
         return getBlockHashIndex().get().index;
     }
 
     /**
-     * 区块头高度
+     * Block header height
      */
     public UInt256 getHeaderHeight() {
         return getBlockHashIndex().get().hash;
     }
 
     /**
-     * 当前区块hash
+     * Current block hash
      */
     public UInt256 getCurrentBlockHash() {
         return getBlockHashIndex().get().hash;
     }
 
     /**
-     * 当前区块头hash
+     * Current block header hash
      */
     public UInt256 getCurrentHeaderHash() {
         return getHeaderHashIndex().get().hash;
     }
 
     /**
-     * 克隆快照
+     * Clone snapshot
      *
-     * @return 快照
+     * @return snapshot
      */
     @Override
     public Snapshot clone() {
@@ -187,14 +235,21 @@ public abstract class Snapshot extends AbstractPersistence {
     }
 
     /**
-     * 持久化到磁盘
+     * Persist to disk
      */
     public void commit() {
-        // TODO
-//        accounts.DeleteWhere((k, v) =>
-//        !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p = > p.Value <= Fixed8.Zero));
-//        unspentCoins.DeleteWhere((k, v) =>v.Items.All(p = > p.HasFlag(CoinState.Spent)));
-//        spentCoins.DeleteWhere((k, v) =>v.Items.Count == 0);
+        // C# code
+        // accounts.DeleteWhere((k, v) =>
+        //        !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p = > p.Value <= Fixed8.Zero));
+        //  unspentCoins.DeleteWhere((k, v) =>v.Items.All(p = > p.HasFlag(CoinState.Spent)));
+        //        spentCoins.DeleteWhere((k, v) =>v.Items.Count == 0);
+
+        accounts.deleteWhere((k, v) -> !v.isFrozen
+                && v.votes.length == 0
+                && v.balances.entrySet().stream().allMatch(p -> p.getValue().compareTo(Fixed8.ZERO) <= 0));
+        unspentCoins.deleteWhere((k, v) -> Arrays.stream(v.items).allMatch(p -> p.hasFlag(CoinState.Spent)));
+        spentCoins.deleteWhere((k, v) -> v.items.size() == 0);
+
         blocks.commit();
         transactions.commit();
         accounts.commit();
@@ -212,10 +267,13 @@ public abstract class Snapshot extends AbstractPersistence {
 
 
     /**
-     * 获取一笔交易尚未Claim的outputs的字典。 此字典的key为该交易的output的的序号，而value是这个output的花费状态。
+     * Get a dictionary for outputs of transactions that have not yet been claimed. The key of this
+     * dictionary is the ordinal number of the output of the transaction, and the value is the spent
+     * state of the output.
      *
-     * @param hash 待查询交易hash
-     * @return 返回尚未Claim的outputs字典，如果交易不存在，则返回null
+     * @param hash Transaction hash
+     * @return Return a dictionary of outputs that have not been claimed, or null if the transaction
+     * does not exist
      */
     public HashMap<Ushort, SpentCoin> getUnclaimed(UInt256 hash) {
         /*
@@ -245,12 +303,14 @@ public abstract class Snapshot extends AbstractPersistence {
     }
 
     /**
-     * 计算可以Claim的GAS奖励
+     * Calculate the GAS bonus that can be claimed
      *
-     * @param inputs Claim指向的交易集合
-     * @return 可以Claim的GAS数量
-     * @throws IllegalArgumentException ignoreClaimed设置为false时，若出现以下一种情况：<br/> 1）claimable为null，或者其数量为零<br/>
-     *                                  2）发现有已经claim的input时
+     * @param inputs The collection of transactions to which Claim refers
+     * @return The amount of GAS that can be claimed
+     * @throws IllegalArgumentException IgnoreClaimed when set to false, if one of the following
+     *                                  situations occurs: <br/> 1) claimable is null, or its number
+     *                                  is zero; <br/> 2) the input that has been claimed is found;
+     *                                  <br/> Throw the exception.
      */
     public Fixed8 calculateBonus(Collection<CoinReference> inputs) {
         return calculateBonus(inputs, true);
@@ -258,15 +318,19 @@ public abstract class Snapshot extends AbstractPersistence {
 
 
     /**
-     * 计算可以Claim的GAS奖励
+     * Calculate the GAS bonus that can be claimed
      *
-     * @param inputs        Claim指向的交易集合
-     * @param ignoreClaimed 是否忽略已经Claims的input。当如果发现参数inputs指向的UTXO不存在或者已经被claim过了，<br> 这时如果
-     *                      ignoreClaimed 指定为 true，则忽略这个错误继续计算剩下的部分，<br/> 如果 ignoreClaimed 指定为
-     *                      false，则抛出异常。
-     * @return 可以Claim的GAS数量
-     * @throws IllegalArgumentException ignoreClaimed设置为false时，若出现以下一种情况：<br/> 1）claimable为null，或者其数量为零<br/>
-     *                                  2）发现有已经claim的input时
+     * @param inputs        The collection of transactions to which Claim refers
+     * @param ignoreClaimed Whether to ignore the input that has already been claimed, <br/> If the
+     *                      UTXO indicated by the parameter inputs does not exist or has been
+     *                      claimed,<br/> If ignoreClaimed is specified as true at this point, it
+     *                      ignores the error and moves on to the rest of the calculation. <br/> If
+     *                      ignoreClaimed specifies false, an exception is thrown.
+     * @return The amount of GAS that can be claimed
+     * @throws IllegalArgumentException IgnoreClaimed when set to false, if one of the following
+     *                                  situations occurs: <br/> 1) claimable is null, or its number
+     *                                  is zero; <br/> 2) the input that has been claimed is found;
+     *                                  <br/> Throw the exception.
      */
     public Fixed8 calculateBonus(Collection<CoinReference> inputs, boolean ignoreClaimed) {
         // C# code
@@ -315,12 +379,14 @@ public abstract class Snapshot extends AbstractPersistence {
     }
 
     /**
-     * 计算可以Claim到的GAS奖励
+     * Calculate the GAS rewards that can be claimed
      *
-     * @param inputs     Claim指向的交易集合
-     * @param height_end 花费的高度
-     * @return 可以Claim的GAS数量
-     * @throws IllegalArgumentException 当指向的交易不存在，或者指向交易输出序号不合法，<br/> 或者指向交易输出不是NEO输出时，抛出异常
+     * @param inputs     The transaction set pointed to by Claim
+     * @param height_end The height to be spent
+     * @return The amount of GAS that can be claimed
+     * @throws IllegalArgumentException When the pointed transaction does not exist, or the
+     *                                  transaction output serial number is not legal, or the
+     *                                  transaction output is not NEO asset, Throw an exception.
      */
     public Fixed8 calculateBonus(Collection<CoinReference> inputs, Uint height_end) {
         /*
@@ -332,7 +398,8 @@ public abstract class Snapshot extends AbstractPersistence {
                 if (tx_state.BlockIndex == height_end) continue;
                 foreach(CoinReference claim in group)
                 {
-                    if (claim.PrevIndex >= tx_state.Transaction.Outputs.Length || !tx_state.Transaction.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.GoverningToken.Hash))
+                    if (claim.PrevIndex >= tx_state.Transaction.Outputs.Length ||
+                    !tx_state.Transaction.Outputs[claim.PrevIndex].AssetId.Equals(Blockchain.GoverningToken.Hash))
                         throw new ArgumentException();
                     unclaimed.Add(new SpentCoin
                     {
@@ -397,7 +464,8 @@ public abstract class Snapshot extends AbstractPersistence {
                     }
                     amount += (iend - istart) * Blockchain.GenerationAmount[ustart];
                 }
-                amount += (uint)(this.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0 ? 0 : this.GetSysFeeAmount(group.Key.StartHeight - 1)));
+                amount += (uint)(this.GetSysFeeAmount(group.Key.EndHeight - 1) - (group.Key.StartHeight == 0
+                ? 0 : this.GetSysFeeAmount(group.Key.StartHeight - 1)));
                 amount_claimed += group.Sum(p => p.Value) / 100000000 * amount;
             }
             return amount_claimed;
@@ -439,9 +507,9 @@ public abstract class Snapshot extends AbstractPersistence {
 
 
     /**
-     * 获取当前参与共识的验证人
+     * Get the current Validators participating in consensus
      *
-     * @return 参与共识的验证人列表
+     * @return The list of Validators for the consensus
      */
     public ECPoint[] getValidatorPubkeys() {
         if (validatorPubkeys == null) {
@@ -453,10 +521,11 @@ public abstract class Snapshot extends AbstractPersistence {
     }
 
     /**
-     * 获取参与共识的验证人列表。
+     * Get a list of Validators participating in the consensus。
      *
-     * @param others 打包的交易。验证人点票时，包含这些交易中的影响。
-     * @return 参与共识的验证人列表
+     * @param others Packaged transaction. The impact of these transactions is included when the
+     *               Validators Counting.
+     * @return The list of Validators participating in the consensus
      */
     public Collection<ECPoint> getValidators(Collection<Transaction> others) {
         Snapshot snapshot = clone();
@@ -464,16 +533,19 @@ public abstract class Snapshot extends AbstractPersistence {
         // 计算因交易产生的票数变化
         for (Transaction tx : others) {
             for (TransactionOutput output : tx.outputs) {
-                AccountState account = snapshot.getAccounts().getAndChange(output.scriptHash, () -> new AccountState(output.scriptHash));
+                AccountState account = snapshot.getAccounts().getAndChange(output.scriptHash,
+                        () -> new AccountState(output.scriptHash));
                 account.increaseBalance(output.assetId, output.value);
 
                 if (output.assetId.equals(Blockchain.GoverningToken.hash()) && account.votes.length > 0) {
                     for (ECPoint pubkey : account.votes) {
-                        ValidatorState validator = snapshot.getValidators().getAndChange(pubkey, () -> new ValidatorState(pubkey));
+                        ValidatorState validator = snapshot.getValidators().getAndChange(pubkey,
+                                () -> new ValidatorState(pubkey));
                         validator.votes = Fixed8.add(validator.votes, output.value);
                     }
                     ValidatorsCountState countState = snapshot.getValidatorsCount().getAndChange();
-                    countState.votes[account.votes.length - 1] = Fixed8.subtract(countState.votes[account.votes.length - 1], output.value);
+                    int index = account.votes.length - 1;
+                    countState.votes[index] = Fixed8.subtract(countState.votes[index], output.value);
                 }
             }
 
@@ -492,7 +564,8 @@ public abstract class Snapshot extends AbstractPersistence {
                                 }
                             }
                             ValidatorsCountState countState = snapshot.getValidatorsCount().getAndChange();
-                            countState.votes[account.votes.length - 1] = Fixed8.subtract(countState.votes[account.votes.length - 1], output_prev.value);
+                            int index = account.votes.length - 1;
+                            countState.votes[index] = Fixed8.subtract(countState.votes[index], output_prev.value);
                         }
                     }
                     account.increaseBalance(output_prev.assetId, Fixed8.negate(output_prev.value));

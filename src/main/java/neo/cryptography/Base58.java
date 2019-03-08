@@ -75,7 +75,7 @@ public class Base58 {
      */
     public static String encodeWithSha256Check(byte[] data) {
         try {
-            byte[] checksum = Crypto.Default.sha256(Crypto.Default.sha256(data));
+            byte[] checksum = Helper.sha256(Helper.sha256(data));
             byte[] buffer = new byte[data.length + 4];
 
             System.arraycopy(data, 0, buffer, 0, data.length);
@@ -98,7 +98,7 @@ public class Base58 {
 
         byte[] data = BitConverter.subBytes(buffer, 0, buffer.length - 4);
         try {
-            byte[] checksum = Crypto.Default.sha256(Crypto.Default.sha256(data));
+            byte[] checksum = Helper.sha256(Helper.sha256(data));
             checksum = BitConverter.subBytes(checksum, 0, 4);// take 4 bytes.
             byte[] originCheckSum = BitConverter.subBytes(buffer, buffer.length - 4, buffer.length);
 

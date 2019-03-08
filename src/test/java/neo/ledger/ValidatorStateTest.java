@@ -7,12 +7,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import neo.Fixed8;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
-import neo.vm.Types.ByteArray;
 
-import static org.junit.Assert.*;
 
 public class ValidatorStateTest {
 

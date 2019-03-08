@@ -12,13 +12,12 @@ import java.util.Locale;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.network.p2p.payloads.AssetType;
 
-import static org.junit.Assert.*;
 
 public class AssetStateTest {
 

@@ -165,11 +165,12 @@ public class Helper {
      * @return 集合中所有对象经过转换后的值的和
      */
     public static <T> Fixed8 sum(Collection<T> source, FuncA2T<T, Fixed8> selector) {
+        TR.enter();
         Fixed8 sum = Fixed8.ZERO;
         for (T item : source) {
             sum = Fixed8.add(sum, selector.get(item));
         }
-        return sum;
+        return TR.exit(sum);
     }
 
     //
@@ -268,6 +269,7 @@ public class Helper {
      * @return long 加权平均值
      */
     public static <T> long weightedAverage(Collection<T> source, FuncA2T<T, Long> valueSelector, FuncA2T<T, Long> weightSelector) {
+        TR.enter();
         /*
             C# code
             long sum_weight = 0;
@@ -285,12 +287,12 @@ public class Helper {
         long sum_weight = 0;
         long sum_value = 0;
         for (T item : source) {
-            long weight = valueSelector.get(item);
+            long weight = weightSelector.get(item);
             sum_weight += weight;
             sum_value += valueSelector.get(item) * weight;
         }
         if (sum_value == 0) return 0;
-        return sum_value / sum_weight;
+        return TR.exit(sum_value / sum_weight);
     }
 
 
@@ -307,6 +309,7 @@ public class Helper {
      * @return Collection<R>
      */
     public static <T, R> Collection<R> weightedFilter(Collection<T> source, double start, double end, FuncA2T<T, Fixed8> weightSelector, FuncAB2T<T, Long, R> resultSelector) {
+        TR.enter();
         /*
             C# code
             double amount = source.Sum(weightSelector);
@@ -358,7 +361,10 @@ public class Helper {
             long weight = weightSelector.get(item).getData();
             sum += weight;
             double old = current;
-            current = sum / amount;
+            current = Double.valueOf(sum) / amount; // notice!!
+
+            System.out.println(item.toString() + " -> weight: " + weight + " current: " + current);
+
             if (current <= start) continue;
             if (old < start) {
                 if (current > end) {
@@ -371,7 +377,7 @@ public class Helper {
             }
             results.add(resultSelector.get(item, weight));
         }
-        return results;
+        return TR.exit(results);
     }
 
     /**
@@ -382,10 +388,11 @@ public class Helper {
      * @return HashSet<T>
      */
     public static <T> HashSet<T> array2HashSet(T[] array) {
+        TR.enter();
         HashSet<T> set = new HashSet<>();
         for (T item : array) {
             set.add(item);
         }
-        return set;
+        return TR.exit(set);
     }
 }

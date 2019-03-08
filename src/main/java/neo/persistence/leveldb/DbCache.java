@@ -17,6 +17,12 @@ import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.io.caching.DataCache;
 
+/**
+ * Table cache
+ *
+ * @param <TKey>   table prefix
+ * @param <TValue> column value type
+ */
 public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValue> & ISerializable> extends DataCache<TKey, TValue> {
 
     private final DB db;
@@ -26,6 +32,16 @@ public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValu
     private final Supplier<TKey> keyGenerator;
     private final Supplier<TValue> valueGenerator;
 
+    /**
+     * DBCache constructor
+     *
+     * @param db             leveldb
+     * @param options        read options
+     * @param batch          write batch
+     * @param prefix         table prefix
+     * @param keyGenerator   key generator
+     * @param valueGenerator value generator
+     */
     public DbCache(DB db, ReadOptions options, WriteBatch batch, byte prefix, Supplier<TKey> keyGenerator, Supplier<TValue> valueGenerator) {
         this.db = db;
         this.options = options;
@@ -35,10 +51,20 @@ public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValu
         this.valueGenerator = valueGenerator;
     }
 
+    /**
+     * get from internal
+     *
+     * @param key query key
+     * @return TValue
+     */
     @Override
     protected TValue getInternal(TKey key) {
         byte[] bytes = BitConverter.merge(prefix, SerializeHelper.toBytes(key));
-        byte[] value = db.get(bytes, options);
+        byte[] value = options == null ? db.get(bytes) : db.get(bytes, options);
+
+        if (value == null || value.length == 0) {
+            return null;
+        }
         return SerializeHelper.parse(valueGenerator, value);
     }
 
@@ -66,16 +92,15 @@ public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValu
 
     @Override
     protected Collection<Map.Entry<TKey, TValue>> findInternal(byte[] keyPrefix) {
-        DBIterator iterator = db.iterator();
-        iterator.seek(keyPrefix);
-        ArrayList<Map.Entry<TKey, TValue>> list = new ArrayList<>();
+        byte[] keyBytes = BitConverter.merge(prefix, keyPrefix);
 
-        while (iterator.hasNext()) {
-            Map.Entry<byte[], byte[]> entry = iterator.next();
-            TKey key = SerializeHelper.parse(keyGenerator, entry.getValue());
-            TValue value = SerializeHelper.parse(valueGenerator, entry.getValue());
-            list.add(new AbstractMap.SimpleEntry<>(key, value));
-        }
-        return list;
+        // C# code
+        //  db.Find(options, SliceBuilder.Begin(prefix).Add(key_prefix),
+        //            (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(1),
+        //            v.ToArray().AsSerializable<TValue>()));
+        // be careful with the prefix!
+        return DBHelper.find(db, keyBytes, (key, value) ->
+                new AbstractMap.SimpleEntry<>(SerializeHelper.parse(keyGenerator, key, 1),
+                        SerializeHelper.parse(valueGenerator, value)));
     }
 }

@@ -39,6 +39,10 @@ public class DbMetaDataCache<T extends ISerializable & ICloneable<T>> extends Me
     protected T tryGetInternal() {
         byte[] bytes = new byte[]{prefix};
         byte[] value = db.get(bytes, options);
+
+        if (value == null || value.length == 0) {
+            return null;
+        }
         return SerializeHelper.parse(valueGenerator, value);
     }
 

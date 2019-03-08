@@ -13,7 +13,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 
 /**
  * 注册验证人【已弃用，请使用StateTransaction】

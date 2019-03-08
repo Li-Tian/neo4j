@@ -1,8 +1,12 @@
 package neo;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 import neo.log.tr.TR;
 
@@ -42,4 +46,55 @@ public class HelperTest {
     public void getVersion() {
         assertEquals("2.9.4.0", Helper.GetVersion());
     }
+
+
+    @Test
+    public void sum() {
+        ArrayList<Fixed8> list = new ArrayList();
+        list.add(new Fixed8(1));
+        list.add(new Fixed8(2));
+        list.add(new Fixed8(3));
+        Fixed8 sum = Helper.sum(list, p -> p);
+        Assert.assertEquals(new Fixed8(6), sum);
+    }
+
+    @Test
+    public void weightedAverage() {
+        ArrayList<Integer[]> list = new ArrayList<>();
+        list.add(new Integer[]{1, 10});
+        list.add(new Integer[]{2, 10});
+        list.add(new Integer[]{3, 10});
+        list.add(new Integer[]{4, 10});
+
+        long avg = Helper.weightedAverage(list, p -> Long.valueOf(p[0]), p -> Long.valueOf(p[1]));
+        Assert.assertEquals(2, avg);
+
+        list.add(new Integer[]{5, 10});
+        avg = Helper.weightedAverage(list, p -> Long.valueOf(p[0]), p -> Long.valueOf(p[1]));
+        Assert.assertEquals(3, avg);
+    }
+
+    @Test
+    public void weightedFilter() {
+        ArrayList<Integer[]> list = new ArrayList<>();
+        list.add(new Integer[]{1, 10});
+        list.add(new Integer[]{2, 10});
+        list.add(new Integer[]{3, 10});
+        list.add(new Integer[]{4, 10});
+        list.add(new Integer[]{5, 10});
+
+        Collection<Integer[]> results = Helper.weightedFilter(list, 0.24, 0.76, p -> new Fixed8(Long.valueOf(p[1])), (p, w) -> p);
+        Assert.assertEquals(3, results.size());
+        Iterator<Integer[]> iterator = results.iterator();
+
+        Integer[] item = iterator.next();
+        Assert.assertEquals(Integer.valueOf(2), item[0]);
+
+        item = iterator.next();
+        Assert.assertEquals(Integer.valueOf(3), item[0]);
+
+        item = iterator.next();
+        Assert.assertEquals(Integer.valueOf(4), item[0]);
+    }
+
 }

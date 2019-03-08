@@ -17,7 +17,7 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
 import neo.Fixed8;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 
 import neo.log.tr.TR;
 

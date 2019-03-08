@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import neo.Fixed8;
 import neo.UInt160;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 

@@ -15,7 +15,7 @@ import java.nio.charset.Charset;
 import neo.Properties;
 import neo.UInt160;
 import neo.UInt256;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 import neo.io.caching.DataCache;
 import neo.io.caching.MetaDataCache;
 import neo.io.wrappers.UInt32Wrapper;
@@ -36,7 +36,7 @@ import neo.persistence.Snapshot;
 import neo.persistence.Store;
 
 /**
- * Leveldb存储器
+ * LevelDB Store
  */
 public class LevelDBStore extends Store {
 
@@ -45,9 +45,10 @@ public class LevelDBStore extends Store {
 
 
     /**
-     * 构造函数：打开leveldb数据库
+     * Constructor: Open the leveldb database
      *
-     * @param path 数据库路径
+     * @param path leveldb path
+     * @throws IOException throw it when open db failed.
      */
     public LevelDBStore(String path) throws IOException {
         DBFactory factory = new JniDBFactory();
@@ -59,98 +60,172 @@ public class LevelDBStore extends Store {
         db = factory.open(file, options);
         byte[] keys = new byte[]{Prefixes.SYS_Version};
         byte[] versionBytes = db.get(keys);
-        String version = new String(versionBytes);
-        // TODO 硬代码
-        if (version.compareTo("2.9.1") >= 0) {
-            return;
-        }
 
         WriteBatch batch = db.createWriteBatch();
-        ReadOptions readOptions = new ReadOptions();
-        readOptions.fillCache(true);
-        DBIterator iterator = db.iterator(readOptions);
-        iterator.seekToFirst();
-        while (iterator.hasNext()) {
-            batch.delete(iterator.next().getKey());
+        if (versionBytes != null && versionBytes.length > 0) {
+            String version = new String(versionBytes);
+            // TODO hard code
+            if (version.compareTo("2.9.1") >= 0) {
+                return;
+            }
+            ReadOptions readOptions = new ReadOptions();
+            readOptions.fillCache(true);
+            DBIterator iterator = db.iterator(readOptions);
+            iterator.seekToFirst();
+            while (iterator.hasNext()) {
+                batch.delete(iterator.next().getKey());
+            }
+            iterator.close();
         }
-        iterator.close();
         db.put(keys, Properties.Default.version.getBytes(CHARSET));
         db.write(batch);
     }
 
 
+    /**
+     * Get Snapshot
+     *
+     * @return Database Snapshot
+     */
     @Override
     public Snapshot getSnapshot() {
         return new DbSnapshot(db);
     }
 
+    /**
+     * Release resources
+     */
     public void close() throws IOException {
         if (db != null) {
             db.close();
         }
     }
 
-
+    /**
+     * Get blocks
+     *
+     * @return DbCache with the "DATA_Block" prefix
+     */
     @Override
     public DataCache<UInt256, BlockState> getBlocks() {
         return new DbCache<>(db, null, null, Prefixes.DATA_Block, UInt256::new, BlockState::new);
     }
 
+    /**
+     * Get Transactions
+     *
+     * @return DbCache with the "DATA_Transaction" prefix
+     */
     @Override
     public DataCache<UInt256, TransactionState> getTransactions() {
         return new DbCache<>(db, null, null, Prefixes.DATA_Transaction, UInt256::new, TransactionState::new);
     }
 
+    /**
+     * Get accounts
+     *
+     * @return DbCache with the "ST_Account" prefix
+     */
     @Override
     public DataCache<UInt160, AccountState> getAccounts() {
         return new DbCache<>(db, null, null, Prefixes.ST_Account, UInt160::new, AccountState::new);
     }
 
+    /**
+     * Get UTXO
+     *
+     * @return DbCache with the "ST_Coin" prefix
+     */
     @Override
     public DataCache<UInt256, UnspentCoinState> getUnspentCoins() {
         return new DbCache<>(db, null, null, Prefixes.ST_Coin, UInt256::new, UnspentCoinState::new);
     }
 
+    /**
+     * Get Spent Coins
+     *
+     * @return DbCache with the "ST_SpentCoin" prefix
+     */
     @Override
     public DataCache<UInt256, SpentCoinState> getSpentCoins() {
         return new DbCache<>(db, null, null, Prefixes.ST_SpentCoin, UInt256::new, SpentCoinState::new);
     }
 
+    /**
+     * Get Validators
+     *
+     * @return DbCache with the "ST_Validator" prefix
+     */
     @Override
     public DataCache<ECPoint, ValidatorState> getValidators() {
         return new DbCache<>(db, null, null, Prefixes.ST_Validator, ECPoint::new, ValidatorState::new);
     }
 
+    /**
+     * Get assets
+     *
+     * @return DbCache with the "ST_Asset" prefix
+     */
     @Override
     public DataCache<UInt256, AssetState> getAssets() {
         return new DbCache<>(db, null, null, Prefixes.ST_Asset, UInt256::new, AssetState::new);
     }
 
+    /**
+     * Get Contracts
+     *
+     * @return DbCache with the "ST_Contract" prefix
+     */
     @Override
     public DataCache<UInt160, ContractState> getContracts() {
         return new DbCache<>(db, null, null, Prefixes.ST_Asset, UInt160::new, ContractState::new);
     }
 
+    /**
+     * Get Validators
+     *
+     * @return DbCache with the "ST_Validator" prefix
+     */
     @Override
     public DataCache<StorageKey, StorageItem> getStorages() {
         return new DbCache<>(db, null, null, Prefixes.ST_Contract, StorageKey::new, StorageItem::new);
     }
 
+    /**
+     * Gets the block header hash list
+     *
+     * @return DbCache with the "IX_HeaderHashList" prefix
+     */
     @Override
     public DataCache<UInt32Wrapper, HeaderHashList> getHeaderHashList() {
         return new DbCache<>(db, null, null, Prefixes.IX_HeaderHashList, UInt32Wrapper::new, HeaderHashList::new);
     }
 
+    /**
+     * Get Validators Count
+     *
+     * @return DbMetaDataCache with the "IX_ValidatorsCount" prefix
+     */
     @Override
     public MetaDataCache<ValidatorsCountState> getValidatorsCount() {
         return new DbMetaDataCache<>(db, null, null, Prefixes.IX_ValidatorsCount, ValidatorsCountState::new);
     }
 
+    /**
+     * Get block hash index
+     *
+     * @return DbMetaDataCache with the "IX_CurrentBlock" prefix
+     */
     @Override
     public MetaDataCache<HashIndexState> getBlockHashIndex() {
         return new DbMetaDataCache<>(db, null, null, Prefixes.IX_CurrentBlock, HashIndexState::new);
     }
 
+    /**
+     * Get block header hash index
+     *
+     * @return DbMetaDataCache with the "IX_CurrentHeader" prefix
+     */
     @Override
     public MetaDataCache<HashIndexState> getHeaderHashIndex() {
         return new DbMetaDataCache<>(db, null, null, Prefixes.IX_CurrentHeader, HashIndexState::new);

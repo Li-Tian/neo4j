@@ -16,80 +16,87 @@ import neo.ledger.StorageItem;
 import neo.ledger.StorageKey;
 import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
 
 /**
- * 持久化操作接口
+ * Persistent operation interface
  */
 public interface IPersistence {
 
     /**
-     * 区块缓存。通过区块的哈希值快速查找区块状态。
+     * Block cache. Quickly find the block status by the hash of the block.
      */
     DataCache<UInt256, BlockState> getBlocks();
 
     /**
-     * 交易缓存。通过交易的哈希值快速查找交易状态。
+     * Transaction cache. Quickly find transaction status by the hash of the transaction.
      */
     DataCache<UInt256, TransactionState> getTransactions();
 
     /**
-     * 账户缓存。通过账户的哈希值快速查找账户状态。
+     * Account cache. Quickly find the account status by the hash of the account.
      */
     DataCache<UInt160, AccountState> getAccounts();
 
     /**
-     * UTXO缓存。通过交易哈希快速查找该交易下所有UTXO的状态。
+     * UTXO cache. Quickly find the status of all UTXOs of the transaction by the hash of the
+     * transaction.
      */
     DataCache<UInt256, UnspentCoinState> getUnspentCoins();
 
     /**
-     * 已花费的UTXO相关信息缓存。通过交易的哈希值快速查找已花费的UTXO的信息。 包括交易所在的区块高度和交易中已经被花费的UTXO在被花费时的所处区块的高度。
+     * The information cacahe about the UTXO that has been spent. Quickly find information about the
+     * UTXO that has been spent by hash of the transaction. This includes the block height of the
+     * transaction and the height of the block in which the UTXO that has been spent.
      */
     DataCache<UInt256, SpentCoinState> getSpentCoins();
 
     /**
-     * 验证人的缓存。通过公钥快速查询验证人的状态。包括公钥，是否已经注册，投票数。
+     * The validators cache. Quickly query the status of the validator through the public key.
+     * Including the public key, whether it has been registered, and the number of votes.
      */
     DataCache<ECPoint, ValidatorState> getValidators();
 
     /**
-     * 资产的缓存。通过哈希快速查找资产的状态。
+     * The assets cache. Quickly find the status of an asset by the hash.
      */
     DataCache<UInt256, AssetState> getAssets();
 
 
     /**
-     * 合约换成
+     * Smart contracts cache. Quickly find information about smart contracts through the hash of
+     * smart contracts.
      */
     DataCache<UInt160, ContractState> getContracts();
 
 
     /**
-     * 合约的键值对存储。通过脚本哈希和存储key查询value。
+     * Key-value pair storage for contracts. Query value by script hash and storing key.
      */
     DataCache<StorageKey, StorageItem> getStorages();
 
     /**
-     * 区块头哈希列表的缓存。<br/> 每个区块头哈希列表包含2000个区块头的哈希值。<br/> 然后第一个区块头哈希列表的编号是0。<br/>
-     * 第二个区块头哈希列表的编号是2000。以此类推。<br/> 这个缓存通过区块头哈希列表的编号快速查找区块头哈希列表。
+     * Block header hash list cache. <br/>Each block header hash list contains the hash values of
+     * 2000 block headers. <br/> The number of the first block header hash list is 0. <br/> The
+     * number of the second block header hash list is 2000. And so on. <br/> This cache quickly
+     * finds the block header hash list by the number of the block header hash list.
      */
     DataCache<UInt32Wrapper, HeaderHashList> getHeaderHashList();
 
     /**
-     * 验证人个数的投票池。投票时用来点票。
+     * The voting pool of ValidatorsCount. Used to vote for votes.
      */
     MetaDataCache<ValidatorsCountState> getValidatorsCount();
 
     /**
-     * 区块索引。存放最新的区块的哈希值和高度。
+     * Block index. Stores the hash value and height of the latest block.
      */
     MetaDataCache<HashIndexState> getBlockHashIndex();
 
     /**
-     * 区块头索引。存放最新的区块头的哈希值和高度。
+     * Block header index. Stores the hash and height of the latest block header.
      */
     MetaDataCache<HashIndexState> getHeaderHashIndex();
 

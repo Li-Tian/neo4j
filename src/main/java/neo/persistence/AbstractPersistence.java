@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import neo.UInt256;
+import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
 import neo.csharp.Ushort;
 import neo.ledger.BlockState;
@@ -23,18 +24,17 @@ import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.Header;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionOutput;
-import neo.cryptography.ECC.ECPoint;
 
 /**
- * 抽象的持久化服务方法
+ * Abstract persistence, provides business operations.
  */
 public abstract class AbstractPersistence implements IPersistence {
 
     /**
-     * 是否包含某个区块hash
+     * Determine whether it contains specified block hash
      *
-     * @param hash 待查询区块hash
-     * @return 存在则返回true.不存在则返回false
+     * @param hash specified block hash
+     * @return If it contains,return true.Otherwise,return false
      */
     public boolean containsBlock(UInt256 hash) {
         BlockState state = getBlocks().tryGet(hash);
@@ -43,10 +43,10 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 查询是否包含某个交易hash
+     * Determine whether it contains specified transcation hash
      *
-     * @param hash 交易hash
-     * @return 存在则返回true, 不存在返回false
+     * @param hash specified transcation hash
+     * @return If it contains,return true.Otherwise,return false
      */
     public boolean containsTransaction(UInt256 hash) {
         TransactionState state = getTransactions().tryGet(hash);
@@ -54,10 +54,10 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 获取某个区块
+     * Get the block of a specified height
      *
-     * @param index 区块高度
-     * @return 返回指定高度对应的区块，若不存在则返回null
+     * @param index block height
+     * @return Returns the block corresponding to the specified height, or null if it does not exist
      */
     public Block getBlock(Uint index) {
         UInt256 hash = Blockchain.singleton().getBlockHash(index);
@@ -66,10 +66,10 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 获取某个区块
+     * Get the block of a specified block hash
      *
-     * @param hash 区块hash
-     * @return 返回指定区块哈希对应的区块，若不存在则返回null
+     * @param hash specified block hash
+     * @return Returns the block corresponding to the specified block hash,  otherwise null.
      */
     public Block getBlock(UInt256 hash) {
         BlockState state = getBlocks().tryGet(hash);
@@ -79,21 +79,28 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 获取验证人候选人列表。包括已经登记为验证候选人的列表和备用验证人列表。<br/> 不包含是否当选为验证人的信息。
+     * get a validator candidate list. Includes a list of verified candidates who had registered and
+     * a list of stand validator. Does not include information on whether to be elected as a
+     * validator.
      */
     public Collection<ValidatorState> getEnrollments() {
         HashSet<ECPoint> sv = new HashSet<>();
         for (ECPoint ecpoint : Blockchain.StandbyValidators) {
             sv.add(ecpoint);
         }
-        return getValidators().find().stream().map(p -> p.getValue()).filter(p -> p.registered || sv.contains(p.publicKey)).collect(Collectors.toList());
+        return getValidators()
+                .find()
+                .stream()
+                .map(p -> p.getValue())
+                .filter(p -> p.registered || sv.contains(p.publicKey))
+                .collect(Collectors.toList());
     }
 
     /**
-     * 获取某个高度的区块头
+     * Get the block header of a specified height
      *
-     * @param index 区块头高度
-     * @return 指定高度的区块的区块头，如果该高度区块不存在，则返回null
+     * @param index specified height of block header
+     * @return specified block header.Return null if it does not exist
      */
     public Header getHeader(Uint index) {
         UInt256 hash = Blockchain.singleton().getBlockHash(index);
@@ -104,10 +111,10 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 获取某个区块头
+     * Get the block header of a specified block hash
      *
-     * @param hash 区块头hash
-     * @return 指定区块的区块头。不存在时返回null
+     * @param hash specified block header hash
+     * @return specified block header. Return null if it does not exist
      */
     public Header getHeader(UInt256 hash) {
         BlockState state = getBlocks().tryGet(hash);
@@ -118,10 +125,10 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 获取下一个区块的哈希
+     * get next block hash
      *
-     * @param hash 待查询的区块hash
-     * @return 下一个区块的哈希。不存在时返回null
+     * @param hash current block hash
+     * @return next block hash.Return null if it does not exist
      */
     public UInt256 getNextBlockHash(UInt256 hash) {
         BlockState state = getBlocks().tryGet(hash);
@@ -134,20 +141,21 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 查询到某个高度位置，总的系统手续费（包含该区块）总的系统手续费
+     * Query total system fee from the block 0 to the specified block
      *
-     * @param height 区块高度
-     * @return 总的系统手续费金额
+     * @param height specified block height
+     * @return total system fee amount
      */
     public long getSysFeeAmount(Uint height) {
         return getSysFeeAmount(Blockchain.singleton().getBlockHash(height));
     }
 
     /**
-     * 查询从区块0开始到指定哈希的区块位置（包含该区块）总的系统手续费
+     * Query the total system fee from the block 0 to the specified hash location (including
+     * specified block)
      *
-     * @param hash 指定的区块hash
-     * @return 总的系统手续费金额
+     * @param hash specified block hash
+     * @return total system fee amount
      */
     public long getSysFeeAmount(UInt256 hash) {
         BlockState block_state = getBlocks().tryGet(hash);
@@ -156,10 +164,10 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 查询交易
+     * Query transaction
      *
-     * @param hash 交易hash
-     * @return 指定哈希对应的交易
+     * @param hash transaction hash
+     * @return transaction output corresponding to transaction hash
      */
     public Transaction getTransaction(UInt256 hash) {
         TransactionState state = getTransactions().tryGet(hash);
@@ -170,11 +178,14 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 查询某一笔交易的未花费交易输出
+     * Query unspent transaction outputs of a transaction
      *
-     * @param hash  交易hash
-     * @param index 第几个output
-     * @return 指定索引的未花费交易输出，查询不到交易hash对应的未花费交易输出或未花费交易输出的输出个数小于索引或处于被花费的状态的时候返回null
+     * @param hash  transcation hash
+     * @param index transcation output index
+     * @return a unspent transaction output of specified index. Returns null if can not query the
+     * unspent transaction outputs corresponding to transaction hash or the number of unspent
+     * transaction output is less than the index or the unspent transaction output is in the state
+     * of being spent.
      */
     public TransactionOutput getUnspent(UInt256 hash, Ushort index) {
         UnspentCoinState state = getUnspentCoins().tryGet(hash);
@@ -192,10 +203,10 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 查询某一笔交易的未花费交易输出
+     * Query  unspent transaction outputs of a transaction
      *
-     * @param hash 交易Hash
-     * @return 该交易所有的未花费交易输出
+     * @param hash transcation hash
+     * @return all unspent transcation outputs of the transaction
      */
     public Collection<TransactionOutput> getUnspent(UInt256 hash) {
         ArrayList<TransactionOutput> outputs = new ArrayList<>();
@@ -212,14 +223,16 @@ public abstract class AbstractPersistence implements IPersistence {
     }
 
     /**
-     * 检测交易是否需多重支付
+     * Check if the transaction is a multiple payment
      *
-     * @param tx 交易hash
-     * @return 若交易中input所指向的每一笔output都存在，且没有被花费掉，则返回false。否则返回true。
+     * @param tx transaction hash
+     * @return Returns false if each previous transcation output pointed to by current transaction
+     * input exists and is not spent, otherwise,return true.
      */
     public boolean isDoubleSpend(Transaction tx) {
         if (tx.inputs.length == 0) return false;
-        Map<UInt256, List<CoinReference>> groupMap = Arrays.stream(tx.inputs).collect(Collectors.groupingBy(p -> p.prevHash));
+        Map<UInt256, List<CoinReference>> groupMap = Arrays.stream(tx.inputs)
+                .collect(Collectors.groupingBy(p -> p.prevHash));
         for (Map.Entry<UInt256, List<CoinReference>> entry : groupMap.entrySet()) {
             UnspentCoinState state = getUnspentCoins().tryGet(entry.getKey());
             if (state == null) {

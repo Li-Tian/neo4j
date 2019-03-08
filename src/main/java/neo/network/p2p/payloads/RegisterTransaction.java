@@ -16,7 +16,7 @@ import neo.exception.FormatException;
 import neo.ledger.Blockchain;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 
 
 /**

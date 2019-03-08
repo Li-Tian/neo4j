@@ -6,11 +6,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import akka.actor.Props;
 import akka.actor.UntypedActor;
 import neo.Fixed8;
+import neo.NeoSystem;
 import neo.ProtocolSettings;
 import neo.UInt160;
 import neo.UInt256;
+import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.io.SerializeHelper;
@@ -22,14 +25,14 @@ import neo.network.p2p.payloads.StateDescriptor;
 import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
-import neo.cryptography.ECC.ECPoint;
 import neo.persistence.Snapshot;
+import neo.persistence.Store;
 import neo.vm.OpCode;
 
 /**
  * 区块链核心Actor
  */
-public final class Blockchain extends UntypedActor {
+public class Blockchain extends UntypedActor {
 
     /**
      * 出块时间
@@ -70,7 +73,7 @@ public final class Blockchain extends UntypedActor {
             name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]";
             amount = Fixed8.fromDecimal(new BigDecimal(100000000));
             precision = 0;
-            owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+            owner = new neo.cryptography.ecc.ECPoint(neo.cryptography.ecc.ECPoint.secp256r1.getCurve().getInfinity());
             admin = UInt160.parseToScriptHash(new byte[]{OpCode.PUSHT.getCode()});
             attributes = new TransactionAttribute[0];
             inputs = new CoinReference[0];
@@ -88,7 +91,7 @@ public final class Blockchain extends UntypedActor {
             name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]";
             amount = Fixed8.fromDecimal(BigDecimal.valueOf(Arrays.stream(GenerationAmount).mapToLong(p -> p * DecrementInterval).sum()));
             precision = 8;
-            owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+            owner = new ECPoint(neo.cryptography.ecc.ECPoint.secp256r1.getCurve().getInfinity());
             admin = UInt160.parseToScriptHash(new byte[]{OpCode.PUSHT.getCode()});
             attributes = new TransactionAttribute[0];
             inputs = new CoinReference[0];
@@ -96,6 +99,27 @@ public final class Blockchain extends UntypedActor {
             witnesses = new Witness[0];
         }
     };
+
+    /**
+     * Constructor which create a core blockchain
+     *
+     * @param system NEO actor system
+     * @param store  The storage for persistence
+     */
+    public Blockchain(NeoSystem system, Store store) {
+        singleton = this;
+    }
+
+    /**
+     * Create the blockchain Actor Ref
+     *
+     * @param system NEO actor system
+     * @param store  The storage for persistence
+     * @return return a actorRef which is immutable and thread safe
+     */
+    public static Props props(NeoSystem system, Store store) {
+        return Props.create(Blockchain.class, system, store).withMailbox("blockchain-mailbox");
+    }
 
 
     private static Blockchain singleton;
@@ -117,17 +141,18 @@ public final class Blockchain extends UntypedActor {
 
 
     /**
-     * 根据区块高度查询区块
+     * Query block hash by block index
      *
-     * @param index 区块高度
-     * @return 区块
+     * @param index block index
+     * @return block hash
      */
     public UInt256 getBlockHash(Uint index) {
         if (headerIndex.size() <= index.intValue()) {
             return null;
         }
-        return headerIndex.get(index.intBits());
+        return headerIndex.get(index.intValue());
     }
+
 
     public static void processAccountStateDescriptor(StateDescriptor descriptor, Snapshot snapshot) {
         UInt160 hash = new UInt160(descriptor.key);

@@ -5,12 +5,22 @@ import java.io.ByteArrayOutputStream;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
+import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
+/**
+ * Serialize helper, provides parse methods
+ */
 public class SerializeHelper {
 
+    /**
+     * Serialize to byte array
+     *
+     * @param serializable the object to be serialized
+     * @return byte array
+     */
     public static byte[] toBytes(ISerializable serializable) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream(serializable.size());
         BinaryWriter writer = new BinaryWriter(stream);
@@ -18,6 +28,31 @@ public class SerializeHelper {
         return stream.toByteArray();
     }
 
+    /**
+     * Parse from byte array
+     *
+     * @param generator value generator
+     * @param bytes     byte array
+     * @param offset    byte array offset
+     * @param <TValue>  the object to be serialize
+     * @return TValue
+     */
+    public static <TValue extends ISerializable> TValue parse(Supplier<TValue> generator, byte[] bytes, int offset) {
+        bytes = BitConverter.subBytes(bytes, offset, bytes.length);
+        ByteArrayInputStream input = new ByteArrayInputStream(bytes);
+        BinaryReader reader = new BinaryReader(input);
+        return reader.readSerializable(generator);
+    }
+
+
+    /**
+     * Parse from byte array
+     *
+     * @param generator value generator
+     * @param bytes     byte array
+     * @param <TValue>  the object to be serialize
+     * @return TValue
+     */
     public static <TValue extends ISerializable> TValue parse(Supplier<TValue> generator, byte[] bytes) {
         ByteArrayInputStream input = new ByteArrayInputStream(bytes);
         BinaryReader reader = new BinaryReader(input);
@@ -25,12 +60,12 @@ public class SerializeHelper {
     }
 
     /**
-     * 从byte数组中，反序列化出数组对象
+     * Parse value array from byte array
      *
-     * @param bytes    待解析的byte数组
-     * @param arrayGen 数组构造器
-     * @param objGen   对象构造器
-     * @param <TValue> 解析泛型对象
+     * @param bytes    byte array
+     * @param arrayGen array generator
+     * @param objGen   value generator
+     * @param <TValue> the object to be serialized
      * @return TValue[]
      */
     public static <TValue extends ISerializable> TValue[] asAsSerializableArray(byte[] bytes, IntFunction<TValue[]> arrayGen, Supplier<TValue> objGen) {

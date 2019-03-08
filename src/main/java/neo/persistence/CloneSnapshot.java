@@ -1,8 +1,16 @@
 package neo.persistence;
 
 
+/**
+ * Snapshot's clone
+ */
 public class CloneSnapshot extends Snapshot {
 
+    /**
+     * Copy from snapshot
+     *
+     * @param snapshot snapshot
+     */
     public CloneSnapshot(Snapshot snapshot) {
         this.persistingBlock = snapshot.getPersistingBlock();
         this.blocks = snapshot.getBlocks();

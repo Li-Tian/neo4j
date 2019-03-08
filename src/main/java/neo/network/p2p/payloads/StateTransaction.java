@@ -16,7 +16,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.InvalidOperationException;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
-import neo.cryptography.ECC.ECPoint;
+import neo.cryptography.ecc.ECPoint;
 
 
 /**
