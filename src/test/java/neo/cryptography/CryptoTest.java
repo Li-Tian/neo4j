@@ -40,20 +40,4 @@ public class CryptoTest {
 //        byte[] output = Crypto.Default.sign(data.getBytes(), BitConverter.hexToBytes(privateKey));
 //        System.out.println(BitConverter.toHexString(output));
     }
-
-    @Test
-    public void ripeMD160() throws Exception {
-        // http://tools.jb51.net/password/hash_md5_sha
-        String input = "hello world";
-        byte[] output = Crypto.Default.ripeMD160(input.getBytes());
-        Assert.assertEquals("98c615784ccb5fe5936fbc0cbe9dfdb408d92f0f", BitConverter.toHexString(output));
-    }
-
-    @Test
-    public void sha256() throws Exception {
-        // http://encode.chahuo.com/
-        String input = "hello world";
-        byte[] output = Crypto.Default.sha256(input.getBytes());
-        Assert.assertEquals("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9", BitConverter.toHexString(output));
-    }
 }
