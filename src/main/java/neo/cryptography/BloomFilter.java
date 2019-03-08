@@ -59,8 +59,7 @@ public class BloomFilter {
         TR.enter();
         //foreach(uint i in seeds.AsParallel().Select(s = > element.Murmur32(s)))
         //bits.Set((int) (i % (uint) bits.Length), true);
-        TR.fixMe("将 murmur32() 方法移动到 Helper.Murmur32");
-        Arrays.stream(seeds).map(s->murmur32(element, s)).forEach(
+        Arrays.stream(seeds).map(s->Helper.murmur32(element, s)).forEach(
                 i->bits.set(i.remainder(new Uint(bits.size())).intValue(), true));
         TR.exit();
     }
@@ -71,8 +70,7 @@ public class BloomFilter {
         //if (!bits.Get((int) (i % (uint) bits.Length)))
         //    return false;
         //return true;
-        TR.fixMe("将 murmur32() 方法移动到 Helper.Murmur32");
-        return TR.exit((Arrays.stream(seeds).map(s->murmur32(element, s)).allMatch(
+        return TR.exit((Arrays.stream(seeds).map(s->Helper.murmur32(element, s)).allMatch(
                 i->bits.get(i.remainder(new Uint(bits.size())).intValue())
         )));
     }
@@ -87,18 +85,4 @@ public class BloomFilter {
         System.arraycopy(temp, 0, newBits, 0, temp.length);
         TR.exit();
     }
-
-    public static Uint murmur32(byte[] value, Uint seed) {
-        TR.enter();
-        Uint result;
-        Murmur3 murmur = new Murmur3(seed);
-        try {
-            byte[] buf = murmur.computeHash(value);
-            result = BitConverter.toUint(buf);
-        } finally {
-            murmur.dispose();
-        }
-        return TR.exit(result);
-    }
-
 }
