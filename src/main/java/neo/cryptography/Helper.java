@@ -162,8 +162,9 @@ public class Helper {
         try {
             TR.enter();
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return md.digest(bytes);
+            return TR.exit(md.digest(bytes));
         } catch (NoSuchAlgorithmException e) {
+            TR.error(e);
             throw new RuntimeException(e);
         }
     }
@@ -172,8 +173,9 @@ public class Helper {
         try {
             TR.enter();
             MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return md.digest(Arrays.copyOfRange(bytes, offset, offset + count));
+            return TR.exit(md.digest(Arrays.copyOfRange(bytes, offset, offset + count)));
         } catch (NoSuchAlgorithmException e) {
+            TR.error(e);
             throw new RuntimeException(e);
         }
     }
