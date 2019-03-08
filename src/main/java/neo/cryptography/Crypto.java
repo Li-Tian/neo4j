@@ -85,7 +85,6 @@ public class Crypto implements ICrypto {
         }
     }
 
-
     /**
      * 数据签名 (ECDSA 方法进行签名)
      *
@@ -107,34 +106,4 @@ public class Crypto implements ICrypto {
             throw new RuntimeException(e);
         }
     }
-
-
-    /**
-     * RipeMD160消息摘要
-     *
-     * @param data 待处理的消息摘要数据
-     * @return byte[] 消息摘要
-     * @date:2018/10/11
-     */
-    public byte[] ripeMD160(byte[] data) throws Exception {
-        //初始化MessageDigest
-        MessageDigest md = MessageDigest.getInstance("RipeMD160");
-        //执行消息摘要
-        return md.digest(data);
-
-    }
-
-    /**
-     * @param bytes 待处理的字符串
-     * @return String  处理后的消息hash
-     * @Author:doubi.liu
-     * @description:对数据做啥256
-     * @date:2018/10/11
-     */
-    public byte[] sha256(byte[] bytes) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("SHA-256");
-        return md.digest(bytes);
-    }
-
-
 }
