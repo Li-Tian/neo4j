@@ -36,14 +36,7 @@ public class Fixed8Test {
         Assert.assertEquals(-1, new Fixed8(-200000000).compareTo(new Fixed8(-10400000)));
         Assert.assertEquals(0, new Fixed8(30).compareTo(new Fixed8(30)));
     }
-
-    @Test
-    public void deserialize() {
-        Assert.assertEquals(1, new Fixed8(200000000).compareTo(new Fixed8(100030000)));
-        Assert.assertEquals(-1, new Fixed8(-200000000).compareTo(new Fixed8(-10400000)));
-        Assert.assertEquals(0, new Fixed8(30).compareTo(new Fixed8(30)));
-    }
-
+    
     @Test
     public void equals() {
         Assert.assertEquals(false, new Fixed8(200000000).equals(new Fixed8(100030000)));
