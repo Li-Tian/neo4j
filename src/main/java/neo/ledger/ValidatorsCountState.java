@@ -8,17 +8,17 @@ import neo.io.ICloneable;
 import neo.log.tr.TR;
 
 /**
- * 验证人个数投票状态
+ * The state of validators's count
  */
 public class ValidatorsCountState extends StateBase implements ICloneable<ValidatorsCountState> {
 
     /**
-     * 投票数组， 数组下标(index)即验证人投票个数
+     * The list of votes whose index stands for the count of validators
      */
     public Fixed8[] votes;
 
     /**
-     * 创建验证人个数投票状态
+     * Constructor of creating the state of validators's count
      */
     public ValidatorsCountState() {
         this.votes = new Fixed8[Blockchain.MaxValidators];
@@ -28,7 +28,7 @@ public class ValidatorsCountState extends StateBase implements ICloneable<Valida
     }
 
     /**
-     * 存储大小
+     * The size of storage
      */
     @Override
     public int size() {
@@ -37,7 +37,7 @@ public class ValidatorsCountState extends StateBase implements ICloneable<Valida
     }
 
     /**
-     * 克隆
+     * clone
      */
     @Override
     public ValidatorsCountState copy() {
@@ -50,9 +50,9 @@ public class ValidatorsCountState extends StateBase implements ICloneable<Valida
     }
 
     /**
-     * 从副本复制
+     * Copy from Replication
      *
-     * @param replica 副本
+     * @param replica replication
      */
     @Override
     public void fromReplica(ValidatorsCountState replica) {
@@ -62,9 +62,9 @@ public class ValidatorsCountState extends StateBase implements ICloneable<Valida
     }
 
     /**
-     * 反序列化
+     * Deserialization
      *
-     * @param reader 二进制输入流
+     * @param reader The binary input reader
      */
     @Override
     public void deserialize(BinaryReader reader) {
@@ -75,14 +75,14 @@ public class ValidatorsCountState extends StateBase implements ICloneable<Valida
     }
 
     /**
-     * 序列化
-     * <p>序列化字段</p>
+     * Serialization
+     * <p>fields</p>
      * <ul>
-     * <li>stateVersion: 状态版本号</li>
-     * <li>votes: 验证人个数投票情况</li>
+     * <li>stateVersion: The version of the state</li>
+     * <li>votes: The status of votings</li>
      * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer The binary output writer
      */
     @Override
     public void serialize(BinaryWriter writer) {

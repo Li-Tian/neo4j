@@ -12,6 +12,7 @@ import java.util.Locale;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
+import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
 import neo.csharp.io.BinaryReader;
@@ -33,7 +34,7 @@ public class AssetStateTest {
         assetState.precision = 0;
         assetState.fee = Fixed8.ZERO;
         assetState.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        assetState.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        assetState.owner = new ECPoint(ECC.Secp256r1.getCurve().getInfinity());
         assetState.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         assetState.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         assetState.expiration = new Uint(1000000);
@@ -53,7 +54,7 @@ public class AssetStateTest {
         assetState.precision = 0;
         assetState.fee = Fixed8.ZERO;
         assetState.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        assetState.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        assetState.owner = new ECPoint( ECC.Secp256r1.getCurve().getInfinity());
         assetState.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         assetState.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         assetState.expiration = new Uint(1000000);
@@ -77,7 +78,7 @@ public class AssetStateTest {
         assetState.precision = 0;
         assetState.fee = Fixed8.ZERO;
         assetState.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        assetState.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        assetState.owner = new ECPoint( ECC.Secp256r1.getCurve().getInfinity());
         assetState.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         assetState.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         assetState.expiration = new Uint(1000000);
@@ -102,7 +103,7 @@ public class AssetStateTest {
         assetState.precision = 0;
         assetState.fee = Fixed8.ZERO;
         assetState.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        assetState.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        assetState.owner = new ECPoint( ECC.Secp256r1.getCurve().getInfinity());
         assetState.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         assetState.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         assetState.expiration = new Uint(1000000);
@@ -121,7 +122,7 @@ public class AssetStateTest {
         assetState.precision = 0;
         assetState.fee = Fixed8.ZERO;
         assetState.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        assetState.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        assetState.owner = new ECPoint( ECC.Secp256r1.getCurve().getInfinity());
         assetState.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         assetState.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         assetState.expiration = new Uint(1000000);
@@ -142,7 +143,7 @@ public class AssetStateTest {
         assetState.precision = 0;
         assetState.fee = Fixed8.ZERO;
         assetState.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        assetState.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        assetState.owner = new ECPoint( ECC.Secp256r1.getCurve().getInfinity());
         assetState.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         assetState.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         assetState.expiration = new Uint(1000000);
@@ -174,7 +175,7 @@ public class AssetStateTest {
         assetState.precision = 0;
         assetState.fee = Fixed8.ZERO;
         assetState.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        assetState.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        assetState.owner = new ECPoint( ECC.Secp256r1.getCurve().getInfinity());
         assetState.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         assetState.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         assetState.expiration = new Uint(1000000);

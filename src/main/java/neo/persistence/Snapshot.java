@@ -38,6 +38,7 @@ import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
+import neo.log.tr.TR;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
 import neo.cryptography.ecc.ECPoint;
@@ -367,7 +368,7 @@ public abstract class Snapshot extends AbstractPersistence {
             for (CoinReference claim : group) {
                 if (!claimable.containsKey(claim.prevIndex)) {
                     if (ignoreClaimed) {
-                        return;
+                        continue;
                     }
                     throw new IllegalArgumentException();
                 }
@@ -417,6 +418,7 @@ public abstract class Snapshot extends AbstractPersistence {
             if (tx_state == null) throw new IllegalArgumentException();
             if (!tx_state.blockIndex.equals(height_end)) {
                 for (CoinReference claim : group) {
+                    // required the asset be NEO
                     if (claim.prevIndex.intValue() >= tx_state.transaction.outputs.length
                             || !tx_state.transaction.outputs[claim.prevIndex.intValue()]
                             .assetId.equals(Blockchain.GoverningToken.hash())) {
@@ -470,6 +472,8 @@ public abstract class Snapshot extends AbstractPersistence {
             }
             return amount_claimed;
          */
+        // TODO group first then calculate bonus
+        TR.fixMe("group by tx.preHash then calculate bonus");
         Fixed8 amount_claimed = Fixed8.ZERO;
         for (SpentCoin coin : unclaimed) {
             int amount = 0;
@@ -497,8 +501,9 @@ public abstract class Snapshot extends AbstractPersistence {
                     ? 0
                     : this.getSysFeeAmount(coin.startHeight.subtract(new Uint(1)));
             amount += this.getSysFeeAmount(coin.endHeight.subtract(new Uint(1))) - leftSysFee;
-            Fixed8 sub_amount_claimed = Fixed8.divide(Fixed8.multiply(coin.value(), amount), 100000000);
+            Fixed8 sub_amount_claimed = Fixed8.multiply(Fixed8.divide(coin.value(), 100000000), amount);
             amount_claimed = Fixed8.add(amount_claimed, sub_amount_claimed);
+
         }
         return amount_claimed;
     }
@@ -509,7 +514,7 @@ public abstract class Snapshot extends AbstractPersistence {
     /**
      * Get the current Validators participating in consensus
      *
-     * @return The list of Validators for the consensus
+     * @return The list of Validators for the consensus in point's (x,y) ascending order.
      */
     public ECPoint[] getValidatorPubkeys() {
         if (validatorPubkeys == null) {
@@ -647,7 +652,7 @@ public abstract class Snapshot extends AbstractPersistence {
                 .map(p -> p.getValue())
                 .filter(p -> (p.registered && Fixed8.smaller(Fixed8.ZERO, p.votes)) || sv.contains(p.publicKey))
                 .sorted(Comparator.comparing(ValidatorState::getVotes)
-                        .thenComparing(ValidatorState::getPublicKey)
+                        .thenComparing(p -> p.publicKey)
                         .reversed())
                 .map(p -> p.publicKey).limit(count).collect(Collectors.toList());
 

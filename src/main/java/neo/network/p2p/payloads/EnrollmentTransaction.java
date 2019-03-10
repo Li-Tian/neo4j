@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import neo.UInt160;
+import neo.cryptography.ecc.ECC;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
@@ -62,7 +63,7 @@ public class EnrollmentTransaction extends Transaction {
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
         if (version != 0) throw new FormatException();
-        publicKey = ECPoint.deserializeFrom(reader, ECPoint.secp256r1.getCurve());
+        publicKey = ECPoint.deserializeFrom(reader, ECC.Secp256r1.getCurve());
     }
 
     /**

@@ -363,8 +363,6 @@ public class Helper {
             double old = current;
             current = Double.valueOf(sum) / amount; // notice!!
 
-            System.out.println(item.toString() + " -> weight: " + weight + " current: " + current);
-
             if (current <= start) continue;
             if (old < start) {
                 if (current > end) {

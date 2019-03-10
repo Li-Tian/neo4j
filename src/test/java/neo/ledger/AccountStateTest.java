@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import neo.Fixed8;
 import neo.UInt160;
+import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -24,7 +25,7 @@ public class AccountStateTest {
         AccountState accountState = new AccountState();
         accountState.scriptHash = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
         accountState.isFrozen = false;
-        accountState.votes = new ECPoint[]{new ECPoint(ECPoint.secp256r1.getCurve().getInfinity())};
+        accountState.votes = new ECPoint[]{ECC.getInfinityPoint()};
         accountState.balances = new ConcurrentHashMap<>();
         accountState.balances.put(Blockchain.GoverningToken.hash(), new Fixed8(100));
         accountState.balances.put(Blockchain.UtilityToken.hash(), new Fixed8(200));
@@ -36,14 +37,14 @@ public class AccountStateTest {
     public void copy() {
         AccountState accountState = new AccountState(UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
         accountState.isFrozen = false;
-        accountState.votes = new ECPoint[]{new ECPoint(ECPoint.secp256r1.getCurve().getInfinity())};
+        accountState.votes = new ECPoint[]{ECC.getInfinityPoint()};
         accountState.balances = new ConcurrentHashMap<>();
         accountState.balances.put(Blockchain.GoverningToken.hash(), new Fixed8(100));
         accountState.balances.put(Blockchain.UtilityToken.hash(), new Fixed8(200));
 
         AccountState copy = accountState.copy();
         Assert.assertEquals(false, copy.isFrozen);
-        Assert.assertEquals(new ECPoint(ECPoint.secp256r1.getCurve().getInfinity()), copy.votes[0]);
+        Assert.assertEquals(ECC.getInfinityPoint(), copy.votes[0]);
         Assert.assertEquals(new Fixed8(100), copy.balances.get(Blockchain.GoverningToken.hash()));
         Assert.assertEquals(new Fixed8(200), copy.balances.get(Blockchain.UtilityToken.hash()));
     }
@@ -53,14 +54,14 @@ public class AccountStateTest {
         AccountState accountState = new AccountState();
         accountState.scriptHash = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
         accountState.isFrozen = false;
-        accountState.votes = new ECPoint[]{new ECPoint(ECPoint.secp256r1.getCurve().getInfinity())};
+        accountState.votes = new ECPoint[]{ECC.getInfinityPoint()};
         accountState.balances = new ConcurrentHashMap<>();
         accountState.balances.put(Blockchain.GoverningToken.hash(), new Fixed8(100));
         accountState.balances.put(Blockchain.UtilityToken.hash(), new Fixed8(200));
 
         AccountState copy = accountState.copy();
         Assert.assertEquals(false, copy.isFrozen);
-        Assert.assertEquals(new ECPoint(ECPoint.secp256r1.getCurve().getInfinity()), copy.votes[0]);
+        Assert.assertEquals(ECC.getInfinityPoint(), copy.votes[0]);
         Assert.assertEquals(new Fixed8(100), copy.balances.get(Blockchain.GoverningToken.hash()));
         Assert.assertEquals(new Fixed8(200), copy.balances.get(Blockchain.UtilityToken.hash()));
     }
@@ -70,7 +71,7 @@ public class AccountStateTest {
         AccountState accountState = new AccountState();
         accountState.scriptHash = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
         accountState.isFrozen = false;
-        accountState.votes = new ECPoint[]{new ECPoint(ECPoint.secp256r1.getCurve().getInfinity())};
+        accountState.votes = new ECPoint[]{ECC.getInfinityPoint()};
         accountState.balances = new ConcurrentHashMap<>();
         accountState.balances.put(Blockchain.GoverningToken.hash(), new Fixed8(100));
         accountState.balances.put(Blockchain.UtilityToken.hash(), new Fixed8(200));
@@ -84,7 +85,7 @@ public class AccountStateTest {
         AccountState accountState = new AccountState();
         accountState.scriptHash = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
         accountState.isFrozen = false;
-        accountState.votes = new ECPoint[]{new ECPoint(ECPoint.secp256r1.getCurve().getInfinity())};
+        accountState.votes = new ECPoint[]{ECC.getInfinityPoint()};
         accountState.balances = new ConcurrentHashMap<>();
         accountState.balances.put(Blockchain.GoverningToken.hash(), new Fixed8(100));
         accountState.balances.put(Blockchain.UtilityToken.hash(), new Fixed8(200));
@@ -98,7 +99,7 @@ public class AccountStateTest {
         copy.deserialize(new BinaryReader(inputStream));
 
         Assert.assertEquals(false, copy.isFrozen);
-        Assert.assertEquals(new ECPoint(ECPoint.secp256r1.getCurve().getInfinity()), copy.votes[0]);
+        Assert.assertEquals(ECC.getInfinityPoint(), copy.votes[0]);
         Assert.assertEquals(new Fixed8(100), copy.balances.get(Blockchain.GoverningToken.hash()));
         Assert.assertEquals(new Fixed8(200), copy.balances.get(Blockchain.UtilityToken.hash()));
     }
@@ -108,7 +109,7 @@ public class AccountStateTest {
         AccountState accountState = new AccountState();
         accountState.scriptHash = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
         accountState.isFrozen = false;
-        accountState.votes = new ECPoint[]{new ECPoint(ECPoint.secp256r1.getCurve().getInfinity())};
+        accountState.votes = new ECPoint[]{ECC.getInfinityPoint()};
         accountState.balances = new ConcurrentHashMap<>();
         accountState.balances.put(Blockchain.GoverningToken.hash(), new Fixed8(100));
         accountState.balances.put(Blockchain.UtilityToken.hash(), new Fixed8(200));

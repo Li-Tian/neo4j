@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import neo.UInt160;
 import neo.UInt256;
 import neo.Fixed8;
+import neo.cryptography.ecc.ECC;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.io.BinaryReader;
@@ -154,7 +155,7 @@ public class AssetState extends StateBase implements ICloneable<AssetState> {
         reader.readByte(); //FeeMode
         fee = reader.readSerializable(Fixed8::new); //Fee
         feeAddress = reader.readSerializable(UInt160::new);
-        owner = ECPoint.deserializeFrom(reader, ECPoint.secp256r1.getCurve());
+        owner = ECPoint.deserializeFrom(reader, ECC.Secp256r1.getCurve());
         admin = reader.readSerializable(UInt160::new);
         issuer = reader.readSerializable(UInt160::new);
         expiration = reader.readUint();

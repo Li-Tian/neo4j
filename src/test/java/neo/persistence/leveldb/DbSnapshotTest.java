@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 
 import neo.persistence.Snapshot;
+import neo.persistence.SnapshotTest;
 
 
 public class DbSnapshotTest extends SnapshotTest {

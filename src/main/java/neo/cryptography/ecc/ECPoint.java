@@ -1,12 +1,8 @@
 package neo.cryptography.ecc;
 
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
-import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 
-import neo.Helper;
 import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -15,8 +11,6 @@ import neo.exception.FormatException;
 import neo.log.notr.TR;
 
 public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comparable<ECPoint>, ISerializable {
-    public static X9ECParameters secp256k1 = ECNamedCurveTable.getByName("secp256r1");
-    public static final ECDomainParameters secp256r1 = new ECDomainParameters(secp256k1.getCurve(), secp256k1.getG(), secp256k1.getN(), secp256k1.getH(), secp256k1.getSeed());
 
     public int size() {
         TR.enter();
@@ -24,7 +18,7 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
     }
 
     public ECPoint() {
-        this(null, null, secp256r1.getCurve(), false);
+        this(null, null, ECC.Secp256r1.getCurve(), false);
         TR.enter();
         TR.exit();
     }
@@ -131,9 +125,9 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
     }
 
     /**
-     * 将这个ECPoint编码后转换为16进制的字符串（使用压缩格式）
+     * to hexstring with compressed format.
      *
-     * @return 转换之后的字符串
+     * @return hexstring
      */
     @Override
     public String toString() {

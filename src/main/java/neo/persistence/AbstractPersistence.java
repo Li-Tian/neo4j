@@ -147,7 +147,8 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return total system fee amount
      */
     public long getSysFeeAmount(Uint height) {
-        return getSysFeeAmount(Blockchain.singleton().getBlockHash(height));
+        UInt256 hash = Blockchain.singleton().getBlockHash(height);
+        return getSysFeeAmount(hash);
     }
 
     /**
@@ -238,6 +239,7 @@ public abstract class AbstractPersistence implements IPersistence {
             if (state == null) {
                 return true;
             }
+            // C# code: if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
             for (CoinReference input : entry.getValue()) {
                 if (input.prevIndex.intValue() >= state.items.length ||
                         state.items[input.prevIndex.intValue()].hasFlag(CoinState.Spent)) {

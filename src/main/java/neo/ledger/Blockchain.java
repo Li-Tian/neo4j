@@ -13,6 +13,7 @@ import neo.NeoSystem;
 import neo.ProtocolSettings;
 import neo.UInt160;
 import neo.UInt256;
+import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
@@ -30,42 +31,42 @@ import neo.persistence.Store;
 import neo.vm.OpCode;
 
 /**
- * 区块链核心Actor
+ * The core Actor of blockChain
  */
 public class Blockchain extends UntypedActor {
 
     /**
-     * 出块时间
+     * The time for each block produce
      */
     public static final int SecondsPerBlock = ProtocolSettings.Default.secondsPerBlock;
 
     /**
-     * 区块奖励
+     * The decrement interval of reward for each block m
      */
     public static final int[] GenerationAmount = {8, 7, 6, 5, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
     /**
-     * 块奖励调整周期。衰减周期
+     * The decrement interval of reward for each block m
      */
     public static final int DecrementInterval = 2000000;
 
     /**
-     * 最大验证人个数
+     * Maximum number of validators
      */
     public static final int MaxValidators = 1024;
 
     /**
-     * 区块间隔时间(Duration类型)
+     * The time for each block produce (TimeSpan)
      */
     public static final Duration TimePerBlock = Duration.ofSeconds(SecondsPerBlock);
 
     /**
-     * 备用验证人列表
+     * The list of standby validators
      */
-    public static final ECPoint[] StandbyValidators = ProtocolSettings.Default.standbyValidators.stream().map(p -> ECPoint.fromBytes(BitConverter.hexToBytes(p), ECPoint.secp256r1.getCurve())).toArray(ECPoint[]::new);
+    public static final ECPoint[] StandbyValidators = ProtocolSettings.Default.standbyValidators.stream().map(p -> ECC.parseFromHexString(p)).toArray(ECPoint[]::new);
 
     /**
-     * NEO代币定义
+     * The definition of NEO token
      */
     public static final RegisterTransaction GoverningToken = new RegisterTransaction() {
         {
@@ -73,7 +74,7 @@ public class Blockchain extends UntypedActor {
             name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]";
             amount = Fixed8.fromDecimal(new BigDecimal(100000000));
             precision = 0;
-            owner = new neo.cryptography.ecc.ECPoint(neo.cryptography.ecc.ECPoint.secp256r1.getCurve().getInfinity());
+            owner = new neo.cryptography.ecc.ECPoint(ECC.Secp256r1.getCurve().getInfinity());
             admin = UInt160.parseToScriptHash(new byte[]{OpCode.PUSHT.getCode()});
             attributes = new TransactionAttribute[0];
             inputs = new CoinReference[0];
@@ -83,7 +84,7 @@ public class Blockchain extends UntypedActor {
     };
 
     /**
-     * GAS代币定义
+     * The definication of GAS token
      */
     public static final RegisterTransaction UtilityToken = new RegisterTransaction() {
         {
@@ -91,7 +92,7 @@ public class Blockchain extends UntypedActor {
             name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁币\"},{\"lang\":\"en\",\"name\":\"AntCoin\"}]";
             amount = Fixed8.fromDecimal(BigDecimal.valueOf(Arrays.stream(GenerationAmount).mapToLong(p -> p * DecrementInterval).sum()));
             precision = 8;
-            owner = new ECPoint(neo.cryptography.ecc.ECPoint.secp256r1.getCurve().getInfinity());
+            owner = new ECPoint(ECC.Secp256r1.getCurve().getInfinity());
             admin = UInt160.parseToScriptHash(new byte[]{OpCode.PUSHT.getCode()});
             attributes = new TransactionAttribute[0];
             inputs = new CoinReference[0];
@@ -193,7 +194,7 @@ public class Blockchain extends UntypedActor {
     }
 
     public static void processValidatorStateDescriptor(StateDescriptor descriptor, Snapshot snapshot) {
-        ECPoint pubkey = ECPoint.fromBytes(descriptor.key, ECPoint.secp256r1.getCurve());
+        ECPoint pubkey = ECPoint.fromBytes(descriptor.key, ECC.Secp256r1.getCurve());
         ValidatorState validator = snapshot.getValidators().getAndChange(pubkey, () -> new ValidatorState(pubkey));
         switch (descriptor.field) {
             case "Registered":

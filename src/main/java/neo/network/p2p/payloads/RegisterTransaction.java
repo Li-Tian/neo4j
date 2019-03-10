@@ -9,6 +9,7 @@ import java.util.Collection;
 
 import neo.Fixed8;
 import neo.UInt160;
+import neo.cryptography.ecc.ECC;
 import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -145,7 +146,7 @@ public class RegisterTransaction extends Transaction {
         name = reader.readVarString(1024);
         amount = reader.readSerializable(Fixed8::new);
         precision = (byte) reader.readByte();
-        owner = ECPoint.deserializeFrom(reader, ECPoint.secp256r1.getCurve());
+        owner = ECPoint.deserializeFrom(reader, ECC.Secp256r1.getCurve());
         if (owner.isInfinity() && assetType != AssetType.GoverningToken && assetType != AssetType.UtilityToken)
             throw new FormatException();
         admin = reader.readSerializable(UInt160::new);

@@ -12,6 +12,8 @@ import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
+import neo.exception.InvalidOperationException;
+import neo.log.tr.TR;
 import neo.persistence.Snapshot;
 
 /**
@@ -186,11 +188,16 @@ public abstract class BlockBase implements IVerifiable {
         if (prevHash == UInt256.Zero) {
             return new UInt160[]{witness.scriptHash()};
         }
-        // TODO
-        return new UInt160[0];
-//        Header prev_header = snapshot.GetHeader(PrevHash);
-//        if (prev_header == null) throw new InvalidOperationException();
-//        return new UInt160[]{prev_header.NextConsensus};
+
+        Header prevHeader = snapshot.getHeader(prevHash);
+        if (prevHeader == null) {
+            throw new InvalidOperationException();
+        }
+        return new UInt160[]{prevHeader.nextConsensus};
+        // C# code
+        //        Header prev_header = snapshot.GetHeader(PrevHash);
+        //        if (prev_header == null) throw new InvalidOperationException();
+        //        return new UInt160[]{prev_header.NextConsensus};
     }
 
     /**
@@ -250,11 +257,13 @@ public abstract class BlockBase implements IVerifiable {
      * </ul>
      */
     public boolean verify(Snapshot snapshot) {
-//        Header prev_header = snapshot.GetHeader(PrevHash);
-//        if (prev_header == null) return false;
-//        if (prev_header.Index + 1 != Index) return false;
-//        if (prev_header.Timestamp >= Timestamp) return false;
-//        if (!this.VerifyWitnesses(snapshot)) return false;
+        Header prevHeader = snapshot.getHeader(prevHash);
+        if (prevHeader == null) return false;
+        if (!prevHeader.index.add(new Uint(1)).equals(index)) return false;
+        if (prevHeader.timestamp.compareTo(timestamp) >= 0) return false;
+        TR.fixMe("waiting for smartcontact");
+//        TODO waiting for smartcontract
+//        if (!this.verifyWitnesses(snapshot)) return false;
         return true;
     }
 

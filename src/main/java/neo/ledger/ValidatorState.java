@@ -2,6 +2,7 @@ package neo.ledger;
 
 
 import neo.Fixed8;
+import neo.cryptography.ecc.ECC;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
@@ -9,32 +10,35 @@ import neo.cryptography.ecc.ECPoint;
 import neo.log.tr.TR;
 
 /**
- * 验证人状态
+ * The state of validator
  */
 public class ValidatorState extends StateBase implements ICloneable<ValidatorState> {
 
     /**
-     * 验证人公钥
+     * The public key of validators
      */
     public ECPoint publicKey;
 
     /**
-     * 是否注册
+     * Is it registered
      */
     public boolean registered;
 
     /**
-     * 投票数
+     * The votes on it
      */
     public Fixed8 votes;
 
+    /**
+     * Empty constructor
+     */
     public ValidatorState() {
     }
 
     /**
-     * 构造函数
+     * The constructor
      *
-     * @param pubkey 验证人公钥
+     * @param pubkey The public key of validators
      */
     public ValidatorState(ECPoint pubkey) {
         this.publicKey = pubkey;
@@ -53,7 +57,7 @@ public class ValidatorState extends StateBase implements ICloneable<ValidatorSta
     }
 
     /**
-     * 克隆
+     * The clone method
      */
     @Override
     public ValidatorState copy() {
@@ -66,15 +70,15 @@ public class ValidatorState extends StateBase implements ICloneable<ValidatorSta
     }
 
     /**
-     * 反序列化
+     * Deserialization
      *
-     * @param reader 二进制输入流
+     * @param reader The binary input stream
      */
     @Override
     public void deserialize(BinaryReader reader) {
         TR.enter();
         super.deserialize(reader);
-        publicKey = ECPoint.deserializeFrom(reader, ECPoint.secp256r1.getCurve());
+        publicKey = ECPoint.deserializeFrom(reader, ECC.Secp256r1.getCurve());
         registered = reader.readBoolean();
         votes = reader.readSerializable(Fixed8::new);
         TR.exit();
@@ -82,9 +86,9 @@ public class ValidatorState extends StateBase implements ICloneable<ValidatorSta
 
 
     /**
-     * 从副本复制
+     * Copy from replication
      *
-     * @param replica 副本
+     * @param replica Replication of other validator state
      */
     @Override
     public void fromReplica(ValidatorState replica) {
@@ -96,16 +100,16 @@ public class ValidatorState extends StateBase implements ICloneable<ValidatorSta
     }
 
     /**
-     * 序列化
-     * <p>序列化字段</p>
+     * Serialization
+     * <p>fields</p>
      * <ul>
-     * <li>stateVersion: 状态版本号</li>
-     * <li>publicKey: 验证人公钥</li>
-     * <li>registered: 是否注册</li>
-     * <li>votes: 投票数</li>
+     * <li>stateVersion: The verison of state</li>
+     * <li>publicKey: The public key of validator</li>
+     * <li>registered: Is it registerd</li>
+     * <li>votes: The number of votes</li>
      * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer The binary output stream writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
@@ -117,16 +121,8 @@ public class ValidatorState extends StateBase implements ICloneable<ValidatorSta
         TR.exit();
     }
 
-
     /**
-     * 获取公钥
-     */
-    public ECPoint getPublicKey() {
-        return publicKey;
-    }
-
-    /**
-     * 获取投票数
+     * Get votes
      */
     public Fixed8 getVotes() {
         return votes;

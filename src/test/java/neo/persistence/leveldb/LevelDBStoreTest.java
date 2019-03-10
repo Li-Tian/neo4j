@@ -16,6 +16,7 @@ import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
 import neo.UInt32;
+import neo.cryptography.ecc.ECC;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
@@ -187,7 +188,7 @@ public class LevelDBStoreTest {
         AccountState state = new AccountState();
         state.scriptHash = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
         state.isFrozen = false;
-        state.votes = new ECPoint[]{new ECPoint(ECPoint.secp256r1.getCurve().getInfinity())};
+        state.votes = new ECPoint[]{new ECPoint(ECC.getInfinityPoint())};
         state.balances = new ConcurrentHashMap<>();
         state.balances.put(Blockchain.GoverningToken.hash(), new Fixed8(100));
         state.balances.put(Blockchain.UtilityToken.hash(), new Fixed8(200));
@@ -333,7 +334,7 @@ public class LevelDBStoreTest {
         DataCache<ECPoint, ValidatorState> cache = snapshot.getValidators();
 
         ValidatorState state = new ValidatorState();
-        state.publicKey = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        state.publicKey = new ECPoint(ECC.getInfinityPoint());
         state.registered = false;
         state.votes = new Fixed8(2);
 
@@ -430,7 +431,7 @@ public class LevelDBStoreTest {
         state.precision = 0;
         state.fee = Fixed8.ZERO;
         state.feeAddress = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-        state.owner = new ECPoint(ECPoint.secp256r1.getCurve().getInfinity());
+        state.owner = new ECPoint(ECC.getInfinityPoint());
         state.admin = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff02");
         state.issuer = UInt160.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff03");
         state.expiration = new Uint(1000000);
@@ -706,6 +707,24 @@ public class LevelDBStoreTest {
         Assert.assertNotNull(dbtx);
 
         Assert.assertEquals(UInt256.Zero, dbtx.hash);
+    }
+
+    @Test
+    public void close() {
+        try {
+            LevelDBStore test = new LevelDBStore("test");
+            test.close();
+            Assert.assertTrue(true);
+            File file = new File("test");
+            if (file.exists()) {
+                for (File subFile : file.listFiles()) {
+                    subFile.delete();
+                }
+                file.delete();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

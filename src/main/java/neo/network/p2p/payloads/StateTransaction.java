@@ -10,6 +10,7 @@ import java.util.List;
 
 import neo.Fixed8;
 import neo.UInt160;
+import neo.cryptography.ecc.ECC;
 import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -130,7 +131,7 @@ public class StateTransaction extends Transaction {
             case "Registered":
                 //  Collections.singleton(UInt160.parseToScriptHash(Contract.createSignatureRedeemScript()));
                 //  yield return Contract.CreateSignatureRedeemScript(ECPoint.DecodePoint(descriptor.Key, ECCurve.Secp256r1)).ToScriptHash();
-                ECPoint publicKey = ECPoint.fromBytes(descriptor.key, ECPoint.secp256r1.getCurve());
+                ECPoint publicKey = ECPoint.fromBytes(descriptor.key, ECC.Secp256r1.getCurve());
                 byte[] scripts = Contract.createSignatureRedeemScript(publicKey);
                 UInt160 scriptHash = UInt160.parseToScriptHash(scripts);
                 return Collections.singleton(scriptHash);

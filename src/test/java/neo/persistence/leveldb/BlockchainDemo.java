@@ -9,7 +9,7 @@ import neo.ledger.Blockchain;
 
 public class BlockchainDemo extends Blockchain {
 
-    public ArrayList<UInt256> headerIndex = new ArrayList<>();
+    public static final ArrayList<UInt256> myheaderIndex = new ArrayList<>();
 
     public BlockchainDemo() {
         super(null, null);
@@ -17,10 +17,10 @@ public class BlockchainDemo extends Blockchain {
 
     @Override
     public UInt256 getBlockHash(Uint index) {
-        if (headerIndex.size() <= index.intValue()) {
+        if (myheaderIndex.size() <= index.intValue()) {
             return null;
         }
-        return headerIndex.get(index.intValue());
+        return myheaderIndex.get(index.intValue());
     }
 
     public static Props props() {

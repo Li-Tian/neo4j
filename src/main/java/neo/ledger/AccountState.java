@@ -52,6 +52,9 @@ public class AccountState extends StateBase implements ICloneable<AccountState> 
      */
     public AccountState() {
         TR.enter();
+        this.isFrozen = false;
+        this.votes = new ECPoint[0];
+        this.balances = new ConcurrentHashMap<>();
         TR.exit();
     }
 
