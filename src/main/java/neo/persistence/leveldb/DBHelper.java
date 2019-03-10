@@ -6,9 +6,9 @@ import org.iq80.leveldb.DBIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 import neo.csharp.BitConverter;
-import neo.function.FuncAB2T;
 
 /**
  * leveldb helper
@@ -24,7 +24,7 @@ public class DBHelper {
      * @param <R>       value type
      * @return Collection<R>, empty set will be return if not found
      */
-    public static <R> Collection<R> find(DB db, byte[] keyPrefix, FuncAB2T<byte[], byte[], R> generator) {
+    public static <R> Collection<R> find(DB db, byte[] keyPrefix, BiFunction<byte[], byte[], R> generator) {
         DBIterator iterator = db.iterator();
         iterator.seek(keyPrefix);
         ArrayList<R> list = new ArrayList<>();
@@ -37,7 +37,7 @@ public class DBHelper {
             if (!BitConverter.startWith(tmpKeyBytes, keyPrefix)) {
                 break;
             }
-            list.add(generator.get(tmpKeyBytes, valueBytes));
+            list.add(generator.apply(tmpKeyBytes, valueBytes));
         }
         return list;
     }

@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 
 import akka.actor.ActorRef;
 import akka.dispatch.Envelope;
 import akka.dispatch.MessageQueue;
 import akka.dispatch.UnboundedMessageQueueSemantics;
-import neo.function.FuncA2T;
-import neo.function.FuncAB2T;
 import neo.log.tr.TR;
 
 public class PriorityMessageQueue implements MessageQueue, UnboundedMessageQueueSemantics {
@@ -20,10 +20,10 @@ public class PriorityMessageQueue implements MessageQueue, UnboundedMessageQueue
 
     private AtomicInteger count = new AtomicInteger(1);
 
-    private final FuncA2T<Object, Boolean> priorityGenerator;
-    private final FuncAB2T<Object, Collection<Object>, Boolean> dropper;
+    private final Function<Object, Boolean> priorityGenerator;
+    private final BiPredicate<Object, Collection<Object>> dropper;
 
-    public PriorityMessageQueue(FuncAB2T<Object, Collection<Object>, Boolean> dropper, FuncA2T<Object, Boolean> priorityGenerator) {
+    public PriorityMessageQueue(BiPredicate<Object, Collection<Object>> dropper, Function<Object, Boolean> priorityGenerator) {
         this.priorityGenerator = priorityGenerator;
         this.dropper = dropper;
     }
@@ -44,11 +44,11 @@ public class PriorityMessageQueue implements MessageQueue, UnboundedMessageQueue
         ArrayList<Object> msgs = new ArrayList<>(high.size() + low.size());
         msgs.addAll(high);
         msgs.addAll(low);
-        if (dropper.get(msg, msgs)) {
+        if (dropper.test(msg, msgs)) {
             TR.exit();
             return;
         }
-        ConcurrentLinkedQueue<Envelope> queue = priorityGenerator.get(msg) ? high : low;
+        ConcurrentLinkedQueue<Envelope> queue = priorityGenerator.apply(msg) ? high : low;
         queue.add(handle);
         TR.exit();
     }

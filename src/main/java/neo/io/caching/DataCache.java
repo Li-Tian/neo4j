@@ -5,12 +5,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import neo.exception.KeyAlreadyExistException;
 import neo.exception.KeyNotFoundException;
-import neo.function.FuncAB2T;
 import neo.io.ICloneable;
 import neo.csharp.io.ISerializable;
 import neo.log.tr.TR;
@@ -124,7 +124,7 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
     }
 
 
-    public void deleteWhere(FuncAB2T<TKey, TValue, Boolean> predicate) {
+    public void deleteWhere(BiPredicate<TKey, TValue> predicate) {
         TR.enter();
 
         /*
@@ -134,7 +134,7 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
         trackable.State = Deleted;
         */
         for (Map.Entry<TKey, Trackable> entry : map.entrySet()) {
-            if (predicate.get(entry.getKey(), entry.getValue().item)) {
+            if (predicate.test(entry.getKey(), entry.getValue().item)) {
                 map.remove(entry.getKey());
             }
         }

@@ -8,11 +8,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.ToLongFunction;
 
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
-import neo.function.FuncA2T;
-import neo.function.FuncAB2T;
 import neo.log.notr.TR;
 
 public class Helper {
@@ -164,11 +165,11 @@ public class Helper {
      * @param <T>      该方法所需要处理的数值表达式类型
      * @return 集合中所有对象经过转换后的值的和
      */
-    public static <T> Fixed8 sum(Collection<T> source, FuncA2T<T, Fixed8> selector) {
+    public static <T> Fixed8 sum(Collection<T> source, Function<T, Fixed8> selector) {
         TR.enter();
         Fixed8 sum = Fixed8.ZERO;
         for (T item : source) {
-            sum = Fixed8.add(sum, selector.get(item));
+            sum = Fixed8.add(sum, selector.apply(item));
         }
         return TR.exit(sum);
     }
@@ -268,7 +269,7 @@ public class Helper {
      * @param <T>            对象泛型
      * @return long 加权平均值
      */
-    public static <T> long weightedAverage(Collection<T> source, FuncA2T<T, Long> valueSelector, FuncA2T<T, Long> weightSelector) {
+    public static <T> long weightedAverage(Collection<T> source, ToLongFunction<T> valueSelector, ToLongFunction<T> weightSelector) {
         TR.enter();
         /*
             C# code
@@ -287,9 +288,9 @@ public class Helper {
         long sum_weight = 0;
         long sum_value = 0;
         for (T item : source) {
-            long weight = weightSelector.get(item);
+            long weight = weightSelector.applyAsLong(item);
             sum_weight += weight;
-            sum_value += valueSelector.get(item) * weight;
+            sum_value += valueSelector.applyAsLong(item) * weight;
         }
         if (sum_value == 0) return 0;
         return TR.exit(sum_value / sum_weight);
@@ -308,7 +309,7 @@ public class Helper {
      * @param <R>            返回值泛型
      * @return Collection<R>
      */
-    public static <T, R> Collection<R> weightedFilter(Collection<T> source, double start, double end, FuncA2T<T, Fixed8> weightSelector, FuncAB2T<T, Long, R> resultSelector) {
+    public static <T, R> Collection<R> weightedFilter(Collection<T> source, double start, double end, Function<T, Fixed8> weightSelector, BiFunction<T, Long, R> resultSelector) {
         TR.enter();
         /*
             C# code
@@ -358,7 +359,7 @@ public class Helper {
 
         for (T item : source) {
             if (current >= end) break;
-            long weight = weightSelector.get(item).getData();
+            long weight = weightSelector.apply(item).getData();
             sum += weight;
             double old = current;
             current = Double.valueOf(sum) / amount; // notice!!
@@ -373,7 +374,7 @@ public class Helper {
             } else if (current > end) {
                 weight = (long) ((end - old) * amount);
             }
-            results.add(resultSelector.get(item, weight));
+            results.add(resultSelector.apply(item, weight));
         }
         return TR.exit(results);
     }
