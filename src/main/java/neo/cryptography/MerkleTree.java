@@ -95,7 +95,7 @@ public class MerkleTree {
         TR.enter();
         ArrayList<UInt256> hashes = new ArrayList<UInt256>();
         depthFirstSearch(root, hashes);
-        return TR.exit((UInt256[]) hashes.toArray());
+        return TR.exit((UInt256[]) hashes.toArray(new UInt256[hashes.size()]));
     }
 
     public void trim(BitSet flags) {
