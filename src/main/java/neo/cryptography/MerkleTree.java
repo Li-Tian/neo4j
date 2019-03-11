@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 
+import neo.UInt160;
 import neo.UInt256;
 import neo.log.tr.TR;
 
@@ -24,7 +25,7 @@ public class MerkleTree {
             throw new IllegalArgumentException();
         }
         //this.root = Build(hashes.Select(p => new MerkleTreeNode { Hash = p }).ToArray());
-        this.root = build((MerkleTreeNode[]) Arrays.stream(hashes).map(x -> new MerkleTreeNode(x)).toArray());
+        this.root = build(Arrays.stream(hashes).map(x -> new MerkleTreeNode(x)).toArray(MerkleTreeNode[]::new));
         int depth = 1;
         for (MerkleTreeNode i = root; i.leftChild != null; i = i.leftChild) {
             depth++;
