@@ -6,6 +6,7 @@ import akka.actor.Props;
 import neo.UInt256;
 import neo.csharp.Uint;
 import neo.ledger.Blockchain;
+import neo.persistence.Store;
 
 public class BlockchainDemo extends Blockchain {
 
@@ -13,6 +14,10 @@ public class BlockchainDemo extends Blockchain {
 
     public BlockchainDemo() {
         super(null, null);
+    }
+
+    public BlockchainDemo(Store store) {
+        super(null, store);
     }
 
     @Override
@@ -27,4 +32,7 @@ public class BlockchainDemo extends Blockchain {
         return Props.create(BlockchainDemo.class).withMailbox("blockchain-mailbox");
     }
 
+    public static Props props(Store store) {
+        return Props.create(BlockchainDemo.class, store).withMailbox("blockchain-mailbox");
+    }
 }

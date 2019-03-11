@@ -4,51 +4,51 @@ package neo.network.p2p.payloads;
 import neo.common.ByteEnum;
 
 /**
- * 资产类型
+ * asset type
  */
 public enum AssetType implements ByteEnum {
     /**
-     * 带有信任类型资产
+     * Asset with Credit type
      */
     CreditFlag((byte) 0x40),
     /**
-     * 带有权益类型资产, 转账时还需要收款人进行签名
+     * Duty type asset, the payee is also required to sign the transfer.
      */
     DutyFlag((byte) 0x80),
 
     /**
-     * NEO 资产
+     * NEO asset
      */
     GoverningToken((byte) 0x00),
 
     /**
-     * GAS 资产
+     * GAS asset
      */
     UtilityToken((byte) 0x01),
 
     /**
-     * 未使用（保留）
+     * Not used (reserved)
      */
     Currency((byte) 0x08),
 
     /**
-     * 股权类资产
+     * Equity type assets
      */
     Share((byte) (DutyFlag.value | (byte) 0x10)),
 
     /**
-     * 票据类资产（保留）
+     * Invoice type assets(reserved)
      */
     Invoice((byte) (DutyFlag.value | (byte) 0x18)),
 
 
     /**
-     * Token类资产
+     * Token type assets
      */
     Token((byte) (DutyFlag.value | (byte) 0x20));
 
     /**
-     * 占用字节数大小
+     * Storage size
      */
     public static final int BYTES = 1;
 
@@ -59,7 +59,7 @@ public enum AssetType implements ByteEnum {
     }
 
     /**
-     * 查询资产类型的具体byte值
+     * get the byte value of the asset
      */
     @Override
     public byte value() {
@@ -68,11 +68,11 @@ public enum AssetType implements ByteEnum {
 
 
     /**
-     * 从byte中解析资产类型
+     * parse AssetTye from byte value
      *
-     * @param type 待解析的资产类型
+     * @param type asset type's byte value
      * @return AssetType
-     * @throws IllegalArgumentException 当类型不存在时，抛出该异常
+     * @throws IllegalArgumentException throw it if the type not exist.
      */
     public static AssetType parse(byte type) {
         return ByteEnum.parse(AssetType.values(), type);

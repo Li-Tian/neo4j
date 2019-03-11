@@ -9,32 +9,32 @@ import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
 /**
- * 交易引用
+ * CoinReference
  */
 public class CoinReference implements ISerializable {
 
     /**
-     * 指向的UTXO所在的交易的hash值
+     * The transaction hash in which UTXO  point to
      */
     public UInt256 prevHash;
 
     /**
-     * 指向的UTXO所在的交易的output的位置。从0开始。
+     * The transaction output index in which UTXO point to. Starting from 0
      */
     public Ushort prevIndex;
 
     /**
-     * 存储大小
+     * size for storage
      */
     @Override
     public int size() {
-        return prevHash.size() + Ushort.BYTES; // ushort 1个字节
+        return prevHash.size() + Ushort.BYTES; // ushort 2个字节
     }
 
     /**
-     * 序列化
+     * Serialize
      *
-     * @param writer 二进制输出器
+     * @param writer BinaryWriter
      */
     @Override
     public void serialize(BinaryWriter writer) {
@@ -44,9 +44,9 @@ public class CoinReference implements ISerializable {
 
 
     /**
-     * 反序列化
+     * Deserialize
      *
-     * @param reader 二进制读入器
+     * @param reader BinaryReader
      */
     @Override
     public void deserialize(BinaryReader reader) {
@@ -55,7 +55,7 @@ public class CoinReference implements ISerializable {
     }
 
     /**
-     * 获取hash code
+     * get hash code
      *
      * @return hash code
      */
@@ -65,14 +65,15 @@ public class CoinReference implements ISerializable {
     }
 
     /**
-     * 判断交易与该对象是否相等
+     * Determine if two CoinReference object are equal
      *
-     * @param obj 待比较对象
-     * @return 返回情况如下：
+     * @param obj Object to be compared
+     * @return return as following：
      * <ul>
-     * <li>若待比较对象为null 或 不是CoinReference， 则返回false</li>
-     * <li>若待比较交易为null, 则返回false。</li>
-     * <li>否则按所指向的交易哈希和所指向的交易的output index比较</li>
+     * <li>returns false if the object to be compared is null or not a CoinReference object</li>
+     * <li>If the other CoinReference object is null, it returns false.</li>
+     * <li>Otherwise compare the transaction hash  and the output index of the transaction in which
+     * UTXO point to</li>
      * </ul>
      */
     @Override
@@ -86,9 +87,9 @@ public class CoinReference implements ISerializable {
     }
 
     /**
-     * 转json对象
+     * Convert to JObject object
      *
-     * @return json对象
+     * @return JObject object
      */
     public JsonObject toJson() {
         JsonObject json = new JsonObject();

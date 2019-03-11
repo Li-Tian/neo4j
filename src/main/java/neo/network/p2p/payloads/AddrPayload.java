@@ -6,23 +6,26 @@ import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
 /**
- * 节点收到其它节点发来的 getaddr 消息以后，回复 addr 消息时的传输数据包。 addr 消息里包含本地节点已知的其它节点 IP 地址。
+ * This class describing a transport packet when replying to the addr message after the node
+ * receives the getaddr message from other nodes. The addr meesage contains the other nodes' IP
+ * address
  */
 public class AddrPayload implements ISerializable {
 
     /**
-     * 一次最多发送记录数。固定值200。
+     * The max number of records sent at a time. The fixed value is 200.
      */
     public static int MaxCountToSend = 200;
 
     /**
-     * 已知的其它节点地址信息。包括这些节点的IP地址，监听端口，上次活动时间。
+     * other known node address information. Includes the IP address of these nodes, the listening
+     * port, and the last active time.
      */
     public NetworkAddressWithTime[] addressList;
 
 
     /**
-     * 存储大小
+     * Get the  length of the entire packet. Unit: Byte
      */
     @Override
     public int size() {
@@ -30,9 +33,9 @@ public class AddrPayload implements ISerializable {
     }
 
     /**
-     * 序列化
+     * Serialize
      *
-     * @param writer 二进制输出器
+     * @param writer Binary writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
@@ -40,9 +43,9 @@ public class AddrPayload implements ISerializable {
     }
 
     /**
-     * 反序列化
+     * Deserialize
      *
-     * @param reader 二进制读入器
+     * @param reader BinaryReader
      */
     @Override
     public void deserialize(BinaryReader reader) {
@@ -50,12 +53,12 @@ public class AddrPayload implements ISerializable {
     }
 
     /**
-     * 创建 AddrPayload 数据结构
+     * Create an AddrPayload object
      *
-     * @param addresses 已知节点的信息列表
-     * @return 传输时使用的数据结构
+     * @param addresses List of known nodes
+     * @return an AddrPayload object
      */
-    public static AddrPayload Create(NetworkAddressWithTime[] addresses) {
+    public static AddrPayload create(NetworkAddressWithTime[] addresses) {
         AddrPayload payload = new AddrPayload();
         payload.addressList = addresses;
         return payload;

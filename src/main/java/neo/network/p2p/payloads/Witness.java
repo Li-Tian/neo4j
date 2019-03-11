@@ -10,26 +10,28 @@ import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
 /**
- * 见证人。<br/>
+ * Witness <br/>
  *
- * @doc 验证时先读取验证脚本(VerificationScript)压入堆栈， 然后再读取执行脚本(InvocationScript)并压入堆栈， 然后执行并判定结果。
+ * @doc When verifying, first read the verification script (VerificationScript)and push it onto the
+ * stack. Then read the execution script (InvocationScript) and push it onto the stack. Then execute
+ * and determine the result.
  */
 public class Witness implements ISerializable {
 
     /**
-     * 执行脚本，补全参数
+     * Invocation script，push the required data into the stack
      */
     public byte[] invocationScript;
 
     /**
-     * 验证脚本
+     * Verification scripts
      */
     public byte[] verificationScript;
 
     private UInt160 scriptHash;
 
     /**
-     * 验证脚本的哈希
+     * Verification scripts hash
      */
     public UInt160 scriptHash() {
         if (scriptHash == null) {
@@ -39,7 +41,7 @@ public class Witness implements ISerializable {
     }
 
     /**
-     * 存储大小
+     * size for storage
      */
     @Override
     public int size() {
@@ -48,9 +50,9 @@ public class Witness implements ISerializable {
     }
 
     /**
-     * 序列化
+     * serialize
      *
-     * @param writer 二进制输出器
+     * @param writer BinaryWriter
      */
     @Override
     public void serialize(BinaryWriter writer) {
@@ -59,9 +61,9 @@ public class Witness implements ISerializable {
     }
 
     /**
-     * 反序列化
+     * Deserialize
      *
-     * @param reader 二进制读入器
+     * @param reader BinaryReader
      */
     @Override
     public void deserialize(BinaryReader reader) {
@@ -70,12 +72,12 @@ public class Witness implements ISerializable {
     }
 
     /**
-     * 转成json对象
+     * Convert to JObject object
      */
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("invocation", BitConverter.toHexString(invocationScript));
-        json.addProperty("invocation", BitConverter.toHexString(verificationScript));
+        json.addProperty("verification", BitConverter.toHexString(verificationScript));
         return json;
     }
 }

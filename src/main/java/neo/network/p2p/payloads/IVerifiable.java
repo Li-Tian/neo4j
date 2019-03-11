@@ -4,51 +4,102 @@ import neo.UInt160;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.tr.TR;
 import neo.persistence.Snapshot;
 import neo.vm.IScriptContainer;
 
 /**
- * 封装的待签名验证接口
+ * An interface for signature verification
  */
 public interface IVerifiable extends ISerializable, IScriptContainer {
 
     /**
-     * 见证人列表
+     * Get witnesses
      */
     Witness[] getWitnesses();
 
     /**
-     * 获取hash数据
+     * get the serialized data for the specified object
+     *
+     * @return serialized data
      */
     byte[] getHashData();
 
     /**
-     * 设置见者人
-     *
-     * @param witnesses 见证人
+     * set witnesses
      */
     void setWitnesses(Witness[] witnesses);
 
     /**
-     * 反序列化待签名数据
+     * Deserialize unsigned data
      *
-     * @param reader 2进制读取器
+     * @param reader BinaryReader
      */
     void deserializeUnsigned(BinaryReader reader);
 
     /**
-     * 获取等待签名验证的脚本hash集合
+     * Get the script hash collection for validation.
      *
-     * @param snapshot 数据库快照
-     * @return 验证脚本hash集合
+     * @param snapshot Database Snapshot
+     * @return script hash collection
      */
     UInt160[] getScriptHashesForVerifying(Snapshot snapshot);
 
     /**
-     * 序列化待签名数据
+     * Serialize unsigned data
      *
-     * @param writer 2进制输出器
+     * @param writer BinaryWriter
      */
     void serializeUnsigned(BinaryWriter writer);
+
+    /**
+     * verify witness
+     *
+     * @param verifiable the verifiable object
+     * @param snapshot   database snapshot
+     * @return true if verify success, otherwise false.
+     */
+    static boolean verifyWitnesses(IVerifiable verifiable, Snapshot snapshot) {
+        // TODO waiting for smartcontract
+        TR.fixMe("waiting for smartcontract....");
+
+        return true;
+
+        // C# code:
+        //        UInt160[] hashes;
+        //        try
+        //        {
+        //            hashes = verifiable.GetScriptHashesForVerifying(snapshot);
+        //        }
+        //        catch (InvalidOperationException)
+        //        {
+        //            return false;
+        //        }
+        //        if (hashes.Length != verifiable.Witnesses.Length) return false;
+        //        for (int i = 0; i < hashes.Length; i++)
+        //        {
+        //            byte[] verification = verifiable.Witnesses[i].VerificationScript;
+        //            if (verification.Length == 0)
+        //            {
+        //                using (ScriptBuilder sb = new ScriptBuilder())
+        //                {
+        //                    sb.EmitAppCall(hashes[i].ToArray());
+        //                    verification = sb.ToArray();
+        //                }
+        //            }
+        //            else
+        //            {
+        //                if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
+        //            }
+        //            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, Fixed8.Zero))
+        //            {
+        //                engine.LoadScript(verification);
+        //                engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
+        //                if (!engine.Execute()) return false;
+        //                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
+        //            }
+        //        }
+        //        return true;
+    }
 
 }

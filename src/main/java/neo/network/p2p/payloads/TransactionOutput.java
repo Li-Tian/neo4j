@@ -11,27 +11,27 @@ import neo.csharp.io.ISerializable;
 import neo.exception.FormatException;
 
 /**
- * 交易输出
+ * The transaction Output
  */
 public class TransactionOutput implements ISerializable {
 
     /**
-     * 资产Id
+     * The asset Id
      */
     public UInt256 assetId;
 
     /**
-     * 转账金额
+     * The amount to be transfer
      */
     public Fixed8 value;
 
     /**
-     * 收款人地址脚本hash
+     * The recipient address script hash
      */
     public UInt160 scriptHash;
 
     /**
-     * 存储大小
+     * The size of storage
      */
     @Override
     public int size() {
@@ -39,9 +39,9 @@ public class TransactionOutput implements ISerializable {
     }
 
     /**
-     * 序列化
+     * serialize
      *
-     * @param writer 二进制输入
+     * @param writer BinaryWriter
      */
     @Override
     public void serialize(BinaryWriter writer) {
@@ -51,24 +51,24 @@ public class TransactionOutput implements ISerializable {
     }
 
     /**
-     * 反序列化
+     * deserialize
      *
-     * @param reader 二进制输出
-                * @throws FormatException 若转账小于0时，抛出该异常
-                */
-        @Override
-        public void deserialize(BinaryReader reader) {
-            this.assetId = reader.readSerializable(UInt256::new);
-            this.value = reader.readSerializable(Fixed8::new);
+     * @param reader BinaryReader
+     * @throws FormatException if value less than 0, throw this exception
+     */
+    @Override
+    public void deserialize(BinaryReader reader) {
+        this.assetId = reader.readSerializable(UInt256::new);
+        this.value = reader.readSerializable(Fixed8::new);
         if (value.compareTo(Fixed8.ZERO) <= 0) throw new FormatException();
         this.scriptHash = reader.readSerializable(UInt160::new);
     }
 
     /**
-     * 转成json数据
+     * Transfer to json object
      *
-     * @param index 此UTXO在交易的output列表中的index。从0开始。
-     * @return json对象
+     * @param index The index of UTXO in the transaction list, begin from 0
+     * @return json object
      */
     public JsonObject toJson(int index) {
         JsonObject json = new JsonObject();
