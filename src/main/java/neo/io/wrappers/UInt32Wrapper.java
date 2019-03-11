@@ -43,7 +43,7 @@ public final class UInt32Wrapper extends SerializableWrapper<UInt32> {
     public void deserialize(BinaryReader reader) {
         TR.enter();
         // NOTE 这里必须与C# uint存储大小保持一致
-        this.value.deserialize(reader);
+        this.value = reader.readSerializable(UInt32::new);
         TR.exit();
     }
 

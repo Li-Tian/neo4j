@@ -33,9 +33,8 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         TR.enter();
         if (value == null) {
             this.dataBytes = new byte[bytes];
-            for (int i = 0; i < bytes; i++) {
-                this.dataBytes[i] = 0;
-            }
+            Arrays.fill(dataBytes, (byte) 0);
+            System.out.println("uintbaes => " + this);
             return;
         }
         if (value.length != bytes) {
@@ -105,7 +104,8 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         if (dataBytes == null || dataBytes.length == 0) {
             return 0;
         }
-        int code = ByteBuffer.wrap(dataBytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        byte[] bytes = Arrays.copyOf(dataBytes, dataBytes.length);
+        int code = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
         return TR.exit(code);
     }
 
@@ -153,8 +153,6 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
     @Override
     public String toString() {
         TR.enter();
-        final StringBuilder builder = new StringBuilder("0x");
-
         if (dataBytes == null || dataBytes.length <= 0) {
             return TR.exit(null);
         }

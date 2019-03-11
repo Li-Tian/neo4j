@@ -5,6 +5,9 @@ import neo.log.notr.TR;
 
 /**
  * This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array
+ *
+ * @notice Be careful when use Zero, can not modify the byte array, especially the deserialize
+ *  * method, it's better to create a object to deserialize.
  */
 public class UInt256 extends UIntBase implements Cloneable {
 

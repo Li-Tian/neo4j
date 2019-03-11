@@ -7,6 +7,9 @@ import neo.log.notr.TR;
 
 /**
  * This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array
+ *
+ * @notice Be careful when use Zero, can not modify the byte array, especially the deserialize
+ *  * method, it's better to create a object to deserialize.
  */
 public class UInt160 extends UIntBase implements Cloneable {
 

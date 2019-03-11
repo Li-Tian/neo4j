@@ -5,6 +5,9 @@ import neo.log.notr.TR;
 
 /**
  * This class stores a 32 bit unsigned int, represented as a 4-byte little-endian byte array
+ *
+ * @notice Be careful when use Zero, can not modify the byte array, especially the deserialize
+ * method, it's better to create a object to deserialize.
  */
 public class UInt32 extends UIntBase implements Cloneable {
 
@@ -75,5 +78,14 @@ public class UInt32 extends UIntBase implements Cloneable {
         byte[] tmp = new byte[dataBytes.length];
         System.arraycopy(dataBytes, 0, tmp, 0, dataBytes.length);
         return TR.exit(new UInt32(tmp));
+    }
+
+    @Override
+    public String toString() {
+        TR.enter();
+        if (dataBytes == null || dataBytes.length <= 0) {
+            return TR.exit(null);
+        }
+        return TR.exit("0x" + BitConverter.toHexString(BitConverter.reverse(dataBytes)));
     }
 }

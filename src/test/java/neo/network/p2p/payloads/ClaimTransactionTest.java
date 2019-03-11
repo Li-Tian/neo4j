@@ -210,6 +210,8 @@ public class ClaimTransactionTest {
         // prepare data
         Snapshot snapshot = store.getSnapshot();
 
+        // add test
+
         ClaimTransaction claimTransaction = new ClaimTransaction() {{
             claims = new CoinReference[]{
                     new CoinReference() {{

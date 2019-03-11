@@ -108,7 +108,7 @@ public class RelayCacheTest {
 
         Iterator<IInventory> iterator = relayCache.iterator();
         int i = 0;
-        while (iterator.hasNext()){
+        while (iterator.hasNext()) {
             IInventory inventory = iterator.next();
             if (i == 0) {
                 Assert.assertEquals(t2, inventory);
@@ -178,7 +178,7 @@ public class RelayCacheTest {
         relayCache.remove(t1);
 
         Out<IInventory> out = new Out<>();
-        boolean success = relayCache.tryGet(u1,out);
+        boolean success = relayCache.tryGet(u1, out);
         Assert.assertFalse(success);
         Assert.assertNull(out.get());
 
@@ -246,6 +246,7 @@ public class RelayCacheTest {
         list.add(t2);
 
         relayCache.retainAll(list);
+//        TODO check failed when execute all test case.！！！
 //        Assert.assertEquals(2, relayCache.size());
 
         list.add(t3);
@@ -275,12 +276,12 @@ public class RelayCacheTest {
         relayCache.add(t4);
 
         Out<IInventory> out = new Out<>();
-        boolean success = relayCache.tryGet(u1,out);
+        boolean success = relayCache.tryGet(u1, out);
         Assert.assertFalse(success);
         Assert.assertNull(out.get());
 
         out = new Out<>();
-        success = relayCache.tryGet(u2,out);
+        success = relayCache.tryGet(u2, out);
         Assert.assertTrue(success);
         Assert.assertNotNull(out.get());
         Assert.assertEquals(t2, out.get());
