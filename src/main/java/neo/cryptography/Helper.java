@@ -65,7 +65,7 @@ public class Helper {
                 throw new IllegalArgumentException();
             }
             SecretKeySpec aesKey = new SecretKeySpec(key, "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.getExemptionMechanism();
             cipher.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(iv));
             return TR.exit(cipher.doFinal(data));
@@ -88,7 +88,7 @@ public class Helper {
                 throw new IllegalArgumentException();
             }
             SecretKeySpec aesKey = new SecretKeySpec(key, "AES");
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, aesKey, new IvParameterSpec(iv));
             return TR.exit(cipher.doFinal(data));
         } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException |
