@@ -10,7 +10,7 @@ import neo.csharp.Out;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * Base class for little-endian unsigned integers. Two classes inherit from this: UInt160 and
@@ -33,6 +33,9 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         TR.enter();
         if (value == null) {
             this.dataBytes = new byte[bytes];
+            for (int i = 0; i < bytes; i++) {
+                this.dataBytes[i] = 0;
+            }
             return;
         }
         if (value.length != bytes) {

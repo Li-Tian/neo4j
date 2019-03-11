@@ -22,7 +22,7 @@ public class TransactionStateTest {
         state.blockIndex = new Uint(10);
         state.transaction = new MinerTransaction();
 
-        Assert.assertEquals(14, state.size());
+        Assert.assertEquals(15, state.size());
     }
 
     @Test

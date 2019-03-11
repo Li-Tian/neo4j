@@ -11,9 +11,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import neo.Fixed8;
 import neo.ProtocolSettings;
@@ -21,21 +24,24 @@ import neo.UInt160;
 import neo.UInt256;
 import neo.cryptography.Crypto;
 import neo.csharp.BitConverter;
+import neo.csharp.Uint;
 import neo.csharp.Ushort;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
+import neo.ledger.AssetState;
 import neo.ledger.Blockchain;
 import neo.persistence.Snapshot;
 
 /**
- * 所有交易的父类
+ * The parent class of all the transactions
  */
 public abstract class Transaction implements IInventory {
 
     /**
-     * 交易最大存储字节数。如果收到的交易数超过这个限制将被直接抛弃。
+     * The maximum stored bytes of transaction. If the received transaction exceeds than this
+     * limitation will be abandoned
      */
     public static final int MaxTransactionSize = 102400;
 
@@ -46,32 +52,32 @@ public abstract class Transaction implements IInventory {
 
 
     /**
-     * 交易类型
+     * The type of transaction
      */
     public final TransactionType type;
 
     /**
-     * 交易版本号。在各个子类中定义。
+     * The version of transaction, which defined in the subclass
      */
     public byte version;
 
     /**
-     * 交易属性
+     * The attribute of transaction
      */
     public TransactionAttribute[] attributes = {};
 
     /**
-     * 交易输入
+     * The input of transaction
      */
     public CoinReference[] inputs = {};
 
     /**
-     * 交易输出
+     * The output of transaction
      */
     public TransactionOutput[] outputs = {};
 
     /**
-     * 验证脚本的数组
+     * The array of witness
      */
     public Witness[] witnesses = {};
 
@@ -81,7 +87,9 @@ public abstract class Transaction implements IInventory {
     private UInt256 hash = null;
 
     /**
-     * 创建交易
+     * Create a transaction
+     *
+     * @param type Transaction type
      */
     public Transaction(TransactionType type) {
         this.type = type;
@@ -89,7 +97,10 @@ public abstract class Transaction implements IInventory {
 
 
     /**
-     * 每字节手续费
+     * The <c>NetworkFee</c> for the transaction divided by its <c>Size</c>.<para>Note that this
+     * property must be used with care. Getting the value of this property multiple times will
+     * return the same result. The value of this property can only be obtained after the transaction
+     * has been completely built (no longer modified).</para>
      */
     public Fixed8 getFeePerByte() {
         if (feePerByte.equals(Fixed8.negate(Fixed8.SATOSHI))) {
@@ -99,7 +110,8 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取交易的hash值。是将交易信息数据做2次Sha256运算，这个过程被称为Hash256。
+     * Get the hash of transactions. Do twice sha256 operation  to get hash of transaction data.
+     * This process is called Hash256
      */
     @Override
     public UInt256 hash() {
@@ -110,7 +122,7 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取InventoryType。
+     * get InventoryType
      */
     @Override
     public InventoryType inventoryType() {
@@ -118,7 +130,7 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取见证人
+     * get witnesses
      */
     @Override
     public Witness[] getWitnesses() {
@@ -126,9 +138,7 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 设置见证人
-     *
-     * @param witnesses 见证人
+     * set witness
      */
     @Override
     public void setWitnesses(Witness[] witnesses) {
@@ -136,19 +146,22 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 存储大小。包括交易类型、版本号、属性、输入、输出和签名的总字节数。
+     * storage size. value=sizeof(TransactionType) + sizeof(byte) + Attributes.GetVarSize() +
+     * Inputs.GetVarSize() + Outputs.GetVarSize() + Witnesses.GetVarSize()
      */
     @Override
     public int size() {
+        // 6
         return TransactionType.BYTES + Byte.BYTES + BitConverter.getVarSize(attributes)
-                + BitConverter.getVarSize(inputs) + BitConverter.getVarSize(witnesses);
+                + BitConverter.getVarSize(inputs) + BitConverter.getVarSize(outputs)
+                + BitConverter.getVarSize(witnesses);
     }
 
 
     /**
-     * 序列化
+     * Serialize
      *
-     * @param writer 二进制输出器
+     * @param writer BinaryWriter
      */
     @Override
     public void serialize(BinaryWriter writer) {
@@ -157,18 +170,18 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 序列化扩展数据。因子类的不同而实现不同。
+     * Serialize exclusive data��Depending on the type of transaction.
      *
-     * @param writer 序列化的输出对象
+     * @param writer BinaryWriter
      */
     protected void serializeExclusiveData(BinaryWriter writer) {
 
     }
 
     /**
-     * 序列化待签名的数据
+     * Serialize unsigned data
      *
-     * @param writer 2进制输出器
+     * @param writer BinaryWriter
      */
     @Override
     public void serializeUnsigned(BinaryWriter writer) {
@@ -181,23 +194,21 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 从 byte数组中，解析出对应的交易
+     * Deserialize from byte array
      *
-     * @param value 待解析的字节数组
-     * @return Transaction
-     * @throws IllegalArgumentException 当解析的交易类型不存在时，抛出异常
+     * @param value init data
+     * @return Transaction object
      */
     public static Transaction deserializeFrom(byte[] value) {
         return deserializeFrom(value, 0);
     }
 
     /**
-     * 从 byte数组中，解析出对应的交易
+     * Deserialize from byte array
      *
-     * @param value  待解析的字节数组
-     * @param offset 偏移量，从offset位置开始解析
+     * @param value  init data
+     * @param offset offset
      * @return Transaction
-     * @throws IllegalArgumentException 当解析的交易类型不存在时，抛出异常
      */
     public static Transaction deserializeFrom(byte[] value, int offset) {
         byte[] sub = BitConverter.subBytes(value, offset, value.length - offset - 1);
@@ -206,11 +217,11 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 解析交易
+     * Deserialize from binary reader
      *
-     * @param reader 二进制输入流
-     * @return 返回对应类型的交易
-     * @throws neo.exception.FormatException 解析失败时，抛出该异常
+     * @param reader BinaryReader
+     * @return Transaction object
+     * @throws neo.exception.FormatException when parse failed, throw this exception.
      */
     public static Transaction deserializeFrom(BinaryReader reader) {
         TransactionType type = TransactionType.parse((byte) reader.readByte());
@@ -223,9 +234,9 @@ public abstract class Transaction implements IInventory {
 
 
     /**
-     * 反序列化
+     * Deserialize
      *
-     * @param reader 二进制读入器
+     * @param reader BinaryReader
      */
     @Override
     public void deserialize(BinaryReader reader) {
@@ -235,10 +246,10 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 反序列化待签名数据
+     * Deserialize unsigned data
      *
-     * @param reader 2进制读取器
-     * @throws FormatException 解析失败时，抛出该异常
+     * @param reader BinaryReader
+     * @throws FormatException when the transaction type not exist, throw this exception.
      */
     @Override
     public void deserializeUnsigned(BinaryReader reader) {
@@ -256,27 +267,24 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 反序列化扩展数据
+     * Deserialize exclusive data。Depending on the type of transaction.
      *
-     * @param reader 二进制输入流
+     * @param reader BinaryReader
      */
     protected void deserializeExclusiveData(BinaryReader reader) {
     }
 
     /**
-     * 反序列化。因子类的不同而实现不同。
+     * Handling deserialized transactions.Depending on the type of transaction.
      */
     protected void onDeserialized() {
     }
 
     /**
-     * 判断两笔交易是否相等
+     * Determine if it equal to another object;
      *
-     * @param obj 相比较的另一个交易
-     * @return <ul>
-     * <li>如果参数other是null则返回false</li>
-     * <li>如果参数 obj 是null或者不是Transaction则返回false，否则按照哈希值比较。</li>
-     * </ul>
+     * @param obj another object to be compared
+     * @return If another object is null,return false.Otherwise,compare hash
      */
     @Override
     public boolean equals(Object obj) {
@@ -289,7 +297,7 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取交易哈希的hash code
+     * Get hash code
      *
      * @return hash code
      */
@@ -299,25 +307,26 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取哈希数据
+     * get hash data
      *
-     * @return 哈希数据
+     * @return hash data
      */
     @Override
-    public byte[] GetMessage() {
+    public byte[] getMessage() {
         return this.getHashData();
     }
 
     /**
-     * 是否是低优先级交易。若是claim交易或网络费用低于阈值时，则为低优先级交易。<br/>优先级阈值在配置文件 protocol.json
-     * 中指定，如果不指定，则使用默认值(0.001GAS)。
+     * Is it a low priority transaction.If network free is less than low priority threshold,it is a
+     * low priority transaction. Low priority threshold is set in protocol.json.If not
+     * config，default value is 0.001GAS。
      */
     public boolean isLowPriority() {
         return getNetworkFee().compareTo(ProtocolSettings.Default.lowPriorityThreshold) < 0;
     }
 
     /**
-     * 系统手续费。因交易种类不同而不同。
+     * SystemFee. Depending on the type of transaction.
      */
     public Fixed8 getSystemFee() {
         Fixed8 fee = ProtocolSettings.Default.systemFee.get(type);
@@ -325,7 +334,8 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 网络手续费。值为交易的Input中的GAS总和减去Output中的GAS总和，再减去系统手续费。
+     * Network Fee. Its value  = the sum of the gas in input of transaction  - the sum of the gas in
+     * output of transaction -  system free.
      */
     public Fixed8 getNetworkFee() {
         Fixed8 amountIn = Fixed8.ZERO;
@@ -353,14 +363,30 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取当前交易所有输入(input)与其所指向的之前某个交易的一个输出(output)之间的只读关系映射(Dictionary)。<br/>
-     * 这个关系映射的每个 key 都是当前交易的
-     * input，而 value 则是之前某个交易的 output。<br/>
-     * 如果当前交易的某个 input 所指向的 output 在过去的交易中不存在，那么返回 null。
+     * Get all the TransactionOutputs referenced by inputs.
+     *
+     * @return the map CoinReference -> TransactionOutput. it returns null, if the
+     * TransactionOutputs pointed by inputs are not exist.
      */
     public HashMap<CoinReference, TransactionOutput> getReferences() {
         if (references == null) {
-            references = new HashMap<>();
+            HashMap<CoinReference, TransactionOutput> map = new HashMap<>();
+            for (Map.Entry<UInt256, List<CoinReference>> entry : Arrays.stream(inputs)
+                    .collect(Collectors.groupingBy(p -> p.prevHash))
+                    .entrySet()) {
+                UInt256 key = entry.getKey();
+                List<CoinReference> group = entry.getValue();
+
+                Transaction tx = Blockchain.singleton().getStore().getTransaction(key);
+                if (tx == null) {
+                    return null;
+                }
+                for (CoinReference input : group) {
+                    map.put(input, tx.outputs[input.prevIndex.intValue()]);
+                }
+            }
+            references = map;
+
             // C# code
             //            foreach (var group in Inputs.GroupBy(p => p.PrevHash))
             //            {
@@ -381,15 +407,12 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取交易的 input 与 output 的比较结果。
+     * Get the comparison of the input and output of the transaction, which the transactions with
+     * inputs' asset not equal with the outputs' asset.
      *
-     * @return <p>
-     * 如果当前交易的某个 input 所指向的 output 在过去的交易中不存在，那么返回 null。 <br/>
-     * 否则按照资产种类归档，返回每种资产的所有 input
-     * 之和减去对应资产的所有 output 之和。<br/>
-     * 归档以后，资产比较结果为 0 的资产会从归档列表中除去。<br/>
-     * 如果所有的资产比较结果都被除去，则返回一个长度为0的IEnumerable对象。
-     * </p>
+     * @return 1. it returns null, when the TransactionOutput referenced by inputs are not exist.
+     * <br/> 2. it returns the result of transactions which the inputs' asset not equal with the
+     * outputs' asset.
      */
     public Collection<TransactionResult> getTransactionResults() {
         if (getReferences() == null) return null;
@@ -438,101 +461,226 @@ public abstract class Transaction implements IInventory {
 
 
     /**
-     * 通过数据库快照验证交易
-     * @param snapshot 数据库快照
-     * @return 验证结果
+     * Verify transaction by database snapshot
+     *
+     * @param snapshot database snapshot
+     * @return Verification result
      */
     public boolean verify(Snapshot snapshot) {
         return verify(snapshot, Collections.emptyList());
     }
 
     /**
-     * 校验交易
-     * @param snapshot  数据库快照
-     * @param mempool 内存池交易
-     * @return
-     * <ul>
-     *     <li>1. 交易数据大小大于最大交易数据大小时，则返回false</li>
-     *     <li>2. 若Input存在重复，则返回false</li>
-     *     <li>3. 若内存池交易包含Input交易时，返回false</li>
-     *     <li>4. 若Input是已经花费的交易，则返回false</li>
-     *     <li>5. 若转账资产不存在，则返回false</li>
-     *     <li>6. 若资产是非NEO或非GAS时，且资产过期时，返回false</li>
-     *     <li>7. 若转账金额不能整除对应资产的最小精度时，返回false</li>
-     *     <li>8. 检查金额关系:
-     *      <ul>
-     *          <li>8.1 若当前交易的某个 input 所指向的 output 在过去的交易中不存在时，返回false</li>
-     *          <li>8.2 若 Input.Asset &gt; Output.Asset 时，且资金种类大于一种时，返回false</li>
-     *          <li>8.3 若 Input.Asset &gt; Output.Asset 时，资金种类不是GAS时，返回false</li>
-     *          <li>8.4 若 交易手续费 大于 （Input.GAS - output.GAS） 时， 返回false</li>
-     *          <li>8.5 若 Input.Asset &lt; Output.Asset 时：
-     *                <ul>
-     *                    <li><8.5.1 若交易类型是 MinerTransaction 或 ClaimTransaction，且资产不是 GAS 时，返回false/li>
-     *                    <li>8.5.2 若交易类型时 IssueTransaction时，且资产是GAS时，返回false</li>
-     *                    <li>8.5.3 若是其他交易类型，且存在增发资产时，返回false</li>
-     *                </ul>
-     *          </li>
-     *      </ul>
-     *     </li>
-     *     <li>9. 若交易属性，包含类型是 TransactionAttributeUsage.ECDH02 或 TransactionAttributeUsage.ECDH03 时，返回false </li>
-     *     <li>10.若 VerifyReceivingScripts 验证返回false时（VerificationR触发器验证），返回false。(目前，VerifyReceivingScripts 返回永真）</li>
-     *     <li>11.若 VerifyWitnesses 验证返回false时（对验证脚本进行验证），则返回false</li>
-     * </ul>
+     * Verify transaction
      *
+     * @param snapshot database snapshot
+     * @param mempool  transactions in mempool
+     * @return <ul>
+     * <li>1. If the size of transaction is larger than maximum transaction data size,return
+     * false.</li>
+     * <li>2. If inputs of transaction duplication exists,return false.</li>
+     * <li>3. If a transaction contains the input exists in mempool, return false</li>
+     * <li>4. If input is a spent transaction output,return false</li>
+     * <li>5. If asset does not exist,return false</li>
+     * <li>6. If asset is not NEO/GAS and is expired,return false</li>
+     * <li>7. If amount can not be divided by asset precision,return false.</li>
+     * <li>8. Check amount relationship:
+     * <ul>
+     * <li>8.1 If the output pointed to by an input of the current transaction does not exist,
+     * return false</li>
+     * <li>8.2 If Input.Asset &gt; Output.Asset and the number of asset type is more than
+     * one,return false</li>
+     * <li>8.3 If Input.Asset &gt; Output.Asset and asset type is not Gas,return false</li>
+     * <li>8.4 If system fee is larger than Input.GAS - output.GAS,return false</li>
+     * <li>8.5 When Input.Asset &lt; Output.Asset:
+     * <ul>
+     * <li>8.5.1 If transaction type is MinerTransaction or ClaimTransaction and asset type is not
+     * GAS,return false</li>
+     * <li>8.5.2 If transaction type is IssueTransaction and asset type is GAS,return false</li>
+     * <li>8.5.3 If it is other type transaction and exist additional issuances,return false</li>
+     * </ul>
+     * </li>
+     * </ul>
+     * </li>
+     * <li>9. If transaction attribute contains TransactionAttributeUsage.ECDH02 or
+     * TransactionAttributeUsage.ECDH03,return false</li>
+     * <li>10.If VerifyReceivingScripts() return false(VerificationR trigger return false
+     * (Currently VerifyReceivingScripts() default return true</li>
+     * <li>11.If VerifyWitnesses() return false Verify witness return false.</li>
+     * </ul>
      */
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
-        //TODO waiting for db
-//        if (Size > MaxTransactionSize) return false;
-//        for (int i = 1; i < Inputs.Length; i++)
-//            for (int j = 0; j < i; j++)
-//                if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
-//                    return false;
-//        if (mempool.Where(p => p != this).SelectMany(p => p.Inputs).Intersect(Inputs).Count() > 0)
-//        return false;
-//        if (snapshot.IsDoubleSpend(this))
-//            return false;
-//        foreach (var group in Outputs.GroupBy(p => p.AssetId))
-//        {
-//            AssetState asset = snapshot.Assets.TryGet(group.Key);
-//            if (asset == null) return false;
-//            if (asset.Expiration <= snapshot.Height + 1 && asset.AssetType != AssetType.GoverningToken && asset.AssetType != AssetType.UtilityToken)
-//                return false;
-//            foreach (TransactionOutput output in group)
-//            if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
-//                return false;
-//        }
-//        TransactionResult[] results = GetTransactionResults()?.ToArray();
-//        if (results == null) return false;
-//        TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
-//        if (results_destroy.Length > 1) return false;
-//        if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.UtilityToken.Hash)
-//            return false;
-//        if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
-//            return false;
-//        TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
-//        switch (Type)
-//        {
-//            // TODO 移植到 java 时仔细检查这段逻辑是否正确
-//            case TransactionType.MinerTransaction:
-//            case TransactionType.ClaimTransaction:
-//                if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
-//                return false;
-//            break;
-//            case TransactionType.IssueTransaction:
-//                if (results_issue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
-//                return false;
-//            break;
-//            default:
-//                if (results_issue.Length > 0)
-//                    return false;
-//                break;
-//        }
-//        if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
-//        return false;
-//        if (!VerifyReceivingScripts()) return false;
-//        return this.VerifyWitnesses(snapshot);
+        // 1. check size
+        if (size() > MaxTransactionSize) {
+            return false;
+        }
+        // 2. check this tx's whether repeat input
+        for (int i = 1; i < inputs.length; i++) {
+            for (int j = 0; j < i; j++) {
+                if (inputs[i].prevHash == inputs[j].prevHash
+                        && inputs[i].prevIndex == inputs[j].prevIndex) {
+                    return false;
+                }
+            }
+        }
 
-        return true;
+        // 3. check whether repeat input in mempool txs
+        HashSet<CoinReference> inputSet = new HashSet<>(Arrays.asList(inputs));
+        boolean isRepeatInput = mempool.stream()
+                .filter(p -> p != this)
+                .map(p -> p.inputs)
+                .anyMatch(others -> {
+                    for (int i = 0; i < others.length; i++) {
+                        if (inputSet.contains(others[i])) {
+                            return true;
+                        }
+                    }
+                    return false;
+                });
+        if (isRepeatInput) {
+            return false;
+        }
+
+        // 4. double spend check
+        if (snapshot.isDoubleSpend(this)) {
+            return false;
+        }
+
+        // 5. check asset
+        for (Map.Entry<UInt256, List<TransactionOutput>> entry : Arrays.stream(outputs)
+                .collect(Collectors.groupingBy(p -> p.assetId))
+                .entrySet()) {
+            UInt256 assetId = entry.getKey();
+            List<TransactionOutput> group = entry.getValue();
+
+            AssetState asset = snapshot.getAssets().tryGet(assetId);
+            if (asset == null) {
+                return false;
+            }
+            // check asset expiration
+            if (asset.expiration.compareTo(snapshot.getHeight().add(new Uint(1))) <= 0
+                    && asset.assetType != AssetType.GoverningToken
+                    && asset.assetType != AssetType.UtilityToken) {
+                return false;
+            }
+            // check value precision
+            for (TransactionOutput output : group) {
+                if (output.value.getData() % Math.pow(10, 8 - asset.precision) != 0) {
+                    return false;
+                }
+            }
+        }
+
+        Collection<TransactionResult> results = getTransactionResults();
+        // must one result is not equal zero, as the gas asset, which inputs' gas > outputs' gas
+        if (results == null) {
+            return false;
+        }
+
+        List<TransactionResult> results_destroy = results.stream()
+                .filter(result -> Fixed8.bigger(result.amount, Fixed8.ZERO))
+                .collect(Collectors.toList());
+        if (results_destroy.size() > 1) { // only gas global asset can be destroyed.
+            return false;
+        }
+        if (results_destroy.size() == 1
+                && !results_destroy.get(0).assetId.equals(Blockchain.UtilityToken.hash())) {
+            return false; // must be gas asset
+        }
+        // check system fee, systemfee must less than the amount of destroyed gas
+        Fixed8 system_fee = getSystemFee();
+        if (system_fee.compareTo(Fixed8.ZERO) > 0
+                && (results_destroy.size() == 0
+                || results_destroy.get(0).amount.compareTo(system_fee) < 0)) {
+            return false;
+        }
+
+        // check issue asset:
+        Stream<TransactionResult> results_issue = results.stream()
+                .filter(p -> p.amount.compareTo(Fixed8.ZERO) > 0);
+        switch (type) {
+            case MinerTransaction:
+            case ClaimTransaction:
+                // only gas can be claimed or as a bonus in minerTx
+                if (results_issue.anyMatch(p -> !p.assetId.equals(Blockchain.UtilityToken.hash()))) {
+                    return false;
+                }
+                break;
+            case IssueTransaction:
+                // Gas asset can not be issue in IssueTx
+                if (results_issue.anyMatch(p -> p.assetId.equals(Blockchain.UtilityToken.hash()))) {
+                    return false;
+                }
+                break;
+            default:
+                // otherwise cannot issue global asset
+                if (results_issue.count() > 0) {
+                    return false;
+                }
+                break;
+        }
+
+        // check attrs, can only have one of ECDH02, ECDH03
+        if (Arrays.stream(attributes)
+                .filter(attr -> attr.usage == TransactionAttributeUsage.ECDH02
+                        || attr.usage == TransactionAttributeUsage.ECDH03)
+                .count() > 1) {
+            return false;
+        }
+
+        // check witness and scripts
+        if (!verifyReceivingScripts()) return false;
+        return IVerifiable.verifyWitnesses(this, snapshot);
+
+        // C# code:
+        //        if (Size > MaxTransactionSize) return false;
+        //        for (int i = 1; i < Inputs.Length; i++)
+        //            for (int j = 0; j < i; j++)
+        //                if (Inputs[i].PrevHash == Inputs[j].PrevHash && Inputs[i].PrevIndex == Inputs[j].PrevIndex)
+        //                    return false;
+        //        if (mempool.Where(p => p != this).SelectMany(p => p.Inputs).Intersect(Inputs).Count() > 0)
+        //        return false;
+        //        if (snapshot.IsDoubleSpend(this))
+        //            return false;
+        //        foreach (var group in Outputs.GroupBy(p => p.AssetId))
+        //        {
+        //            AssetState asset = snapshot.Assets.TryGet(group.Key);
+        //            if (asset == null) return false;
+        //            if (asset.Expiration <= snapshot.Height + 1 && asset.AssetType != AssetType.GoverningToken && asset.AssetType != AssetType.UtilityToken)
+        //                return false;
+        //            foreach (TransactionOutput output in group)
+        //            if (output.Value.GetData() % (long)Math.Pow(10, 8 - asset.Precision) != 0)
+        //                return false;
+        //        }
+        //        TransactionResult[] results = GetTransactionResults()?.ToArray();
+        //        if (results == null) return false;
+        //        TransactionResult[] results_destroy = results.Where(p => p.Amount > Fixed8.Zero).ToArray();
+        //        if (results_destroy.Length > 1) return false;
+        //        if (results_destroy.Length == 1 && results_destroy[0].AssetId != Blockchain.UtilityToken.Hash)
+        //            return false;
+        //        if (SystemFee > Fixed8.Zero && (results_destroy.Length == 0 || results_destroy[0].Amount < SystemFee))
+        //            return false;
+        //        TransactionResult[] results_issue = results.Where(p => p.Amount < Fixed8.Zero).ToArray();
+        //        switch (Type)
+        //        {
+        //            case TransactionType.MinerTransaction:
+        //            case TransactionType.ClaimTransaction:
+        //                if (results_issue.Any(p => p.AssetId != Blockchain.UtilityToken.Hash))
+        //                return false;
+        //            break;
+        //            case TransactionType.IssueTransaction:
+        //                if (results_issue.Any(p => p.AssetId == Blockchain.UtilityToken.Hash))
+        //                return false;
+        //            break;
+        //            default:
+        //                if (results_issue.Length > 0)
+        //                    return false;
+        //                break;
+        //        }
+        //        if (Attributes.Count(p => p.Usage == TransactionAttributeUsage.ECDH02 || p.Usage == TransactionAttributeUsage.ECDH03) > 1)
+        //        return false;
+        //        if (!VerifyReceivingScripts()) return false;
+        //        return this.VerifyWitnesses(snapshot);
     }
 
     private boolean verifyReceivingScripts() {
@@ -561,26 +709,35 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取验证脚本hash
-     * @param snapshot 数据库快照
-     * @return 包含：
+     * get script hash for verifying
+     *
+     * @param snapshot database snapshot
+     * @return contains：
      * <ul>
-     *     <li>1. 交易输入所指向的收款人地址脚本hash，</li>
-     *     <li>2. 交易属性为script时，包含该Data</li>
-     *     <li>3. 若资产类型包含AssetType.DutyFlag时，包含收款人地址脚本hash</li>
+     * <li>1. The payee address script hash pointed to by the transaction input</li>
+     * <li>2. If attribute of transaction is script, it contains data of attribute</li>
+     * <li>3. If asset type contains AssetType.DutyFlag, it contains address script hash of
+     * payee.</li>
      * </ul>
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
         if (getReferences() == null) throw new InvalidOperationException();
 
-        Set<UInt160> set1 = Arrays.stream(inputs).map(p -> references.get(p).scriptHash).collect(Collectors.toSet());
-        Set<UInt160> set2 = Arrays.stream(attributes).filter(p -> p.usage == TransactionAttributeUsage.Script).map(p -> new UInt160(p.data)).collect(Collectors.toSet());
+        Set<UInt160> set1 = Arrays.stream(inputs)
+                .map(p -> references.get(p).scriptHash)
+                .collect(Collectors.toSet());
+
+        Set<UInt160> set2 = Arrays.stream(attributes)
+                .filter(p -> p.usage == TransactionAttributeUsage.Script)
+                .map(p -> new UInt160(p.data))
+                .collect(Collectors.toSet());
+
         set1.addAll(set2);
 
-        //  Arrays.stream(outputs).collect(Collectors.groupingBy(p -> p.assetId)).forEach(p -> sna);
-
-        UInt160[] results = (UInt160[]) set1.toArray();
+        // C# code:  Arrays.stream(outputs).collect(Collectors.groupingBy(p -> p.assetId)).forEach(p -> sna);
+        UInt160[] results = new UInt160[set1.size()];
+        set1.toArray(results);
         Arrays.sort(results);
         return results;
 
@@ -599,9 +756,9 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 获取指定对象序列化后的数据
+     * get the serialized data for the specified object
      *
-     * @return 序列化后的原始数据
+     * @return serialized data
      */
     @Override
     public byte[] getHashData() {
@@ -613,7 +770,7 @@ public abstract class Transaction implements IInventory {
     }
 
     /**
-     * 转成json对象
+     * Convert to JObject object
      */
     public JsonObject toJson() {
         JsonObject json = new JsonObject();

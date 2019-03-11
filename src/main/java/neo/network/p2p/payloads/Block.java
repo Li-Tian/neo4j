@@ -19,19 +19,19 @@ import neo.ledger.Blockchain;
 import neo.ledger.TrimmedBlock;
 
 /**
- * 区块数据类，BlockBase的子类
+ * Block data class, a subclass of BlockBase
  */
 public class Block extends BlockBase implements IInventory {
 
     /**
-     * 交易集合
+     * Array of transactions
      */
     public Transaction[] transactions;
 
     private Header header = null;
 
     /**
-     * 消息传输Inventory种类
+     * message inventory type
      */
     @Override
     public InventoryType inventoryType() {
@@ -39,7 +39,7 @@ public class Block extends BlockBase implements IInventory {
     }
 
     /**
-     * 区块头
+     * block header
      */
     public Header getHeader() {
         if (header == null) {
@@ -56,18 +56,20 @@ public class Block extends BlockBase implements IInventory {
     }
 
     /**
-     * 区块大小
+     * the size of block
      */
     @Override
     public int size() {
+        // 111 + 1 + txs =>
         return super.size() + BitConverter.getVarSize(transactions);
     }
 
     /**
-     * 计算一批交易的网络手续费, network_fee = input.GAS - output.GAS - input.systemfee
+     * Calculate the network fee for a batch of transactions. network_fee = input.GAS - output.GAS -
+     * input.systemfee
      *
-     * @param transactions 待计算的交易列表
-     * @return 交易的网络手续费
+     * @param transactions transaction list
+     * @return network fee
      */
     public static Fixed8 calculateNetFee(Collection<Transaction> transactions) {
         //        Transaction[] ts = transactions.Where(p = > p.Type != TransactionType.MinerTransaction && p.Type != TransactionType.ClaimTransaction).
@@ -100,17 +102,15 @@ public class Block extends BlockBase implements IInventory {
 
 
     /**
-     * 反序列化
+     * Deserialize method
      *
-     * @param reader 二进制读入器
-     * @throws FormatException 如果出现以下情况之一，会抛出异常：
-     *                         <ul>
-     *                         <li>1）交易数量为0时</li>
-     *                         <li>2）第一笔交易不是挖矿交易；</li>
-     *                         <li>3）除第一笔交易外，其他交易是挖矿交易；</li>
-     *                         <li>4）添加交易Hash已存在；</li>
-     *                         <li>5）梅克尔根和计算出来的值不相等。</li>
-     *                         </ul>
+     * @param reader BinaryReader
+     * @throws FormatException An exception will be thrown if one of the following conditions
+     *                         occurs:<br/> 1) When the number of transactions is 0,<br/> 2) The
+     *                         first transaction is not a miner transaction;<br/>3) Except for the
+     *                         first transaction, other transactions are miner transactions;<br/> 4)
+     *                         The added transaction hash already exists;<br/>5) Merkel root and the
+     *                         calculated values ​​are not equal.
      */
     @Override
     public void deserialize(BinaryReader reader) {
@@ -139,13 +139,13 @@ public class Block extends BlockBase implements IInventory {
             hashArray[i] = transactions[i].hash();
         }
 
-        if (MerkleTree.computeRoot(hashArray) != merkleRoot) {
+        if (!MerkleTree.computeRoot(hashArray).equals(merkleRoot)) {
             throw new FormatException();
         }
     }
 
     /**
-     * 重新构建梅克尔树
+     * Rebuild Merkle root
      */
     public void rebuildMerkleRoot() {
         UInt256[] hashArray = new UInt256[transactions.length];
@@ -156,21 +156,21 @@ public class Block extends BlockBase implements IInventory {
     }
 
     /**
-     * 序列化
+     * Serialize
      *
-     * <p>序列化字段</p>
+     * <p>fields</p>
      * <ul>
-     * <li>Version: 状态版本号</li>
-     * <li>PrevHash: 上一个区块hash</li>
-     * <li>MerkleRoot: 梅克尔根</li>
-     * <li>Timestamp: 时间戳</li>
-     * <li>Index: 区块高度</li>
-     * <li>ConsensusData: 共识数据，默认为block nonce。议长出块时生成的一个伪随机数。</li>
-     * <li>NextConsensus: 下一个区块共识地址</li>
-     * <li>Transactions: 交易集合</li>
+     * <li>Version: Version</li>
+     * <li>PrevHash: Previous block hash</li>
+     * <li>MerkleRoot: Merkle root</li>
+     * <li>Timestamp: Timestamps</li>
+     * <li>Index: Block height</li>
+     * <li>ConsensusData: Consensus data，default block nonce</li>
+     * <li>NextConsensus: Next block consensus address</li>
+     * <li>Transactions: Transaction colection</li>
      * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer BinaryWriter
      */
     @Override
     public void serialize(BinaryWriter writer) {
@@ -179,7 +179,7 @@ public class Block extends BlockBase implements IInventory {
     }
 
     /**
-     * 转成json对象
+     * Convert to JObject object
      */
     @Override
     public JsonObject toJson() {
@@ -191,10 +191,10 @@ public class Block extends BlockBase implements IInventory {
     }
 
     /**
-     * 判断两个区块是否相等
+     * Determine if the block is equal to another object
      *
-     * @param obj 待比较区块
-     * @return 若待比较区块为null，直接返回false。否则进行引用和hash值比较
+     * @param obj another object
+     * @return Return true if it is equal, false otherwise
      */
     @Override
     public boolean equals(Object obj) {
@@ -209,9 +209,9 @@ public class Block extends BlockBase implements IInventory {
     }
 
     /**
-     * 获取区块hash code
+     * Get block hash code
      *
-     * @return 区块hash code
+     * @return block hash code
      */
     @Override
     public int hashCode() {
@@ -219,9 +219,9 @@ public class Block extends BlockBase implements IInventory {
     }
 
     /**
-     * 转成简化版的block。抛弃交易，仅保留交易的哈希值。
+     * Convert to trimmed block. Discard the transaction, leaving only the hash of the transaction
      *
-     * @return 简化版的block
+     * @return TrimmedBlock object
      */
     public TrimmedBlock trim() {
         TrimmedBlock trimmedBlock = new TrimmedBlock();

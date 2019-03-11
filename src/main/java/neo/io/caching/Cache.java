@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import neo.csharp.Out;
 import neo.exception.KeyNotFoundException;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public abstract class Cache<TKey, TValue> implements Collection<TValue> {
 

@@ -74,7 +74,7 @@ public class Blockchain extends UntypedActor {
             name = "[{\"lang\":\"zh-CN\",\"name\":\"小蚁股\"},{\"lang\":\"en\",\"name\":\"AntShare\"}]";
             amount = Fixed8.fromDecimal(new BigDecimal(100000000));
             precision = 0;
-            owner = new neo.cryptography.ecc.ECPoint(ECC.Secp256r1.getCurve().getInfinity());
+            owner = new ECPoint(ECC.Secp256r1.getCurve().getInfinity());
             admin = UInt160.parseToScriptHash(new byte[]{OpCode.PUSHT.getCode()});
             attributes = new TransactionAttribute[0];
             inputs = new CoinReference[0];
@@ -101,6 +101,8 @@ public class Blockchain extends UntypedActor {
         }
     };
 
+    private Store store;
+
     /**
      * Constructor which create a core blockchain
      *
@@ -109,6 +111,15 @@ public class Blockchain extends UntypedActor {
      */
     public Blockchain(NeoSystem system, Store store) {
         singleton = this;
+        this.store = store;
+    }
+
+
+    /**
+     * Get store
+     */
+    public Store getStore() {
+        return store;
     }
 
     /**

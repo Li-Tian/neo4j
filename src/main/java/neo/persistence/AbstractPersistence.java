@@ -231,9 +231,13 @@ public abstract class AbstractPersistence implements IPersistence {
      * input exists and is not spent, otherwise,return true.
      */
     public boolean isDoubleSpend(Transaction tx) {
-        if (tx.inputs.length == 0) return false;
+        if (tx.inputs.length == 0) {
+            return false;
+        }
+
         Map<UInt256, List<CoinReference>> groupMap = Arrays.stream(tx.inputs)
                 .collect(Collectors.groupingBy(p -> p.prevHash));
+
         for (Map.Entry<UInt256, List<CoinReference>> entry : groupMap.entrySet()) {
             UnspentCoinState state = getUnspentCoins().tryGet(entry.getKey());
             if (state == null) {

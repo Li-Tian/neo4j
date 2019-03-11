@@ -17,27 +17,27 @@ import neo.smartcontract.Contract;
 import neo.cryptography.ecc.ECPoint;
 
 /**
- * 注册验证人【已弃用，请使用StateTransaction】
+ * Registered Verifier【Abandoned, please use StateTransaction】
  */
 @Deprecated
 public class EnrollmentTransaction extends Transaction {
 
     /**
-     * 申请人公钥地址
+     * Applicant public key
      */
     public ECPoint publicKey;
 
     private UInt160 scriptHash = null;
 
     /**
-     * 构造函数：创建注册验证人交易
+     * Constructor：create a EnrollmentTransaction object
      */
     public EnrollmentTransaction() {
         super(TransactionType.EnrollmentTransaction);
     }
 
     /**
-     * 获取脚本hash
+     * get scripthash
      */
     public UInt160 getScriptHash() {
         if (scriptHash == null) {
@@ -47,7 +47,7 @@ public class EnrollmentTransaction extends Transaction {
     }
 
     /**
-     * 存储大小
+     * size for storage
      */
     @Override
     public int size() {
@@ -55,10 +55,10 @@ public class EnrollmentTransaction extends Transaction {
     }
 
     /**
-     * 反序列化，读取公钥地址
+     * Deserialize method，read publickey from binary reader
      *
-     * @param reader 二进制输入流
-     * @throws FormatException 如果交易版本号不等于0
+     * @param reader BinaryReader
+     * @throws FormatException the transaction version number is not 0
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
@@ -67,15 +67,17 @@ public class EnrollmentTransaction extends Transaction {
     }
 
     /**
-     * 获取需要签名的交易的hash。包括交易输入的地址和申请人的公钥地址。
+     * Get the hash of the transaction that needs to be signed. This includes transaction input
+     * address and the applicant's public key.
      *
-     * @param snapshot 数据库快照
-     * @return 包括交易输入的地址和申请人的公钥地址。
+     * @param snapshot snapshot
+     * @return This includes transaction input address and the applicant's public key.
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
         // C# code
-        // base.GetScriptHashesForVerifying(snapshot).Union(new UInt160[] { ScriptHash }).OrderBy(p => p).ToArray();
+        // base.GetScriptHashesForVerifying(snapshot).Union(new UInt160[] { ScriptHash })
+        // .OrderBy(p => p).ToArray();
         UInt160 ownerHash = getScriptHash();
         UInt160[] hashes = super.getScriptHashesForVerifying(snapshot);
 
@@ -87,13 +89,13 @@ public class EnrollmentTransaction extends Transaction {
     }
 
     /**
-     * 序列化
-     * <p>序列化字段</p>
+     * Serialize
+     * <p>fields:</p>
      * <ul>
-     * <li>PublicKey: 申请人公钥地址</li>
+     * <li>PublicKey: applicant's public key</li>
      * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer BinaryWriter
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
@@ -101,9 +103,9 @@ public class EnrollmentTransaction extends Transaction {
     }
 
     /**
-     * 转成json对象
+     * applicant's public key
      *
-     * @return json对象
+     * @return JObject object
      */
     @Override
     public JsonObject toJson() {
@@ -113,11 +115,11 @@ public class EnrollmentTransaction extends Transaction {
     }
 
     /**
-     * 校验该交易。已弃用该交易。拒绝新的交易。所以固定返回false
+     * Verify the transaction. This class has been deprecated.Return false by default.
      *
-     * @param snapshot 数据库快照
-     * @param mempool  内存池交易
-     * @return 返回false，已弃用该交易。拒绝新的交易。
+     * @param snapshot database snapshot
+     * @param mempool  mempool
+     * @return return false by default.
      */
     @Override
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {

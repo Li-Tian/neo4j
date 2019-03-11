@@ -9,7 +9,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 
 import neo.exception.FormatException;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public class Fixed8 implements Comparable<Fixed8>, ISerializable {
     /// <summary>

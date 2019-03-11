@@ -3,7 +3,7 @@ package neo;
 import neo.cryptography.Base58;
 import neo.cryptography.Crypto;
 import neo.csharp.BitConverter;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * This class stores a 160 bit unsigned int, represented as a 20-byte little-endian byte array

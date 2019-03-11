@@ -88,7 +88,7 @@ public class TransactionDemo implements IInventory, ICloneable<TransactionDemo> 
     }
 
     @Override
-    public byte[] GetMessage() {
+    public byte[] getMessage() {
         return new byte[0];
     }
 }

@@ -1,7 +1,7 @@
 package neo.io.wrappers;
 
 import neo.csharp.io.ISerializable;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public abstract class SerializableWrapper<T> implements ISerializable {
 

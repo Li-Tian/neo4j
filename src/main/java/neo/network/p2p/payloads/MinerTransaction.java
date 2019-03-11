@@ -10,7 +10,8 @@ import neo.exception.FormatException;
 import neo.ledger.Blockchain;
 
 /**
- * 挖矿交易，奖励给出块的共识节点，同时，作为每个区块的第一笔交易
+ * Miner Transaction，It is a reward for giving speaker consensus node. At the same time, as the
+ * first transaction for each block.
  */
 public class MinerTransaction extends Transaction {
 
@@ -20,19 +21,19 @@ public class MinerTransaction extends Transaction {
      */
 
     /**
-     * 交易nonce 随机值
+     * transaction nonce
      */
     public Uint nonce = Uint.ZERO;
 
     /**
-     * 构造函数
+     * make a miner transaction
      */
     public MinerTransaction() {
         super(TransactionType.MinerTransaction);
     }
 
     /**
-     * 存储大小
+     * storage size
      */
     @Override
     public int size() {
@@ -40,7 +41,7 @@ public class MinerTransaction extends Transaction {
     }
 
     /**
-     * 交易网络手续费，默认为0
+     * NetworkFee，default value is 0
      */
     @Override
     public Fixed8 getNetworkFee() {
@@ -48,9 +49,9 @@ public class MinerTransaction extends Transaction {
     }
 
     /**
-     * 反序列化，读取nonce值
+     * Deserialize exclusive data，read nonce
      *
-     * @param reader 二进制输入流
+     * @param reader BinaryReader
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
@@ -59,9 +60,9 @@ public class MinerTransaction extends Transaction {
     }
 
     /**
-     * 交易反序列化后处理
+     * Handling deserialized transactions
      *
-     * @throws FormatException 若挖矿交易的输入不为空，或者资产不为GAS时，则抛出该异常
+     * @throws FormatException If input of miner transaction is not null or asset is not gass.
      */
     @Override
     protected void onDeserialized() {
@@ -69,16 +70,19 @@ public class MinerTransaction extends Transaction {
         if (inputs.length != 0)
             throw new FormatException();
         for (TransactionOutput output : outputs) {
-            if (output.assetId != Blockchain.UtilityToken.hash()) {
+            if (!output.assetId.equals(Blockchain.UtilityToken.hash())) {
                 throw new FormatException();
             }
         }
     }
 
     /**
-     * 序列化出data外的字段
+     * Serialize exclusive data, the following is the fields:
+     * <ul>
+     * <li>Nonce: transaction nonce</li>
+     * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer BinaryWriter
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
@@ -86,9 +90,9 @@ public class MinerTransaction extends Transaction {
     }
 
     /**
-     * 转成json对象
+     * Convert to JObject object
      *
-     * @return json对象
+     * @return a JObject object
      */
     @Override
     public JsonObject toJson() {
