@@ -1,5 +1,8 @@
 package neo.cryptography;
 
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -11,6 +14,7 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -123,19 +127,15 @@ public class Helper {
      *
      * @param data 待处理的消息摘要数据
      * @return byte[] 消息摘要
-     * @date:2018/10/11
+     * @date:2019/03/11
      */
     public static byte[] ripeMD160(byte[] data) {
-        //初始化MessageDigest
-        try {
-            TR.enter();
-            MessageDigest md = MessageDigest.getInstance("RipeMD160");
-            //执行消息摘要
-            return TR.exit(md.digest(data));
-        } catch (NoSuchAlgorithmException e) {
-            TR.error(e);
-            throw new RuntimeException(e);
-        }
+        TR.enter();
+        RIPEMD160Digest processsor = new RIPEMD160Digest();
+        processsor.update(data, 0, data.length);
+        byte[] output = new byte[processsor.getDigestSize()];
+        processsor.doFinal(output, 0);
+        return TR.exit(output);
     }
 
     public static Uint murmur32(byte[] value, Uint seed) {

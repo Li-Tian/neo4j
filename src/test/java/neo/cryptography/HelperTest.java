@@ -13,7 +13,7 @@ public class HelperTest {
         byte[] key = new byte[16];
         for (int i = 0; i < 16; i++) key[i] = 0;
         byte[] result = Helper.aes256Encrypt(string.getBytes(), key);
-        Assert.assertEquals(correctResult, result);
+        Assert.assertArrayEquals(correctResult, result);
     }
 
     @Test
@@ -23,7 +23,7 @@ public class HelperTest {
         byte[] key = new byte[16];
         for (int i = 0; i < 16; i++) key[i] = 0;
         byte[] result = Helper.aes256Decrypt(input, key);
-        Assert.assertEquals(correctResult, result);
+        Assert.assertArrayEquals(correctResult, result);
     }
 
     @Test
@@ -39,7 +39,7 @@ public class HelperTest {
             iv[i] = 0;
         }
         byte[] result = Helper.aesEncrypt(data, key, iv);
-        Assert.assertEquals(correctResult, result);
+        Assert.assertArrayEquals(correctResult, result);
     }
 
     @Test
@@ -55,7 +55,7 @@ public class HelperTest {
             iv[i] = 0;
         }
         byte[] result = Helper.aesDecrypt(data, key, iv);
-        Assert.assertEquals(correctResult, result);
+        Assert.assertArrayEquals(correctResult, result);
     }
 
     @Test
@@ -71,7 +71,7 @@ public class HelperTest {
         String data = new String("AXaXZjZGA3qhQRTCsyG5uFKr9HeShgVhTF");
         byte[] correctResult = hexStringToByte("17ad5cac596a1ef6c18ac1746dfd304f93964354b5");
         byte[] result = Helper.base58CheckDecode(data);
-        Assert.assertEquals(correctResult, result);
+        Assert.assertArrayEquals(correctResult, result);
     }
 
     private static byte[] hexStringToByte(String hex) {
@@ -104,9 +104,9 @@ public class HelperTest {
 
     @Test
     public void toAesKey() {
-        String data = "abcdrfg";
+        String data = "abcdefg";
         byte[] correctResult = new byte[]{-38, -42, -71, 101, -83, -122, -72, -128, -50, -74, -103, 63, -104, -21, -18, -78, 66, -34, 57, -10, -72, 122, 69, -116, 101, 16, -75, -95, 95, -9, -69, -15};
         byte[] result = Helper.toAesKey(data);
-        Assert.assertEquals(correctResult, result);
+        Assert.assertArrayEquals(correctResult, result);
     }
 }
