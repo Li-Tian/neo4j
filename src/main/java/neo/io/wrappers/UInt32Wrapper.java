@@ -4,7 +4,7 @@ package neo.io.wrappers;
 import neo.UInt32;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public final class UInt32Wrapper extends SerializableWrapper<UInt32> {
 

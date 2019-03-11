@@ -1,7 +1,7 @@
 package neo;
 
 import neo.csharp.BitConverter;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * This class stores a 256 bit unsigned int, represented as a 32-byte little-endian byte array

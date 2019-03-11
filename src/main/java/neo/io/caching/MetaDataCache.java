@@ -4,7 +4,7 @@ import java.util.function.Supplier;
 
 import neo.io.ICloneable;
 import neo.csharp.io.ISerializable;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public abstract class MetaDataCache<T extends ISerializable & ICloneable<T>> {
 

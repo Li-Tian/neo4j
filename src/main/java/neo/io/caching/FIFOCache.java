@@ -1,6 +1,6 @@
 package neo.io.caching;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public abstract class FIFOCache<TKey, TValue> extends Cache<TKey, TValue> {
 
