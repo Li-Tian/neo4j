@@ -20,7 +20,7 @@ public class UIntBaseTest {
         Assert.assertEquals(20, UInt160.Zero.size());
         Assert.assertEquals(32, UInt256.Zero.size());
 
-        Assert.assertEquals(0, UInt32.Zero.hashCode());
+        Assert.assertEquals(0, UInt32.parse("0x00000000").hashCode());
         Assert.assertEquals(3, UInt32.parse("0x00000003").hashCode());
     }
 
