@@ -29,7 +29,7 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
         TR.exit();
     }
 
-    private ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve, boolean withCompression) {
+    public ECPoint(ECFieldElement x, ECFieldElement y, ECCurve curve, boolean withCompression) {
         super(curve, x, y, withCompression);
         TR.enter();
         if ((x != null && y == null) || (x == null && y != null)) {

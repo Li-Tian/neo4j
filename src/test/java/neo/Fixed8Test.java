@@ -27,7 +27,7 @@ public class Fixed8Test {
     @Test
     public void ceiling() {
         Assert.assertEquals(new Fixed8(200000000), new Fixed8(100030000).ceiling());
-        Assert.assertEquals(new Fixed8(-100000000), new Fixed8(-10400000).ceiling());
+        Assert.assertEquals(new Fixed8(-100000000), new Fixed8(-104000000).ceiling());
     }
 
     @Test
@@ -92,7 +92,7 @@ public class Fixed8Test {
 
     @Test
     public void toStringTest() {
-        Assert.assertEquals("3.00000000", new Fixed8(300000000L));
+        Assert.assertEquals("3.00000000", new Fixed8(300000000L).toString());
     }
 
     @Test
@@ -101,13 +101,13 @@ public class Fixed8Test {
         Assert.assertEquals(true, Fixed8.tryParse("3", fixed8));
         Assert.assertEquals(new Fixed8(300000000L), fixed8);
 
-        Assert.assertEquals(true, Fixed8.tryParse("hello", fixed8));
+        Assert.assertEquals(false, Fixed8.tryParse("hello", fixed8));
         Assert.assertEquals(new Fixed8(0L), fixed8);
     }
 
     @Test
     public void toBigDecimal() {
-        Assert.assertEquals(new BigDecimal(3L), Fixed8.toBigDecimal(new Fixed8(300000000L)));
+        Assert.assertEquals(new BigDecimal("3.00000000"), Fixed8.toBigDecimal(new Fixed8(300000000L)));
     }
 
     @Test
@@ -123,8 +123,8 @@ public class Fixed8Test {
 
     @Test
     public void notEqual() {
-        Assert.assertEquals(false, Fixed8.equal(new Fixed8(3L), new Fixed8(3L)));
-        Assert.assertEquals(true, Fixed8.equal(new Fixed8(3L), new Fixed8(20L)));
+        Assert.assertEquals(false, Fixed8.notEqual(new Fixed8(3L), new Fixed8(3L)));
+        Assert.assertEquals(true, Fixed8.notEqual(new Fixed8(3L), new Fixed8(20L)));
     }
 
     @Test
@@ -157,8 +157,8 @@ public class Fixed8Test {
 
     @Test
     public void multiply() {
-        Assert.assertEquals(new Fixed8(20000000000L), Fixed8.multiply(new Fixed8(100000000L), new Fixed8(200000000L)));
-        Assert.assertEquals(new Fixed8(300L), Fixed8.multiply(new Fixed8(30L), 10L));
+        Assert.assertEquals(new Fixed8(200000000L), Fixed8.multiply(new Fixed8(100000000L), new Fixed8(200000000L)));
+        Assert.assertEquals(new Fixed8(300L), Fixed8.multiply(new Fixed8(300000L), new Fixed8(100000L)));
     }
 
     @Test
