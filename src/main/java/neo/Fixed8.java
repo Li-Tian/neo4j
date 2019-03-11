@@ -162,7 +162,7 @@ public class Fixed8 implements Comparable<Fixed8>, ISerializable {
             Fixed8 fixed8Val = fromDecimal(val);
             result.value = fixed8Val.value;
             return TR.exit(true);
-        } catch (FormatException | ArithmeticException ex) {
+        } catch (FormatException | ArithmeticException | NumberFormatException ex) {
             result.value = 0;
             return TR.exit(false);
         }
