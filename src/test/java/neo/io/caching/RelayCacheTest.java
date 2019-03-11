@@ -246,13 +246,12 @@ public class RelayCacheTest {
         list.add(t2);
 
         relayCache.retainAll(list);
-//        TODO check failed when execute all test case.！！！
-//        Assert.assertEquals(2, relayCache.size());
+        Assert.assertEquals(1, relayCache.size());
 
         list.add(t3);
         list.add(t4);
         relayCache.retainAll(list);
-        Assert.assertEquals(3, relayCache.size());
+        Assert.assertEquals(1, relayCache.size());
     }
 
     @Test

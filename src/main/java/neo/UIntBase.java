@@ -34,7 +34,6 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
         if (value == null) {
             this.dataBytes = new byte[bytes];
             Arrays.fill(dataBytes, (byte) 0);
-            System.out.println("uintbaes => " + this);
             return;
         }
         if (value.length != bytes) {

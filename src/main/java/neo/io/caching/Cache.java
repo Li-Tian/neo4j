@@ -229,10 +229,6 @@ public abstract class Cache<TKey, TValue> implements Collection<TValue> {
             TKey key = getKeyForItem(value);
             if (key != null) {
                 set.add(key);
-
-                if (!containsKey(key)) {
-                    add(value);
-                }
             }
         }
         for (TKey key : map.keySet()) {
