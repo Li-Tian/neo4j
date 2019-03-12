@@ -3,13 +3,7 @@ package neo.ledger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
-
-import static org.junit.Assert.*;
+import neo.Utils;
 
 public class UnspentCoinStateTest {
 
@@ -50,14 +44,7 @@ public class UnspentCoinStateTest {
         UnspentCoinState coinState = new UnspentCoinState();
         coinState.items = new CoinState[]{CoinState.Claimed, CoinState.Confirmed, CoinState.Spent, CoinState.Unconfirmed};
 
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        coinState.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        UnspentCoinState tmp = new UnspentCoinState();
-        tmp.deserialize(new BinaryReader(inputStream));
+        UnspentCoinState tmp = Utils.copyFromSerialize(coinState, UnspentCoinState::new);
 
         Assert.assertEquals(CoinState.Claimed, tmp.items[0]);
         Assert.assertEquals(CoinState.Confirmed, tmp.items[1]);

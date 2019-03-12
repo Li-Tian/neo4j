@@ -6,15 +6,10 @@ import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.Objects;
 
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
+import neo.Utils;
 import neo.smartcontract.ContractParameterType;
-
-import static org.junit.Assert.*;
 
 public class ContractStateTest {
 
@@ -158,14 +153,7 @@ public class ContractStateTest {
         contractState.returnType = ContractParameterType.Void;
         contractState.script = new byte[]{0x01, 0x02, 0x03, 0x04};
 
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        contractState.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        ContractState copy = new ContractState();
-        copy.deserialize(new BinaryReader(inputStream));
+        ContractState copy = Utils.copyFromSerialize(contractState, ContractState::new);
 
         Assert.assertEquals(contractState.author, copy.author);
         Assert.assertEquals(contractState.codeVersion, copy.codeVersion);

@@ -3,13 +3,7 @@ package neo.ledger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
-
-import static org.junit.Assert.*;
+import neo.Utils;
 
 public class StorageItemTest {
 
@@ -57,13 +51,7 @@ public class StorageItemTest {
         item.isConstant = false;
         item.value = new byte[]{0x01, 0x02, 0x03, 0x04};
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        item.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        StorageItem tmp = new StorageItem();
-        tmp.deserialize(new BinaryReader(inputStream));
+        StorageItem tmp = Utils.copyFromSerialize(item, StorageItem::new);
 
         Assert.assertEquals(false, tmp.isConstant);
         Assert.assertEquals((byte) 0x01, tmp.value[0]);

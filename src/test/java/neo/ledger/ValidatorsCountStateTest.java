@@ -3,12 +3,8 @@ package neo.ledger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
 import neo.Fixed8;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
+import neo.Utils;
 
 
 public class ValidatorsCountStateTest {
@@ -63,13 +59,7 @@ public class ValidatorsCountStateTest {
         countState.votes[2] = new Fixed8(3);
         countState.votes[3] = new Fixed8(0);
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        countState.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        ValidatorsCountState tmp = new ValidatorsCountState();
-        tmp.deserialize(new BinaryReader(inputStream));
+        ValidatorsCountState tmp = Utils.copyFromSerialize(countState, ValidatorsCountState::new);
 
         Assert.assertEquals(new Fixed8(1), tmp.votes[0]);
         Assert.assertEquals(new Fixed8(2), tmp.votes[1]);

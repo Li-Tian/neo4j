@@ -5,15 +5,9 @@ import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
 import neo.UInt256;
+import neo.Utils;
 import neo.csharp.Uint;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
-
-import static org.junit.Assert.*;
 
 public class HashIndexStateTest {
 
@@ -55,13 +49,7 @@ public class HashIndexStateTest {
         indexState.hash = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
         indexState.index = new Uint(10);
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        indexState.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        HashIndexState tmp = new HashIndexState();
-        tmp.deserialize(new BinaryReader(inputStream));
+        HashIndexState tmp = Utils.copyFromSerialize(indexState, HashIndexState::new);
 
         Assert.assertEquals(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"), tmp.hash);
         Assert.assertEquals(new Uint(10), tmp.index);

@@ -5,18 +5,15 @@ import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.Locale;
 
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
+import neo.Utils;
 import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
 import neo.network.p2p.payloads.AssetType;
 
 
@@ -149,13 +146,7 @@ public class AssetStateTest {
         assetState.expiration = new Uint(1000000);
         assetState.isFrozen = false;
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        assetState.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        AssetState tmp = new AssetState();
-        tmp.deserialize(new BinaryReader(inputStream));
+        AssetState tmp = Utils.copyFromSerialize(assetState, AssetState::new);
 
         Assert.assertEquals(assetState.assetId, tmp.assetId);
         Assert.assertEquals(assetState.name, tmp.name);

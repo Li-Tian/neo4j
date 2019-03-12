@@ -5,24 +5,19 @@ import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.Map;
 
 import neo.UInt160;
 import neo.UInt256;
+import neo.Utils;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
 import neo.io.caching.DataCache;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.Header;
 import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.Witness;
-
-import static org.junit.Assert.*;
 
 public class TrimmedBlockTest {
 
@@ -124,13 +119,7 @@ public class TrimmedBlockTest {
         trimmedBlock.witness.invocationScript = new byte[]{0x3, 0x04};
         trimmedBlock.hashes = new UInt256[]{new MinerTransaction().hash()};
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        trimmedBlock.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        TrimmedBlock tmp = new TrimmedBlock();
-        tmp.deserialize(new BinaryReader(inputStream));
+        TrimmedBlock tmp = Utils.copyFromSerialize(trimmedBlock, TrimmedBlock::new);
 
         Assert.assertEquals(trimmedBlock.consensusData, tmp.consensusData);
         Assert.assertEquals(trimmedBlock.version, tmp.version);

@@ -3,13 +3,9 @@ package neo.ledger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
 import neo.Fixed8;
+import neo.Utils;
 import neo.cryptography.ecc.ECC;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
 
 
 public class ValidatorStateTest {
@@ -59,13 +55,7 @@ public class ValidatorStateTest {
         validatorState.registered = false;
         validatorState.votes = new Fixed8(2);
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        validatorState.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        ValidatorState tmp = new ValidatorState();
-        tmp.deserialize(new BinaryReader(inputStream));
+        ValidatorState tmp = Utils.copyFromSerialize(validatorState, ValidatorState::new);
 
         Assert.assertEquals(validatorState.publicKey, tmp.publicKey);
         Assert.assertEquals(validatorState.registered, tmp.registered);

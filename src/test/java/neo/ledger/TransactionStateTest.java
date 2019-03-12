@@ -5,12 +5,8 @@ import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
+import neo.Utils;
 import neo.csharp.Uint;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
 import neo.network.p2p.payloads.MinerTransaction;
 
 
@@ -65,13 +61,7 @@ public class TransactionStateTest {
         state.blockIndex = new Uint(10);
         state.transaction = new MinerTransaction();
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        state.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        TransactionState tmp = new TransactionState();
-        tmp.deserialize(new BinaryReader(inputStream));
+        TransactionState tmp = Utils.copyFromSerialize(state, TransactionState::new);
 
         Assert.assertEquals(state.blockIndex, tmp.blockIndex);
         Assert.assertEquals(state.transaction, tmp.transaction);

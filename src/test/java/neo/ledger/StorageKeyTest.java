@@ -3,14 +3,8 @@ package neo.ledger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
 import neo.UInt160;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
-
-import static org.junit.Assert.*;
+import neo.Utils;
 
 public class StorageKeyTest {
 
@@ -57,13 +51,7 @@ public class StorageKeyTest {
         key.scriptHash = UInt160.Zero;
         key.key = new byte[]{0x01, 0x02, 0x03, 0x04};
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        key.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        StorageKey tmp = new StorageKey();
-        tmp.deserialize(new BinaryReader(inputStream));
+        StorageKey tmp = Utils.copyFromSerialize(key, StorageKey::new);
 
         Assert.assertEquals(key.scriptHash, tmp.scriptHash);
         Assert.assertEquals((byte) 0x01, tmp.key[0]);

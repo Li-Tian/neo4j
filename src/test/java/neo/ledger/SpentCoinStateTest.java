@@ -3,17 +3,12 @@ package neo.ledger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
 
 import neo.UInt256;
+import neo.Utils;
 import neo.csharp.Uint;
 import neo.csharp.Ushort;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
-
-import static org.junit.Assert.*;
 
 public class SpentCoinStateTest {
 
@@ -71,14 +66,7 @@ public class SpentCoinStateTest {
         coinState.items.put(new Ushort(1), new Uint(100));
         coinState.items.put(new Ushort(2), new Uint(200));
 
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        coinState.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        SpentCoinState tmp = new SpentCoinState();
-        tmp.deserialize(new BinaryReader(inputStream));
+        SpentCoinState tmp = Utils.copyFromSerialize(coinState, SpentCoinState::new);
 
         Assert.assertEquals(coinState.transactionHeight, tmp.transactionHeight);
         Assert.assertEquals(coinState.transactionHash, tmp.transactionHash);
