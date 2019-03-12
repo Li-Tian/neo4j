@@ -4,6 +4,7 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.tr.TR;
 
 /**
  * This class describing a transport packet when replying to the addr message after the node
@@ -29,7 +30,8 @@ public class AddrPayload implements ISerializable {
      */
     @Override
     public int size() {
-        return BitConverter.getVarSize(addressList);
+        TR.enter();
+        return TR.exit(BitConverter.getVarSize(addressList));
     }
 
     /**
@@ -39,7 +41,9 @@ public class AddrPayload implements ISerializable {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeArray(addressList);
+        TR.exit();
     }
 
     /**
@@ -49,7 +53,9 @@ public class AddrPayload implements ISerializable {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         addressList = reader.readArray(NetworkAddressWithTime[]::new, NetworkAddressWithTime::new);
+        TR.exit();
     }
 
     /**
@@ -59,8 +65,9 @@ public class AddrPayload implements ISerializable {
      * @return an AddrPayload object
      */
     public static AddrPayload create(NetworkAddressWithTime[] addresses) {
+        TR.enter();
         AddrPayload payload = new AddrPayload();
         payload.addressList = addresses;
-        return payload;
+        return TR.exit(payload);
     }
 }

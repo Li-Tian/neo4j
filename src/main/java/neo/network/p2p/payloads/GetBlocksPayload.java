@@ -5,73 +5,82 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.tr.TR;
 
 /**
- * 获取区块的传输数据包
+ * A payload for getting block
  */
 public class GetBlocksPayload implements ISerializable {
 
     /**
-     * 开始区块的哈希值列表。固定长度为1
+     * The hash list of start blocks. The fixed length is 1
      */
     public UInt256[] hashStart;
 
     /**
-     * 结束区块的哈希值
+     * The hash value of the end block
      */
     public UInt256 hashStop;
 
     /**
-     * 存储大小
+     * The size of this payload
      */
     @Override
     public int size() {
-        return BitConverter.getVarSize(hashStart) + hashStop.size();
+        TR.enter();
+        return TR.exit(BitConverter.getVarSize(hashStart) + hashStop.size());
     }
 
     /**
-     * 序列化
+     * Serialization
      *
-     * @param writer 二进制输出器
+     * @param writer >The binary output writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeArray(hashStart);
         writer.writeSerializable(hashStop);
+        TR.exit();
     }
 
     /**
-     * 反序列化
+     * Deserialization
      *
-     * @param reader 二进制读入器
+     * @param reader The binary input reader
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         hashStart = reader.readArray(UInt256[]::new, UInt256::new);
         hashStop = reader.readSerializable(UInt256::new);
+        TR.exit();
     }
 
     /**
-     * 创建一个获取区块的数据包
+     * Create a payload for geting blocks
      *
-     * @param hashStart 开始区块的哈希值
-     * @param hashStop  结束区块的哈希值。不指定时，自动设置为0。将最多获取500个区块
-     * @return 创建完成的获取区块的数据包
+     * @param hashStart The hash value of the start block
+     * @param hashStop  The hash value of the stop block. If not specified, set to 0 automatically.
+     *                  The most block number is 500
+     * @return The playload of the complete hash blocks with the hash start and hash stop
      */
     public static GetBlocksPayload create(UInt256 hashStart, UInt256 hashStop) {
+        TR.enter();
         GetBlocksPayload payload = new GetBlocksPayload();
         payload.hashStart = new UInt256[]{hashStart};
         payload.hashStop = hashStop == null ? UInt256.Zero : hashStop;
-        return payload;
+        return TR.exit(payload);
     }
 
     /**
-     * 创建一个获取区块的数据包
+     * Create a payload for geting blocks
      *
-     * @param hashStart 开始区块的哈希值
-     * @return 创建完成的获取区块的数据包
+     * @param hashStart The hash value of the start block
+     * @return The playload of the complete hash blocks with the hash start and hash stop
      */
     public static GetBlocksPayload create(UInt256 hashStart) {
-        return create(hashStart, null);
+        TR.enter();
+        return TR.exit(create(hashStart, null));
     }
 }

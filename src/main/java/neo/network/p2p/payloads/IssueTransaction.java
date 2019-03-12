@@ -2,37 +2,40 @@ package neo.network.p2p.payloads;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 
 import neo.Fixed8;
 import neo.UInt160;
 import neo.csharp.io.BinaryReader;
 import neo.exception.FormatException;
+import neo.exception.InvalidOperationException;
+import neo.ledger.AssetState;
 import neo.ledger.Blockchain;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 
 /**
- * 发布资产交易
+ * Issue asset transactions
  */
 public class IssueTransaction extends Transaction {
 
     /**
-     * 构造函数：创建发布资产交易
+     * Constructor: create the transaction for issuing asset
      */
     public IssueTransaction() {
         super(TransactionType.IssueTransaction);
     }
 
     /**
-     * 系统手续费
+     * get system fee
      *
-     * @return <ul>
-     * <li>1）若交易版本号大于等于1，手续费为0</li>
-     * <li>2）若发布的资产是NEO或GAS，则手续费为0</li>
-     * <li>3）否则按基本交易计算系统手续费</li>
-     * </ul>
+     * @return 1) if the transaction version equal or more than 1, then the system fee is 0<br/> 2)
+     * If the issued asset is NEO or Gas, then the system fee is 0 <br/> 3) Otherwise, use the basic
+     * transaction fee calculation.
      */
     @Override
     public Fixed8 getSystemFee() {
+        TR.enter();
         if (version >= 1) {
             return Fixed8.ZERO;
         }
@@ -43,78 +46,129 @@ public class IssueTransaction extends Transaction {
                 .filter(p -> p.assetId == Blockchain.GoverningToken.hash() ||
                         p.assetId == Blockchain.UtilityToken.hash())
                 .count() > 0) {
-            return Fixed8.ZERO;
+            return TR.exit(Fixed8.ZERO);
         }
-        return super.getSystemFee();
+        return TR.exit(super.getSystemFee());
     }
 
     /**
-     * 反序列化扩展数据
+     * Deserilization exclusive data
      *
-     * @param reader 二进制输入流
-     * @throws FormatException 若交易版本号大于1，则抛出该异常
+     * @param reader The binary input reader
+     * @throws FormatException If the version of transactions is larger than 1, then throw
+     *                         exceptions.
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         if (version > 1) {
             throw new FormatException();
         }
+        TR.exit();
     }
 
     /**
-     * 获取待验证签名的脚本hash
+     * Get the script hash of the signature which is waiting for verify
      *
-     * @param snapshot 快照
-     * @return 交易本身的验证脚本，以及发行者的地址脚本hash
-     * @throws InvalidOperationException 若发行的资产不存在，则抛出该异常
+     * @param snapshot database snapshot
+     * @return The script hash of the transaction, and the address hash of the issuer.
+     * @throws InvalidOperationException Thrown if the issued asset does not exist
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
-//        TODO waiting for db
-//        HashSet<UInt160> hashes = new HashSet<UInt160>(super.getScriptHashesForVerifying(snapshot));
-//        foreach(TransactionResult result in GetTransactionResults().Where(p = > p.Amount < Fixed8.Zero))
-//        {
-//            AssetState asset = snapshot.Assets.TryGet(result.AssetId);
-//            if (asset == null) throw new InvalidOperationException();
-//            hashes.Add(asset.Issuer);
-//        }
-//        return hashes.OrderBy(p = > p).ToArray();
-        return new UInt160[0];
+        TR.enter();
+        UInt160[] hashArray = super.getScriptHashesForVerifying(snapshot);
+        HashSet<UInt160> hashSet = new HashSet<>();
+        for (int i = 0; i < hashArray.length; i++) {
+            hashSet.add(hashArray[i]);
+        }
+        getTransactionResults().stream().filter(p -> p.amount.compareTo(Fixed8.ZERO) < 0).forEach(result -> {
+            AssetState assetState = snapshot.getAssets().tryGet(result.assetId);
+            if (assetState == null) {
+                throw new InvalidOperationException("assetId %s is not exist", result.assetId.toString());
+            }
+            hashSet.add(assetState.issuer);
+        });
+        hashArray = new UInt160[hashSet.size()];
+        return TR.exit(hashSet.toArray(hashArray));
+
+        // C# code
+        //        foreach(TransactionResult result in GetTransactionResults().Where(p = > p.Amount < Fixed8.Zero))
+        //        {
+        //            AssetState asset = snapshot.Assets.TryGet(result.AssetId);
+        //            if (asset == null) throw new InvalidOperationException();
+        //            hashes.Add(asset.Issuer);
+        //        }
+        //       return hashes.OrderBy(p = > p).ToArray();
     }
 
     /**
-     * 校验交易
+     * The transaction verification
      *
-     * @param snapshot 数据库快照
-     * @param mempool  内存池交易
+     * @param snapshot database snapshot
+     * @param mempool  transactions in mempool
      * @return <ul>
-     * <li>1. 进行交易的基本验证，若验证失败，则返回false</li>
-     * <li>2. 交易引用的input 不存在时返回false</li>
-     * <li>3. 若发行的资产不存在返回false</li>
-     * <li>4. 若发行的量为负数时返回false</li>
-     * <li>5. 若该交易的发行量加上内存池其他发行量，超过了发行总量，则返回false</li>
+     * <li>1. verify the basic transactions, if verify failed, return false</li>
+     * <li>2. If the input of transactions references not exist, return false</li>
+     * <li>3. If the asset issued not exist return false</li>
+     * <li>4. If the asset issued is negative return false</li>
+     * <li>5 If the sum of the amount of this transaction  and other transactions in  mempool
+     * exceeds the total issue amount , then return false</li>
      * </ul>
      */
     @Override
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
+        TR.enter();
         if (!super.verify(snapshot, mempool)) {
-            return false;
+            return TR.exit(false);
         }
+        Collection<TransactionResult> results = getTransactionResults();
+        if (results == null) {
+            return TR.exit(false);
+        }
+        for (TransactionResult result : results) {
+            if (result.amount.compareTo(Fixed8.ZERO) >= 0) {
+                continue;
+            }
 
-//        TransactionResult[] results = getTransactionResults();
-//         TODO C# waiting db
-//        TransactionResult[] results = GetTransactionResults() ?.Where(p = > p.Amount < Fixed8.Zero).
-//        ToArray();
-//        if (results == null) return false;
-//        foreach(TransactionResult r in results)
-//        {
-//            AssetState asset = snapshot.Assets.TryGet(r.AssetId);
-//            if (asset == null) return false;
-//            if (asset.Amount < Fixed8.Zero) continue;
-//            Fixed8 quantity_issued = asset.Available + mempool.OfType < IssueTransaction > ().Where(p = > p != this).
-//            SelectMany(p = > p.Outputs).Where(p = > p.AssetId == r.AssetId).Sum(p = > p.Value);
-//            if (asset.Amount - quantity_issued < -r.Amount) return false;
-//        }
-        return true;
+            AssetState asset = snapshot.getAssets().tryGet(result.assetId);
+            if (asset == null) {
+                return TR.exit(false);
+            }
+            if (asset.amount.compareTo(Fixed8.ZERO) < 0) {
+                continue;
+            }
+            Fixed8 quantity_issued = asset.available;
+            for (Transaction tx : mempool) {
+                if (tx instanceof IssueTransaction && tx != this) {
+                    for (TransactionOutput output : tx.outputs) {
+                        if (output.assetId.equals(asset.assetId)) {
+                            quantity_issued = Fixed8.add(quantity_issued, output.value);
+                        }
+                    }
+                }
+            }
+            Fixed8 rest = Fixed8.subtract(asset.amount, quantity_issued);
+            if (rest.compareTo(Fixed8.negate(result.amount)) < 0) {
+                // the available amount of this asset is not enough
+                return TR.exit(false);
+            }
+        }
+        return TR.exit(true);
+
+        // C# code
+        //         TODO C# waiting db
+        //        TransactionResult[] results = GetTransactionResults() ?.Where(p = > p.Amount < Fixed8.Zero).
+        //        ToArray();
+        //        if (results == null) return false;
+        //        foreach(TransactionResult r in results)
+        //        {
+        //            AssetState asset = snapshot.Assets.TryGet(r.AssetId);
+        //            if (asset == null) return false;
+        //            if (asset.Amount < Fixed8.Zero) continue;
+        //            Fixed8 quantity_issued = asset.Available + mempool.OfType < IssueTransaction > ().Where(p = > p != this).
+        //            SelectMany(p = > p.Outputs).Where(p = > p.AssetId == r.AssetId).Sum(p = > p.Value);
+        //            if (asset.Amount - quantity_issued < -r.Amount) return false;
+        //        }
     }
 }

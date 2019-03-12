@@ -15,6 +15,25 @@ import neo.csharp.io.ISerializable;
  */
 public class SerializeHelper {
 
+
+    /**
+     * Serialize the serializable array to byte array
+     *
+     * @param serializables the serializables array
+     * @return byte array
+     */
+    public static byte[] toBytes(ISerializable[] serializables) {
+        int size = 0;
+        for (ISerializable serializable : serializables) {
+            size += serializable.size();
+        }
+        ByteArrayOutputStream output = new ByteArrayOutputStream(size);
+        BinaryWriter writer = new BinaryWriter(output);
+        writer.writeArray(serializables);
+        return output.toByteArray();
+    }
+
+
     /**
      * Serialize to byte array
      *

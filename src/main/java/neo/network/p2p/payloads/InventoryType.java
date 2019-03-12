@@ -4,22 +4,22 @@ package neo.network.p2p.payloads;
 import neo.common.ByteEnum;
 
 /**
- * Inventory类型
+ * The type of Inventory
  */
 public enum InventoryType implements ByteEnum {
 
     /**
-     * 交易
+     * Transaction
      */
     Tr((byte) 0x01),
 
     /**
-     * 区块类
+     * Transaction
      */
     Block((byte) 0x02),
 
     /**
-     * 共识类
+     * Consensus data
      */
     Consensus((byte) 0x03);
 
@@ -30,7 +30,7 @@ public enum InventoryType implements ByteEnum {
     }
 
     /**
-     * 获取类别存储的byte值
+     * get the value of type
      */
     @Override
     public byte value() {
@@ -38,11 +38,11 @@ public enum InventoryType implements ByteEnum {
     }
 
     /**
-     * 从byte中解析类型
+     * parse type from value
      *
-     * @param type 待解析的Inventory类型值
+     * @param type type's value
      * @return InventoryType
-     * @throws IllegalArgumentException 当类型不存在时，抛出该异常
+     * @throws IllegalArgumentException throws this exception when the type is not exist.
      */
     public static InventoryType parse(byte type) {
         return ByteEnum.parse(InventoryType.values(), type);

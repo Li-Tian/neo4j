@@ -8,10 +8,13 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.ledger.Blockchain;
+import neo.log.notr.TR;
 
 /**
  * Miner Transaction，It is a reward for giving speaker consensus node. At the same time, as the
  * first transaction for each block.
+ *
+ * @note MinerTransaction's inputs must be empty, and outputs can only have GAS asset.
  */
 public class MinerTransaction extends Transaction {
 
@@ -37,6 +40,7 @@ public class MinerTransaction extends Transaction {
      */
     @Override
     public int size() {
+        TR.enter();
         return super.size() + Uint.BYTES;
     }
 
@@ -45,6 +49,7 @@ public class MinerTransaction extends Transaction {
      */
     @Override
     public Fixed8 getNetworkFee() {
+        TR.enter();
         return Fixed8.ZERO;
     }
 
@@ -55,6 +60,7 @@ public class MinerTransaction extends Transaction {
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         if (version != 0) throw new FormatException();
         this.nonce = reader.readUint();
     }
@@ -66,12 +72,13 @@ public class MinerTransaction extends Transaction {
      */
     @Override
     protected void onDeserialized() {
+        TR.enter();
         super.onDeserialized();
         if (inputs.length != 0)
             throw new FormatException();
         for (TransactionOutput output : outputs) {
             if (!output.assetId.equals(Blockchain.UtilityToken.hash())) {
-                throw new FormatException();
+                throw new FormatException("MinerTransaction's output can only have gas asset");
             }
         }
     }
@@ -86,6 +93,7 @@ public class MinerTransaction extends Transaction {
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
+        TR.enter();
         writer.writeUint(nonce);
     }
 
@@ -96,6 +104,7 @@ public class MinerTransaction extends Transaction {
      */
     @Override
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = super.toJson();
         json.addProperty("nonce", nonce);
         return json;

@@ -1,5 +1,7 @@
 package neo.network.p2p.payloads;
 
+import java.io.ByteArrayOutputStream;
+
 import neo.UInt160;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -17,13 +19,6 @@ public interface IVerifiable extends ISerializable, IScriptContainer {
      * Get witnesses
      */
     Witness[] getWitnesses();
-
-    /**
-     * get the serialized data for the specified object
-     *
-     * @return serialized data
-     */
-    byte[] getHashData();
 
     /**
      * set witnesses
@@ -100,6 +95,20 @@ public interface IVerifiable extends ISerializable, IScriptContainer {
         //            }
         //        }
         //        return true;
+    }
+
+    /**
+     * get the serialized data for the specified object
+     *
+     * @param verifiable specified object
+     * @return serialized data
+     */
+    static byte[] getHashData(IVerifiable verifiable) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        BinaryWriter writer = new BinaryWriter(outputStream);
+        verifiable.serializeUnsigned(writer);
+        writer.flush();
+        return outputStream.toByteArray();
     }
 
 }

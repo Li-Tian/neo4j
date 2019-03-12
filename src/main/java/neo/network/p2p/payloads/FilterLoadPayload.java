@@ -7,77 +7,84 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 import neo.exception.FormatException;
+import neo.log.tr.TR;
 
 /**
- * 过滤器加载的传输数据包
+ * The payload which is loaded from filter
  */
 public class FilterLoadPayload implements ISerializable {
 
     /**
-     * 过滤器初始化的位阵列数据
+     * The initial byteArray of filter
      */
     public byte[] filter;
 
     /**
-     * 互相独立的哈希函数的个数
+     * The number of independent hash functions
      */
     public byte k;
 
 
     /**
-     * 微调参数
+     * The tweak parameter
      */
     public Uint tweak;
 
 
     /**
-     * 过滤器加载负载大小
+     * The size of payload of filter
      */
     @Override
     public int size() {
-        return BitConverter.getVarSize(filter) + Byte.BYTES + Uint.BYTES;
+        TR.enter();
+        return TR.exit(BitConverter.getVarSize(filter) + Byte.BYTES + Uint.BYTES);
     }
 
     /**
-     * 序列化
+     * Serialization
      *
-     * @param writer 二进制输出器
+     * @param writer The binary output writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeVarBytes(filter);
         writer.writeByte(k);
         writer.writeUint(tweak);
+        TR.exit();
     }
 
     /**
-     * 反序列化
+     * Deserialization
      *
-     * @param reader 二进制读入器
+     * @param reader The binary input reader
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         filter = reader.readVarBytes(36000);
         k = (byte) reader.readByte();
         if (k > 50) throw new FormatException();
         tweak = reader.readUint();
+        TR.exit();
     }
 
 
     /**
-     * 根据一个布隆过滤器创建对应的过滤器加载传输数据包
+     * create a filterpayload which is load from the bloomfilter
      *
-     * @param filter 布隆过滤器
-     * @return 对应的过滤器加载的传输数据包
+     * @param filter The bloomfilter
+     * @return The payload load from filter
      */
     public static FilterLoadPayload create(BloomFilter filter) {
+        TR.enter();
         byte[] buffer = new byte[filter.getM() / 8];
         filter.getBits(buffer);
         FilterLoadPayload payload = new FilterLoadPayload();
         payload.filter = buffer;
         payload.k = (byte) filter.getK();
         payload.tweak = filter.getTweak();
-        return payload;
+        return TR.exit(payload);
     }
 
 }

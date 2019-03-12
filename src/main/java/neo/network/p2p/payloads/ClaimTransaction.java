@@ -17,6 +17,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
 import neo.ledger.Blockchain;
+import neo.log.tr.TR;
 import neo.persistence.Snapshot;
 
 /**
@@ -41,7 +42,8 @@ public class ClaimTransaction extends Transaction {
      */
     @Override
     public int size() {
-        return super.size() + BitConverter.getVarSize(claims);
+        TR.enter();
+        return TR.exit(super.size() + BitConverter.getVarSize(claims));
     }
 
     /**
@@ -49,7 +51,8 @@ public class ClaimTransaction extends Transaction {
      */
     @Override
     public Fixed8 getNetworkFee() {
-        return Fixed8.ZERO;
+        TR.enter();
+        return TR.exit(Fixed8.ZERO);
     }
 
     /**
@@ -61,9 +64,11 @@ public class ClaimTransaction extends Transaction {
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         if (version != 0) throw new FormatException();
         claims = reader.readArray(CoinReference[]::new, CoinReference::new);
         if (claims.length == 0) throw new FormatException();
+        TR.exit();
     }
 
     /**
@@ -77,6 +82,7 @@ public class ClaimTransaction extends Transaction {
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+        TR.enter();
         UInt160[] hashes = super.getScriptHashesForVerifying(snapshot);
         HashSet<UInt160> hashSet = new HashSet(Arrays.asList(hashes));
 
@@ -93,7 +99,7 @@ public class ClaimTransaction extends Transaction {
         hashes = new UInt160[hashSet.size()];
         hashSet.toArray(hashes);
         Arrays.sort(hashes);
-        return hashes;
+        return TR.exit(hashes);
     }
 
     /**
@@ -107,6 +113,7 @@ public class ClaimTransaction extends Transaction {
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
+        TR.enter();
         writer.writeArray(claims);
     }
 
@@ -117,6 +124,7 @@ public class ClaimTransaction extends Transaction {
      */
     @Override
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = super.toJson();
 
         JsonArray array = new JsonArray(claims.length);
@@ -124,7 +132,7 @@ public class ClaimTransaction extends Transaction {
             array.add(claim.toJson());
         }
         json.add("claims", array);
-        return json;
+        return TR.exit(json);
     }
 
     /**
@@ -148,11 +156,12 @@ public class ClaimTransaction extends Transaction {
      */
     @Override
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
+        TR.enter();
         if (!super.verify(snapshot, mempool)) {
-            return false;
+            return TR.exit(false);
         }
         if (claims.length != Arrays.stream(claims).distinct().count()) {
-            return false;
+            return TR.exit(false);
         }
         // check whether the claimSet already contain the claims
         HashSet<CoinReference> claimSet = new HashSet<>();
@@ -166,7 +175,7 @@ public class ClaimTransaction extends Transaction {
         }
         for (CoinReference claim : claims) {
             if (claimSet.contains(claim)) {
-                return false;
+                return TR.exit(false);
             }
         }
 
@@ -175,20 +184,18 @@ public class ClaimTransaction extends Transaction {
                 .filter(p -> p.assetId.equals(Blockchain.UtilityToken.hash()))
                 .findAny();
         if (!optional.isPresent() || optional.get().amount.compareTo(Fixed8.ZERO) > 0) {
-            //TODO why just only one amout > fixed8.zero
-            return false;
+            // gas amount must more than zero.
+            return TR.exit(false);
         }
         TransactionResult result = optional.get();
-
-        return snapshot.calculateBonus(Arrays.asList(claims), false).equals(Fixed8.negate(result.amount));
+        return TR.exit(snapshot.calculateBonus(Arrays.asList(claims), false).equals(Fixed8.negate(result.amount)));
 
         // C# code:
         //        if (mempool.OfType < ClaimTransaction > ().Where(p = > p != this).
         //        SelectMany(p = > p.Claims).
         //        Intersect(Claims).Count() > 0)
         //        return false;
-        //        TransactionResult result = GetTransactionResults().FirstOrDefault(p = > p.AssetId == Blockchain.UtilityToken.Hash)
-        //        ;
+        //        TransactionResult result = GetTransactionResults().FirstOrDefault(p = > p.AssetId == Blockchain.UtilityToken.Hash);
         //        if (result == null || result.Amount > Fixed8.Zero) return false;
         //        try {
         //            return snapshot.CalculateBonus(Claims, false) == -result.Amount;

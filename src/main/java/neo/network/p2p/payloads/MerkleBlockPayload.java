@@ -1,6 +1,5 @@
 package neo.network.p2p.payloads;
 
-import sun.security.util.BitArray;
 
 import java.util.BitSet;
 
@@ -10,28 +9,39 @@ import neo.csharp.BitConverter;
 import neo.csharp.Ulong;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
+import neo.log.notr.TR;
 
 /**
- * SPV钱包所需的数据块的实体类, BlockBase的子类
+ * a class descript data required by SPV wallet <br/> a subclass of BlockBase
  */
 public class MerkleBlockPayload extends BlockBase {
 
     /**
-     * 交易数量
+     * The number of transactions
      */
     public int txCount;
 
     /**
-     * 数组形式的梅克尔树
+     * The merkle tree in array format
      */
     public UInt256[] hashes;
 
     /**
-     * 标志位，表示梅克尔树中哪些节点可以省略，哪些节点不可以省略，用于梅克尔树与数组的相互转换。(little endian)
+     * The flags stands for which nodes are ignored, and which nodes are not ignored.<br/>   This
+     * flag is used for transferring merkle tree to array.(little endian)<br/>
      */
     public byte[] flags;
 
-    public static MerkleBlockPayload Create(Block block, BitSet flags) {
+
+    /**
+     * create the data for SPV wallet to verify the transaction
+     *
+     * @param block block data
+     * @param flags flags
+     * @return MerkleBlockPayload
+     */
+    public static MerkleBlockPayload create(Block block, BitSet flags) {
+        TR.enter();
         UInt256[] txHashs = new UInt256[block.transactions.length];
         for (int i = 0; i < block.transactions.length; i++) {
             txHashs[i] = block.transactions[i].hash();
@@ -39,9 +49,9 @@ public class MerkleBlockPayload extends BlockBase {
 
         MerkleTree tree = new MerkleTree(txHashs);
         tree.trim(flags);
-// TODO waiting for bitset or bitmap
-//        byte[] buffer = new byte[(flags.size() + 7) / 8];
-//        flags.toByteArray(buffer, 0);
+        // C# code:
+        //    byte[] buffer = new byte[(flags.size() + 7) / 8];
+        //    flags.toByteArray(buffer, 0);
         byte[] buffer = flags.toByteArray();
 
         MerkleBlockPayload payload = new MerkleBlockPayload();
@@ -56,40 +66,47 @@ public class MerkleBlockPayload extends BlockBase {
         payload.txCount = block.transactions.length;
         payload.hashes = tree.toHashArray();
         payload.flags = buffer;
-        return payload;
+        return TR.exit(payload);
     }
 
     /**
-     * 数据块的大小
+     * The size of data blocks
      */
     @Override
     public int size() {
-        return super.size() + Integer.BYTES + BitConverter.getVarSize(hashes) + BitConverter.getVarSize(flags);
+        TR.enter();
+        // C# code: Size => base.Size + sizeof(int) + Hashes.GetVarSize() + Flags.GetVarSize();
+        // 105 + witness + 4 + hashes + flags
+        return TR.exit(super.size() + Integer.BYTES + BitConverter.getVarSize(hashes) + BitConverter.getVarSize(flags));
     }
 
     /**
-     * 反序列化方法
+     * Deserialization
      *
-     * @param reader 二进制输入流
+     * @param reader The binary input reader
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         super.deserialize(reader);
         txCount = reader.readVarInt(new Ulong(Integer.MAX_VALUE)).intValue();
         hashes = reader.readArray(UInt256[]::new, UInt256::new);
         flags = reader.readVarBytes();
+        TR.exit();
     }
 
     /**
-     * 序列化方法
+     * Serialization
      *
-     * @param writer 二进制输出流
+     * @param writer The binary output writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         super.serialize(writer);
         writer.writeVarInt(txCount);
         writer.writeArray(hashes);
         writer.writeVarBytes(flags);
+        TR.exit();
     }
 }

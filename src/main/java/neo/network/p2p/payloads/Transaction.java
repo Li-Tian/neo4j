@@ -596,25 +596,25 @@ public abstract class Transaction implements IInventory {
         }
 
         // check issue asset:
-        Stream<TransactionResult> results_issue = results.stream()
-                .filter(p -> p.amount.compareTo(Fixed8.ZERO) > 0);
+        List<TransactionResult> results_issue = results.stream()
+                .filter(p -> p.amount.compareTo(Fixed8.ZERO) < 0).collect(Collectors.toList());
         switch (type) {
             case MinerTransaction:
             case ClaimTransaction:
                 // only gas can be claimed or as a bonus in minerTx
-                if (results_issue.anyMatch(p -> !p.assetId.equals(Blockchain.UtilityToken.hash()))) {
+                if (results_issue.stream().anyMatch(p -> !p.assetId.equals(Blockchain.UtilityToken.hash()))) {
                     return false;
                 }
                 break;
             case IssueTransaction:
                 // Gas asset can not be issue in IssueTx
-                if (results_issue.anyMatch(p -> p.assetId.equals(Blockchain.UtilityToken.hash()))) {
+                if (results_issue.stream().anyMatch(p -> p.assetId.equals(Blockchain.UtilityToken.hash()))) {
                     return false;
                 }
                 break;
             default:
                 // otherwise cannot issue global asset
-                if (results_issue.count() > 0) {
+                if (results_issue.size() > 0) {
                     return false;
                 }
                 break;
@@ -760,13 +760,8 @@ public abstract class Transaction implements IInventory {
      *
      * @return serialized data
      */
-    @Override
     public byte[] getHashData() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(outputStream);
-        serializeUnsigned(writer);
-        writer.flush();
-        return outputStream.toByteArray();
+        return IVerifiable.getHashData(this);
     }
 
     /**

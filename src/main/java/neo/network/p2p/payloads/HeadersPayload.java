@@ -6,60 +6,68 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.notr.TR;
 
 /**
- * 区块头的传输数据包，定义了区块头的结构等
+ * The payload of the headers, which define the struct of block headers
  */
 public class HeadersPayload implements ISerializable {
 
     /**
-     * 最大区块头数量
+     * The max number of headers
      */
     public static final int MaxHeadersCount = 2000;
 
     /**
-     * 区块头数组
+     * The array of headers
      */
     public Header[] headers;
 
     /**
-     * 区块头数组的大小
+     * The size of block header array
      */
     @Override
     public int size() {
-        return BitConverter.getVarSize(headers);
+        TR.enter();
+        return TR.exit(BitConverter.getVarSize(headers));
     }
 
 
     /**
-     * 序列化
+     * Serialization
      *
-     * @param writer 二进制输出器
+     * @param writer The binary output writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeArray(headers);
+        TR.exit();
     }
 
     /**
-     * 反序列化
+     * Deserialization
      *
-     * @param reader 二进制读入器
+     * @param reader The binary input reader
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         headers = reader.readArray(Header[]::new, Header::new, MaxHeadersCount);
+        TR.exit();
     }
 
     /**
-     * 根据可枚举区块头集合创建一个区块头传输数据包
+     * Create a payload for headers accoring to enumerable headers
      *
-     * @param headers 可枚举区块头集合
-     * @return 创建的区块头传输数据包
+     * @param headers The enumerable headers
+     * @return The payload for headers
      */
     public static HeadersPayload create(Collection<Header> headers) {
+        TR.enter();
         HeadersPayload headersPayload = new HeadersPayload();
-        headersPayload.headers = (Header[]) headers.toArray();
-        return headersPayload;
+        headersPayload.headers = new Header[headers.size()];
+        headers.toArray(headersPayload.headers);
+        return TR.exit(headersPayload);
     }
 }

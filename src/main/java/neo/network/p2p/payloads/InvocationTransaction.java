@@ -11,69 +11,75 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 
 /**
- * 执行交易，执行脚本或智能合约。包括部署和执行智能合约
+ * Invocation of the transaction, which execute the scripts and contracts, including deploying and
+ * executing smart contract
  */
 public class InvocationTransaction extends Transaction {
 
     /**
-     * 脚本
+     * The hash script
      */
     public byte[] script;
 
     /**
-     * GAS消耗
+     * Gas consumption
      */
     public Fixed8 gas;
 
     /**
-     * 构造函数：创建执行交易
+     * The construct function: creating the InvocationTransaction
      */
     public InvocationTransaction() {
         super(TransactionType.InvocationTransaction);
     }
 
     /**
-     * 存储大小
+     * The size of storage
      */
     @Override
     public int size() {
-        return super.size() + BitConverter.getVarSize(script);
+        TR.enter();
+        return TR.exit(super.size() + BitConverter.getVarSize(script));
     }
 
     /**
-     * 序列化
-     * <p>序列化字段</p>
+     * Serialization
+     * <p>fields:</p>
      * <ul>
-     * <li>Script: 待执行脚本</li>
-     * <li>Gas: 若交易版本号大于等于1，则序列化Gas字段</li>
+     * <li>Script: The script waiting to be executed</li>
+     * <li>Gas: If the version of transaction is larger than 1, then serialize this data</li>
      * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer The binary output writer
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
+        TR.enter();
         writer.writeVarBytes(script);
         if (version >= 1) {
             writer.writeSerializable(gas);
         }
+        TR.exit();
     }
 
     /**
-     * 反序列化数据，除了data数据外。
+     * Deserialization function which exclude the data
      *
-     * @param reader 二进制读取流
-     * @return Version为0时，不指定GAS。默认为0<br/> Version为1时，需要指定GAS<br/>
-     * @throws FormatException <ul>
-     *                         <li>1. 若交易版本大于1，则抛出该异常</li>
-     *                         <li>2. 反序列化的脚本数组长度为0</li>
-     *                         <li>3. 指定的执行智能合约的GAS额度小于0.</li>
-     *                         </ul>
+     * @param reader The binary input reader
+     * @throws FormatException 1. If the transaction version is larger than 1 then throw this
+     *                         exception<br/> 2. The transction script's length is equal to 0<br/>
+     *                         3. The gas consumption of smart contract invocation is smaller than
+     *                         0.
+     * @note When the version is 0， do not need gas. The default value is 0<br/> When the version is
+     * 1, need set the gas <br/>
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         if (version > 1) throw new FormatException();
         script = reader.readVarBytes(65536);
         if (script.length == 0) {
@@ -87,54 +93,65 @@ public class InvocationTransaction extends Transaction {
         } else {
             gas = Fixed8.ZERO;
         }
+        TR.exit();
     }
 
     /**
-     * 获取GAS消耗
+     * get system fee
      *
-     * @param consumed 实际消耗的gas
-     * @return <ul>
-     * <li>GAS消息等于实际消耗的GAS减去免费的10GAS；</li>
-     * <li>若gas消耗小于等于0，则返回0；；</li>
-     * <li>最后对gas消耗取上整数；</li>
-     * </ul>
+     * @return system fee = gas
+     */
+    @Override
+    public Fixed8 getSystemFee() {
+        TR.enter();
+        return TR.exit(gas);
+    }
+
+    /**
+     * Get the gas consumption
+     *
+     * @param consumed The real consumpt gas
+     * @return GThe Gas consumption is equal to the comsumed gas minus the free 10 Gas. If the gas
+     * consumption is small than 0, then return 0 Finally use the ceil of the gas.
      */
     public static Fixed8 getGas(Fixed8 consumed) {
-        // c3 code Fixed8 gas = consumed - Fixed8.FromDecimal(10);
+        TR.enter();
+        // c3 code Fixed8 gas = consumed - Fixed8.FromDecimal(10); // TODO 10 is hard code
         Fixed8 gas = Fixed8.subtract(consumed, Fixed8.fromDecimal(BigDecimal.valueOf(10)));
-        if (gas.compareTo(Fixed8.ZERO) <= 0) return Fixed8.ZERO;
-        return gas.ceiling();
+        if (gas.compareTo(Fixed8.ZERO) <= 0) return TR.exit(Fixed8.ZERO);
+        return TR.exit(gas.ceiling());
     }
 
 
     /**
-     * 校验交易
+     * Verify the transaction
      *
-     * @param snapshot 数据库快照
-     * @param mempool  内存池交易
-     * @return <ul>
-     * <li>1. 若消耗的GAS不能整除10^8, 则返回false.（即，GAS必须是整数单位形式的Fixed8，即不能包含有小数的GAS） </li>
-     * <li>2. 进行交易的基本验证，若验证失败，则返回false  </li>
-     * </ul>
+     * @param snapshot Snapshot of database
+     * @param mempool  Memory pool of transactions
+     * @return 1. If the consuming gas can not be divide by 10^8 ,return false.(e.g. The gas must be
+     * the integer format of Fixed8, which means there is not decimal Gas.)<br/>  2. The basic
+     * verification of the transaction invocation. If not verified, return false.
      */
     @Override
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
+        TR.enter();
         if (gas.getData() % 100000000 != 0) {
-            return false;
+            return TR.exit(false);
         }
-        return super.verify(snapshot, mempool);
+        return TR.exit(super.verify(snapshot, mempool));
     }
 
     /**
-     * 转成json对象
+     * Transfer to json object
      *
-     * @return json对象
+     * @return Json object
      */
     @Override
     public JsonObject toJson() {
+        TR.enter();
         JsonObject jsonObject = super.toJson();
         jsonObject.addProperty("script", BitConverter.toHexString(script));
         jsonObject.addProperty("gas", gas.toString());
-        return jsonObject;
+        return TR.exit(jsonObject);
     }
 }

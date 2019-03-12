@@ -3,14 +3,7 @@ package neo.network.p2p.payloads;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
-import neo.ledger.AssetState;
-
-import static org.junit.Assert.*;
+import neo.Utils;
 
 public class AddrPayloadTest {
 
@@ -29,13 +22,7 @@ public class AddrPayloadTest {
             addressList = new NetworkAddressWithTime[0];
         }};
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        addrPayload.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        AddrPayload tmp = new AddrPayload();
-        tmp.deserialize(new BinaryReader(inputStream));
+        AddrPayload tmp = Utils.copyFromSerialize(addrPayload, AddrPayload::new);
 
         Assert.assertEquals(1, tmp.size());
     }

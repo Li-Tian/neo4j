@@ -2,6 +2,7 @@ package neo.network.p2p.payloads;
 
 import neo.csharp.io.BinaryReader;
 import neo.exception.FormatException;
+import neo.log.tr.TR;
 
 /**
  * common transaction (not issuing a smart contract)
@@ -23,6 +24,8 @@ public class ContractTransaction extends Transaction {
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         if (version != 0) throw new FormatException();
+        TR.exit();
     }
 }

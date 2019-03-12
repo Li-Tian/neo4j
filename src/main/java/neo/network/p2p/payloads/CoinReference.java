@@ -7,6 +7,7 @@ import neo.csharp.Ushort;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.tr.TR;
 
 /**
  * CoinReference
@@ -28,7 +29,8 @@ public class CoinReference implements ISerializable {
      */
     @Override
     public int size() {
-        return prevHash.size() + Ushort.BYTES; // ushort 2个字节
+        TR.enter();
+        return TR.exit(prevHash.size() + Ushort.BYTES); // ushort 2个字节
     }
 
     /**
@@ -38,8 +40,10 @@ public class CoinReference implements ISerializable {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeSerializable(prevHash);
         writer.writeUshort(prevIndex);
+        TR.exit();
     }
 
 
@@ -50,8 +54,10 @@ public class CoinReference implements ISerializable {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         prevHash = reader.readSerializable(UInt256::new);
         prevIndex = reader.readUshort();
+        TR.exit();
     }
 
     /**
@@ -61,7 +67,8 @@ public class CoinReference implements ISerializable {
      */
     @Override
     public int hashCode() {
-        return prevHash.hashCode() + prevIndex.hashCode();
+        TR.enter();
+        return TR.exit(prevHash.hashCode() + prevIndex.hashCode());
     }
 
     /**
@@ -78,12 +85,13 @@ public class CoinReference implements ISerializable {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null) return false;
-        if (!(obj instanceof CoinReference)) return false;
+        TR.enter();
+        if (obj == this) return TR.exit(true);
+        if (obj == null) return TR.exit(false);
+        if (!(obj instanceof CoinReference)) return TR.exit(false);
 
         CoinReference other = (CoinReference) obj;
-        return prevIndex.equals(other.prevIndex) && prevHash.equals(other.prevHash);
+        return TR.exit(prevIndex.equals(other.prevIndex) && prevHash.equals(other.prevHash));
     }
 
     /**
@@ -92,9 +100,10 @@ public class CoinReference implements ISerializable {
      * @return JObject object
      */
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = new JsonObject();
         json.addProperty("txid", prevHash.toString());
         json.addProperty("vout", prevIndex);
-        return json;
+        return TR.exit(json);
     }
 }

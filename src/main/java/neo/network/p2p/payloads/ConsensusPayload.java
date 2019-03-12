@@ -11,6 +11,7 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
+import neo.log.tr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
 
@@ -62,10 +63,11 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public UInt256 hash() {
+        TR.enter();
         if (hash == null) {
             hash = new UInt256(Crypto.Default.hash256(this.getHashData()));
         }
-        return hash;
+        return TR.exit(hash);
     }
 
     /**
@@ -73,7 +75,8 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public InventoryType inventoryType() {
-        return InventoryType.Consensus;
+        TR.enter();
+        return TR.exit(InventoryType.Consensus);
     }
 
     /**
@@ -87,10 +90,11 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public boolean verify(Snapshot snapshot) {
+        TR.enter();
         if (blockIndex.compareTo(snapshot.getHeight()) < 0) {
-            return false;
+            return TR.exit(false);
         }
-        return IVerifiable.verifyWitnesses(this, snapshot);
+        return TR.exit(IVerifiable.verifyWitnesses(this, snapshot));
     }
 
     /**
@@ -100,12 +104,13 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public Witness[] getWitnesses() {
-        return new Witness[]{witness};
+        TR.enter();
+        return TR.exit(new Witness[]{witness});
     }
 
-    @Override
     public byte[] getHashData() {
-        return new byte[0];
+        TR.enter();
+        return TR.exit(IVerifiable.getHashData(this));
     }
 
     /**
@@ -113,10 +118,12 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public void setWitnesses(Witness[] witnesses) {
+        TR.enter();
         if (witnesses.length != 1) {
             throw new IllegalArgumentException();
         }
         witness = witnesses[0];
+        TR.exit();
     }
 
     /**
@@ -126,12 +133,14 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public void deserializeUnsigned(BinaryReader reader) {
+        TR.enter();
         version = reader.readUint();
         prevHash = reader.readSerializable(UInt256::new);
         blockIndex = reader.readUint();
         validatorIndex = reader.readUshort();
         timestamp = reader.readUint();
         data = reader.readVarBytes();
+        TR.exit();
     }
 
     /**
@@ -142,13 +151,14 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+        TR.enter();
         ECPoint[] validators = snapshot.getValidatorPubkeys();
         if (validators.length < validatorIndex.intValue()) {
             throw new InvalidOperationException();
         }
         byte[] scriptBytes = Contract.createSignatureRedeemScript(validators[validatorIndex.intValue()]);
         UInt160 scriptHash = UInt160.parseToScriptHash(scriptBytes);
-        return new UInt160[]{scriptHash};
+        return TR.exit(new UInt160[]{scriptHash});
     }
 
     /**
@@ -166,12 +176,14 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public void serializeUnsigned(BinaryWriter writer) {
+        TR.enter();
         writer.writeUint(version);
         writer.writeSerializable(prevHash);
         writer.writeUint(blockIndex);
         writer.writeUshort(validatorIndex);
         writer.writeUint(timestamp);
         writer.writeVarBytes(data);
+        TR.exit();
     }
 
     /**
@@ -179,10 +191,12 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public int size() {
+        TR.enter();
         // C# Size => sizeof(uint) + PrevHash.Size + sizeof(uint) + sizeof(ushort) + sizeof(uint)
         // + Data.GetVarSize() + 1 + Witness.Size;
-        return Uint.BYTES + prevHash.size() + Uint.BYTES + Ushort.BYTES + Uint.BYTES
-                + BitConverter.getVarSize(data) + 1 + witness.size();
+        // 4 + 32 + 4 +2 + 4 + data + 1 + witness
+        return TR.exit(Uint.BYTES + prevHash.size() + Uint.BYTES + Ushort.BYTES + Uint.BYTES
+                + BitConverter.getVarSize(data) + 1 + witness.size());
     }
 
     /**
@@ -201,9 +215,11 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         this.serializeUnsigned(writer);
         writer.writeByte((byte) 1);
         writer.writeSerializable(witness);
+        TR.exit();
     }
 
     /**
@@ -213,11 +229,13 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         this.deserializeUnsigned(reader);
         if (reader.readByte() != 1) {
             throw new FormatException();
         }
         witness = reader.readSerializable(Witness::new);
+        TR.exit();
     }
 
     /**
@@ -227,6 +245,7 @@ public class ConsensusPayload implements IInventory {
      */
     @Override
     public byte[] getMessage() {
-        return this.getHashData();
+        TR.enter();
+        return TR.exit(this.getHashData());
     }
 }

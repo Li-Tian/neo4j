@@ -4,25 +4,25 @@ import neo.UInt256;
 import neo.persistence.Snapshot;
 
 /**
- * Inventory接口
+ * The interface of inventory
  */
 public interface IInventory extends IVerifiable {
 
     /**
-     * Inventory哈希值
+     *  The hash value of inventory
      */
     UInt256 hash();
 
     /**
-     * Inventory类型
+     * The inventory type
      */
     InventoryType inventoryType();
 
     /**
-     * 校验函数，根据快照进行校验
+     * The verify function, which verify according to the snapshop
      *
-     * @param snapshot 快照
-     * @return 校验成功返回true，否则返回false
+     * @param snapshot The snapshot of blockchain
+     * @return If verify successfully return true otherwise return false
      */
     boolean verify(Snapshot snapshot);
 }

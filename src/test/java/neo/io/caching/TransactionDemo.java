@@ -63,11 +63,6 @@ public class TransactionDemo implements IInventory, ICloneable<TransactionDemo> 
     }
 
     @Override
-    public byte[] getHashData() {
-        return new byte[0];
-    }
-
-    @Override
     public void setWitnesses(Witness[] witnesses) {
 
     }

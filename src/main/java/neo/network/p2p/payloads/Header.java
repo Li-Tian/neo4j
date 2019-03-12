@@ -1,87 +1,119 @@
 package neo.network.p2p.payloads;
 
 
+import neo.UInt256;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
+import neo.ledger.TrimmedBlock;
+import neo.log.notr.TR;
 
 /**
- * 区块头
+ * The block header
  */
 public class Header extends BlockBase {
 
     /**
-     * 存储大小
+     * The storage size for this block header object
      */
     @Override
     public int size() {
-        return super.size() + 1;
+        TR.enter();
+        return TR.exit(super.size() + 1);
     }
 
     /**
-     * 反序列化
+     * The deserialization
      *
-     * @param reader 二进制输入流
-     * @throws FormatException 二进制数据格式与Header序列化后格式不符时抛出
+     * @param reader The binary output stream
+     * @throws FormatException Thrown when the binary data format does not match the format of the
+     *                         header after serialization
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         super.deserialize(reader);
         if (reader.readByte() != 0) {
             throw new FormatException();
         }
+        TR.exit();
     }
 
 
     /**
-     * 序列化，尾部写入固定值0
-     * <p>序列化字段</p>
+     * Serialization, with a fixed 0 at trim
+     * <p>fields:</p>
      * <ul>
-     * <li>Version: 状态版本号</li>
-     * <li>PrevHash: 上一个区块hash</li>
-     * <li>MerkleRoot: 梅克尔树</li>
-     * <li>Timestamp: 时间戳</li>
-     * <li>Index: 区块高度</li>
-     * <li>ConsensusData: 共识数据，默认为block nonce</li>
-     * <li>NextConsensus: 下一个区块共识地址</li>
-     * <li>0: 固定值0</li>
+     * <li>Version: The version of the state</li>
+     * <li>PrevHash: The hash of previous block</li>
+     * <li>MerkleRoot: The root of Merkle tree</li>
+     * <li>Timestamp: The timestamp</li>
+     * <li>Index: The height of block</li>
+     * <li>ConsensusData: The consensus data, default is block nonce</li>
+     * <li>NextConsensus: The next consensus node address</li>
+     * <li>0: Fixed 0</li>
      * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer The binary output writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         super.serialize(writer);
         writer.writeByte((byte) 0);
+        TR.exit();
     }
 
     /**
-     * 获取hash code
+     * Get the hash code
      *
-     * @return 区块哈希的hashcode
+     * @return The hash code of block
      */
     @Override
     public int hashCode() {
-        return hash().hashCode();
+        TR.enter();
+        return TR.exit(hash().hashCode());
     }
 
     /**
-     * 比较区块头
+     * Determine if the block header is equal to other object
      *
-     * @param other 待比较对象
-     * @return 若待比较区块头为null，返回false。否则按哈希值比较
+     * @param other the object to be compared
+     * @return If it is equal to other object returns true, otherwise return false
      */
     @Override
     public boolean equals(Object other) {
+        TR.enter();
         if (other == this) {
-            return true;
+            return TR.exit(true);
         }
         if (other == null) {
-            return false;
+            return TR.exit(false);
         }
         if (!(other instanceof Header)) {
-            return false;
+            return TR.exit(false);
         }
-        return hash().equals(((Header) other).hash());
+        return TR.exit(hash().equals(((Header) other).hash()));
+    }
+
+    /**
+     * Transfer to trimmed block. The trimmed block instance transferd from header does not include
+     * the hash value of transactions
+     *
+     * @return the trimmed block
+     */
+    public TrimmedBlock trim() {
+        TR.enter();
+        TrimmedBlock trimmedBlock = new TrimmedBlock();
+        trimmedBlock.version = version;
+        trimmedBlock.prevHash = prevHash;
+        trimmedBlock.merkleRoot = merkleRoot;
+        trimmedBlock.timestamp = timestamp;
+        trimmedBlock.index = index;
+        trimmedBlock.consensusData = consensusData;
+        trimmedBlock.nextConsensus = nextConsensus;
+        trimmedBlock.witness = witness;
+        trimmedBlock.hashes = new UInt256[0];
+        return TR.exit(trimmedBlock);
     }
 }

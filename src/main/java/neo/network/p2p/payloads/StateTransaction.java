@@ -15,71 +15,78 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.InvalidOperationException;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
 import neo.cryptography.ecc.ECPoint;
 
 
 /**
- * 投票或申请验证人交易
+ * The transaction for voting or application for validators
  */
 public class StateTransaction extends Transaction {
 
     /**
-     * 交易描述
+     * The descriptor for transactions
      */
     public StateDescriptor[] descriptors;
 
     /**
-     * 构造函数
+     * Constructor of transaction for voting and validator application
      */
     public StateTransaction() {
         super(TransactionType.StateTransaction);
     }
 
     /**
-     * 存储大小
+     * The storage of size
      */
     @Override
     public int size() {
+        TR.enter();
         // C# code Size => base.Size + Descriptors.GetVarSize();
-        return super.size() + BitConverter.getVarSize(descriptors);
+        return TR.exit(super.size() + BitConverter.getVarSize(descriptors));
     }
 
 
     /**
-     * 交易手续费
+     * The transaction system fee
      */
     @Override
     public Fixed8 getSystemFee() {
+        TR.enter();
         Fixed8 fee = Fixed8.ZERO;
         for (StateDescriptor descriptor : descriptors) {
             fee = Fixed8.add(fee, descriptor.getSystemFee());
         }
-        return fee;
+        return TR.exit(fee);
     }
 
     /**
-     * 反序列化非data数据
+     * Deserialize exclusive data
      *
-     * @param reader 二进制输入流
+     * @param reader The binary input reader
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         descriptors = reader.readArray(StateDescriptor[]::new, StateDescriptor::new, 16);
+        TR.exit();
     }
 
     /**
-     * 获取验证脚本hash
+     * Get the script hashes for verifying
      *
-     * @param snapshot 数据库快照
+     * @param snapshot The snapshot for database
      * @return <ul>
-     * <li>若 StateDescriptor.Field = "Votes"时, 包含投票人地址地址</li>
-     * <li>若 Field="Registered"时，包含申请人的地址脚本hash</li>
+     * <li>If the stateDescriptor field is "Votes", it includes the address of the votes </li>
+     * <li>If the stateDescriptor field is "Registered", it includes the address script hash of
+     * applicant</li>
      * </ul>
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+        TR.enter();
         UInt160[] hashes = super.getScriptHashesForVerifying(snapshot);
         List<UInt160> list = Arrays.asList(hashes);
 
@@ -114,19 +121,21 @@ public class StateTransaction extends Transaction {
                     throw new InvalidOperationException();
             }
         }
-        return (UInt160[]) list.stream().distinct().sorted().toArray();
+        return TR.exit((UInt160[]) list.stream().distinct().sorted().toArray());
     }
 
     private Collection<UInt160> getScriptHashesForVerifyingAccount(StateDescriptor descriptor) {
+        TR.enter();
         switch (descriptor.field) {
             case "Votes":
-                return Collections.singleton(new UInt160(descriptor.key));
+                return TR.exit(Collections.singleton(new UInt160(descriptor.key)));
             default:
                 throw new InvalidOperationException();
         }
     }
 
     private Collection<UInt160> getScriptHashesForVerifying_Validator(StateDescriptor descriptor) {
+        TR.enter();
         switch (descriptor.field) {
             case "Registered":
                 //  Collections.singleton(UInt160.parseToScriptHash(Contract.createSignatureRedeemScript()));
@@ -134,29 +143,36 @@ public class StateTransaction extends Transaction {
                 ECPoint publicKey = ECPoint.fromBytes(descriptor.key, ECC.Secp256r1.getCurve());
                 byte[] scripts = Contract.createSignatureRedeemScript(publicKey);
                 UInt160 scriptHash = UInt160.parseToScriptHash(scripts);
-                return Collections.singleton(scriptHash);
+                return TR.exit(Collections.singleton(scriptHash));
             default:
                 throw new InvalidOperationException();
         }
     }
 
     /**
-     * 序列化非data数据
+     * Serialize exclusive data
+     * <p>fields:</p>
+     * <ul>
+     * <li>Descriptors: transaction description</li>
+     * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer BinaryWriter
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
+        TR.enter();
         writer.writeArray(descriptors);
+        TR.exit();
     }
 
     /**
-     * 转成json对象
+     * Transfer to json object
      *
-     * @return json对象
+     * @return Json object
      */
     @Override
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = super.toJson();
 
         JsonArray array = new JsonArray(descriptors.length);
@@ -164,34 +180,37 @@ public class StateTransaction extends Transaction {
             array.add(descriptor.toJson());
         }
         json.add("descriptors", array);
-        return json;
+        return TR.exit(json);
     }
 
     /**
-     * 校验交易
+     * The transaction verification
      *
-     * @param snapshot 数据库快照
-     * @param mempool  内存池交易
+     * @param snapshot database snapshot
+     * @param mempool  transaction in mempool
      * @return <ul>
-     * <li>1. 对每个StateDescriptor进行验证
+     * <li>1. Verify each stateDescriptor
      * <ul>
-     * <li>1.1 若 descriptor.Type 是 StateType.Validator 时, 若 descriptor.Field
-     * 不等于`Registered`时，返回false </li>
-     * <li>1.2 若 descriptor.Type 是 StateType.Account 时
+     * <li>1.1 When the descriptor.Type is StateType.Validator:if descriptor.Field is not equal to
+     * Registered, return false </li>
+     * <li>1.2 When the descriptor.Type is StateType.Account:
      * <ul>
-     * <li>1.2.1 若投票账户持有的NEO数量为0，或者投票账户冻结时，返回false</li>
-     * <li>1.2.2 若被投账户在备用共识节点列表或尚未申请为验证人时，返回false</li>
+     * <li>1.2.1 If NEO hold by the the voting accuntis 0, or when the voting acount is frozen,
+     * return false.</li>
+     * <li> 1.2.2 If the voted account is in the backup list or is not registered as validators,
+     * return false.</li>
      * </ul></li>
      * </ul>
      * </li>
-     * <li>2. 进行交易的基本验证，若验证失败，则返回false</li>
+     * <li>2. The basic transaction verification. If verified failed, return false</li>
      * </ul>
      */
     @Override
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
+        TR.enter();
         for (StateDescriptor descriptor : descriptors)
             if (!descriptor.verify(snapshot))
-                return false;
-        return super.verify(snapshot, mempool);
+                return TR.exit(false);
+        return TR.exit(super.verify(snapshot, mempool));
     }
 }

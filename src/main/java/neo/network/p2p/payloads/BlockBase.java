@@ -3,7 +3,6 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
-import java.io.ByteArrayOutputStream;
 
 import neo.UInt160;
 import neo.UInt256;
@@ -71,10 +70,11 @@ public abstract class BlockBase implements IVerifiable {
      * @return UInt256
      */
     public UInt256 hash() {
+        TR.enter();
         if (hash == null) {
             hash = new UInt256(Crypto.Default.hash256(this.getMessage()));
         }
-        return hash;
+        return TR.exit(hash);
     }
 
 
@@ -85,7 +85,8 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public Witness[] getWitnesses() {
-        return new Witness[]{witness};
+        TR.enter();
+        return TR.exit(new Witness[]{witness});
     }
 
     /**
@@ -93,8 +94,10 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public void setWitnesses(Witness[] witnesses) {
+        TR.enter();
         if (witnesses.length != 1) throw new IllegalArgumentException();
         this.witness = witnesses[0];
+        TR.exit();
     }
 
 
@@ -103,10 +106,11 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public int size() {
+        TR.enter();
         // C# code  Size => sizeof(uint) + PrevHash.Size + MerkleRoot.Size + sizeof(uint) + sizeof(uint) + sizeof(ulong) + NextConsensus.Size + 1 + Witness.Size;
         // 4 + 32 + 32 + 4 + 4 + 8 + 20 + 1 + （1+2+1+2） =105 + 6 => 111
-        return Uint.BYTES + prevHash.size() + merkleRoot.size() + Uint.BYTES
-                + Uint.BYTES + Ulong.BYTES + nextConsensus.size() + 1 + witness.size();
+        return TR.exit(Uint.BYTES + prevHash.size() + merkleRoot.size() + Uint.BYTES
+                + Uint.BYTES + Ulong.BYTES + nextConsensus.size() + 1 + witness.size());
     }
 
     /**
@@ -116,9 +120,11 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         this.deserializeUnsigned(reader);
         if (reader.readByte() != 1) throw new IllegalArgumentException();
         witness = reader.readSerializable(() -> new Witness());
+        TR.exit();
     }
 
 
@@ -129,6 +135,7 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public void deserializeUnsigned(BinaryReader reader) {
+        TR.enter();
         version = reader.readUint();
         prevHash = reader.readSerializable(() -> new UInt256());
         merkleRoot = reader.readSerializable(() -> new UInt256());
@@ -136,6 +143,7 @@ public abstract class BlockBase implements IVerifiable {
         index = reader.readUint();
         consensusData = reader.readUlong();
         nextConsensus = reader.readSerializable(() -> new UInt160());
+        TR.exit();
     }
 
     /**
@@ -157,9 +165,11 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         this.serializeUnsigned(writer);
         writer.writeByte((byte) 1);
         writer.writeSerializable(witness);
+        TR.exit();
     }
 
     /**
@@ -169,6 +179,7 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public void serializeUnsigned(BinaryWriter writer) {
+        TR.enter();
         writer.writeUint(version);
         writer.writeSerializable(prevHash);
         writer.writeSerializable(merkleRoot);
@@ -176,6 +187,7 @@ public abstract class BlockBase implements IVerifiable {
         writer.writeUint(index);
         writer.writeUlong(consensusData);
         writer.writeSerializable(nextConsensus);
+        TR.exit();
     }
 
     /**
@@ -187,6 +199,7 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+        TR.enter();
         if (prevHash == UInt256.Zero) {
             return new UInt160[]{witness.scriptHash()};
         }
@@ -195,7 +208,7 @@ public abstract class BlockBase implements IVerifiable {
         if (prevHeader == null) {
             throw new InvalidOperationException();
         }
-        return new UInt160[]{prevHeader.nextConsensus};
+        return TR.exit(new UInt160[]{prevHeader.nextConsensus});
         // C# code
         //        Header prev_header = snapshot.GetHeader(PrevHash);
         //        if (prev_header == null) throw new InvalidOperationException();
@@ -209,7 +222,8 @@ public abstract class BlockBase implements IVerifiable {
      */
     @Override
     public byte[] getMessage() {
-        return this.getHashData();
+        TR.enter();
+        return TR.exit(this.getHashData());
     }
 
     /**
@@ -217,13 +231,9 @@ public abstract class BlockBase implements IVerifiable {
      *
      * @return serialized data
      */
-    @Override
     public byte[] getHashData() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(outputStream);
-        serializeUnsigned(writer);
-        writer.flush();
-        return outputStream.toByteArray();
+        TR.enter();
+        return TR.exit(IVerifiable.getHashData(this));
     }
 
     /**
@@ -232,6 +242,7 @@ public abstract class BlockBase implements IVerifiable {
      * @return JObject object
      */
     public JsonObject toJson() {
+        TR.enter();
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("hash", hash().toString());
         jsonObject.addProperty("size", size());
@@ -243,7 +254,7 @@ public abstract class BlockBase implements IVerifiable {
         jsonObject.addProperty("nonce", consensusData.toString());
         jsonObject.addProperty("nextconsensus", nextConsensus.toString());
         jsonObject.add("script", witness.toJson());
-        return jsonObject;
+        return TR.exit(jsonObject);
     }
 
     /**
@@ -260,20 +271,21 @@ public abstract class BlockBase implements IVerifiable {
      * </ul>
      */
     public boolean verify(Snapshot snapshot) {
+        TR.enter();
         Header prevHeader = snapshot.getHeader(prevHash);
         if (prevHeader == null) {
-            return false;
+            return TR.exit(false);
         }
         if (!prevHeader.index.add(new Uint(1)).equals(index)) {
-            return false;
+            return TR.exit(false);
         }
         if (prevHeader.timestamp.compareTo(timestamp) >= 0) {
-            return false;
+            return TR.exit(false);
         }
         if (!IVerifiable.verifyWitnesses(this, snapshot)) {
-            return false;
+            return TR.exit(false);
         }
-        return true;
+        return TR.exit(true);
     }
 
 }

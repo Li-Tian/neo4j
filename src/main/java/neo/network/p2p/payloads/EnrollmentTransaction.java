@@ -12,6 +12,7 @@ import neo.cryptography.ecc.ECC;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
+import neo.log.tr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
 import neo.cryptography.ecc.ECPoint;
@@ -40,10 +41,11 @@ public class EnrollmentTransaction extends Transaction {
      * get scripthash
      */
     public UInt160 getScriptHash() {
+        TR.enter();
         if (scriptHash == null) {
             scriptHash = UInt160.parseToScriptHash(Contract.createSignatureRedeemScript(publicKey));
         }
-        return scriptHash;
+        return TR.exit(scriptHash);
     }
 
     /**
@@ -51,7 +53,8 @@ public class EnrollmentTransaction extends Transaction {
      */
     @Override
     public int size() {
-        return super.size() + publicKey.size();
+        TR.enter();
+        return TR.exit(super.size() + publicKey.size());
     }
 
     /**
@@ -62,8 +65,10 @@ public class EnrollmentTransaction extends Transaction {
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         if (version != 0) throw new FormatException();
         publicKey = ECPoint.deserializeFrom(reader, ECC.Secp256r1.getCurve());
+        TR.exit();
     }
 
     /**
@@ -75,6 +80,7 @@ public class EnrollmentTransaction extends Transaction {
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+        TR.enter();
         // C# code
         // base.GetScriptHashesForVerifying(snapshot).Union(new UInt160[] { ScriptHash })
         // .OrderBy(p => p).ToArray();
@@ -85,7 +91,7 @@ public class EnrollmentTransaction extends Transaction {
         results[0] = ownerHash;
         System.arraycopy(hashes, 0, results, 1, hashes.length);
         Arrays.sort(results);
-        return results;
+        return TR.exit(results);
     }
 
     /**
@@ -99,7 +105,9 @@ public class EnrollmentTransaction extends Transaction {
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
+        TR.enter();
         writer.writeSerializable(publicKey);
+        TR.exit();
     }
 
     /**
@@ -109,9 +117,10 @@ public class EnrollmentTransaction extends Transaction {
      */
     @Override
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = super.toJson();
         json.addProperty("pubkey", publicKey.toString());
-        return json;
+        return TR.exit(json);
     }
 
     /**
@@ -123,6 +132,7 @@ public class EnrollmentTransaction extends Transaction {
      */
     @Override
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
-        return false;
+        TR.enter();
+        return TR.exit(false);
     }
 }

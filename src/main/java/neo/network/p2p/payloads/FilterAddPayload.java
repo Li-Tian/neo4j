@@ -4,43 +4,49 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.tr.TR;
 
 /**
- * 过滤器增加元素的传输数据包
+ * The payload which is add to filter
  */
 public class FilterAddPayload implements ISerializable {
 
     /**
-     * 需要添加的新元素数据
+     * The element need to be added
      */
     public byte[] data;
 
 
     /**
-     * 负载大小
+     * The size of the payload
      */
     @Override
     public int size() {
-        return BitConverter.getVarSize(data);
+        TR.enter();
+        return TR.exit(BitConverter.getVarSize(data));
     }
 
     /**
-     * 序列化
+     * The serialization function
      *
-     * @param writer 二进制输出器
+     * @param writer The binary output Writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeVarBytes(data);
+        TR.exit();
     }
 
     /**
-     * 反序列化
+     * Deserialize
      *
-     * @param reader 二进制读入器
+     * @param reader The binary input Rnput
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         data = reader.readVarBytes();
+        TR.exit();
     }
 }

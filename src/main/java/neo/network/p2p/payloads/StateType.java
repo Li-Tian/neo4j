@@ -3,25 +3,19 @@ package neo.network.p2p.payloads;
 import neo.common.ByteEnum;
 
 /**
- * StateTransaction类型
+ * StateTransaction type
  */
 public enum StateType implements ByteEnum {
     /**
-     * 投票, 值 0x40
+     * The acount of votes, value is 0x40
      */
     Account((byte) 0x40),
 
 
     /**
-     * 申请验证人，值0x48
+     * The validator applicant, value is 0x48
      */
     Validator((byte) 0x48);
-
-
-    /**
-     * 占用字节数大小
-     */
-    public static final int BYTES = Byte.BYTES;
 
     private byte value;
 
@@ -30,7 +24,7 @@ public enum StateType implements ByteEnum {
     }
 
     /**
-     * 查询资产类型的具体byte值
+     * get the value of type
      */
     @Override
     public byte value() {
@@ -39,11 +33,11 @@ public enum StateType implements ByteEnum {
 
 
     /**
-     * 从byte中解析StateTransaction类型
+     * parse StateType from type's value
      *
-     * @param type StateTransaction类型
+     * @param type type's value
      * @return StateType
-     * @throws IllegalArgumentException 当类型不存在时，抛出该异常
+     * @throws IllegalArgumentException throws this exception when the type is not exist.
      */
     public static StateType parse(byte type) {
         return ByteEnum.parse(StateType.values(), type);

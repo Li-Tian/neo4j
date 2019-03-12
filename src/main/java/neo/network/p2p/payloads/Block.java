@@ -17,6 +17,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.ledger.Blockchain;
 import neo.ledger.TrimmedBlock;
+import neo.log.notr.TR;
 
 /**
  * Block data class, a subclass of BlockBase
@@ -42,6 +43,7 @@ public class Block extends BlockBase implements IInventory {
      * block header
      */
     public Header getHeader() {
+        TR.enter();
         if (header == null) {
             header = new Header();
             header.prevHash = this.prevHash;
@@ -52,7 +54,7 @@ public class Block extends BlockBase implements IInventory {
             header.nextConsensus = this.nextConsensus;
             header.witness = this.witness;
         }
-        return header;
+        return TR.exit(header);
     }
 
     /**
@@ -60,8 +62,9 @@ public class Block extends BlockBase implements IInventory {
      */
     @Override
     public int size() {
+        TR.enter();
         // 111 + 1 + txs =>
-        return super.size() + BitConverter.getVarSize(transactions);
+        return TR.exit(super.size() + BitConverter.getVarSize(transactions));
     }
 
     /**
@@ -72,6 +75,7 @@ public class Block extends BlockBase implements IInventory {
      * @return network fee
      */
     public static Fixed8 calculateNetFee(Collection<Transaction> transactions) {
+        TR.enter();
         //        Transaction[] ts = transactions.Where(p = > p.Type != TransactionType.MinerTransaction && p.Type != TransactionType.ClaimTransaction).
         //        ToArray();
         //        Fixed8 amount_in = ts.SelectMany(p = > p.References.Values.Where(o = > o.AssetId == Blockchain.UtilityToken.Hash)).
@@ -97,7 +101,7 @@ public class Block extends BlockBase implements IInventory {
                 amountSysfee = Fixed8.add(amountSysfee, tx.getSystemFee());
             }
         }
-        return Fixed8.subtract(Fixed8.subtract(amountIn, amountOut), amountSysfee);
+        return TR.exit(Fixed8.subtract(Fixed8.subtract(amountIn, amountOut), amountSysfee));
     }
 
 
@@ -114,6 +118,7 @@ public class Block extends BlockBase implements IInventory {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         super.deserialize(reader);
         Ulong size = reader.readVarInt(new Ulong(0x10000));
         if (Ulong.ZERO.equals(size)) {
@@ -142,17 +147,20 @@ public class Block extends BlockBase implements IInventory {
         if (!MerkleTree.computeRoot(hashArray).equals(merkleRoot)) {
             throw new FormatException();
         }
+        TR.exit();
     }
 
     /**
      * Rebuild Merkle root
      */
     public void rebuildMerkleRoot() {
+        TR.enter();
         UInt256[] hashArray = new UInt256[transactions.length];
         for (int i = 0; i < transactions.length; i++) {
             hashArray[i] = transactions[i].hash();
         }
         merkleRoot = MerkleTree.computeRoot(hashArray);
+        TR.exit();
     }
 
     /**
@@ -174,8 +182,10 @@ public class Block extends BlockBase implements IInventory {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         super.serialize(writer);
         writer.writeArray(transactions);
+        TR.exit();
     }
 
     /**
@@ -183,11 +193,12 @@ public class Block extends BlockBase implements IInventory {
      */
     @Override
     public JsonObject toJson() {
+        TR.enter();
         JsonObject jsonObject = super.toJson();
         JsonArray array = new JsonArray();
         Arrays.stream(transactions).forEach(p -> array.add(p.toJson()));
         jsonObject.add("tr", array);
-        return super.toJson();
+        return TR.exit(super.toJson());
     }
 
     /**
@@ -198,14 +209,15 @@ public class Block extends BlockBase implements IInventory {
      */
     @Override
     public boolean equals(Object obj) {
+        TR.enter();
         if (obj == this) {
-            return true;
+            return TR.exit(true);
         }
         if (obj == null || !(obj instanceof Block)) {
-            return false;
+            return TR.exit(false);
         }
         Block other = (Block) obj;
-        return hash().equals(other.hash());
+        return TR.exit(hash().equals(other.hash()));
     }
 
     /**
@@ -215,7 +227,8 @@ public class Block extends BlockBase implements IInventory {
      */
     @Override
     public int hashCode() {
-        return hash().hashCode();
+        TR.enter();
+        return TR.exit(hash().hashCode());
     }
 
     /**
@@ -224,6 +237,7 @@ public class Block extends BlockBase implements IInventory {
      * @return TrimmedBlock object
      */
     public TrimmedBlock trim() {
+        TR.enter();
         TrimmedBlock trimmedBlock = new TrimmedBlock();
         trimmedBlock.version = version;
         trimmedBlock.prevHash = prevHash;
@@ -237,6 +251,6 @@ public class Block extends BlockBase implements IInventory {
         for (int i = 0; i < transactions.length; i++) {
             trimmedBlock.hashes[i] = transactions[i].hash();
         }
-        return trimmedBlock;
+        return TR.exit(trimmedBlock);
     }
 }

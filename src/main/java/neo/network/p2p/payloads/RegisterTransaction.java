@@ -15,96 +15,103 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.ledger.Blockchain;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
 import neo.cryptography.ecc.ECPoint;
 
 
 /**
- * 资产登记交易【已弃用】
+ * A transaction for registering asset(given up, please use InvocationTransaction)
  */
 @Deprecated
 public class RegisterTransaction extends Transaction {
 
     /**
-     * 资产类型
+     * The type of asset
      */
     public AssetType assetType;
 
     /**
-     * 资产名字
+     * The name of asset
      */
     public String name;
 
     /**
-     * 资产总量
+     * The total amount of asset
      */
     public Fixed8 amount;
 
     /**
-     * 精度
+     * The precision of asset
      */
     public byte precision;
 
     /**
-     * 所有者公钥
+     * The publickey of owner
      */
     public ECPoint owner;
 
     /**
-     * 管理员地址脚本hash
+     * The address hash of admin
      */
     public UInt160 admin;
 
     private UInt160 scriptHash = null;
 
     /**
-     * 创建智能合约发布交易
+     * The constructor method.Create a registration transaction
      */
     public RegisterTransaction() {
         super(TransactionType.RegisterTransaction);
     }
 
     /**
-     * 获取所有者脚本hash
+     * get the owner's script hash
      */
     public UInt160 getOwnerScriptHash() {
+        TR.enter();
         if (scriptHash == null) {
             scriptHash = UInt160.parseToScriptHash(Contract.createSignatureRedeemScript(owner));
         }
-        return scriptHash;
+        return TR.exit(scriptHash);
     }
 
     /**
-     * 存储大小
+     * The size for storage
      */
     @Override
     public int size() {
-        // C# code: Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size + sizeof(byte) + Owner.Size + Admin.Size;
-        return super.size() + AssetType.BYTES + BitConverter.getVarSize(name) + amount.size() + Byte.BYTES + owner.size() + admin.size();
+        TR.enter();
+        // C# code: Size => base.Size + sizeof(AssetType) + Name.GetVarSize() + Amount.Size
+        // + sizeof(byte) + Owner.Size + Admin.Size;
+        return TR.exit(super.size() + AssetType.BYTES + BitConverter.getVarSize(name) + amount.size()
+                + Byte.BYTES + owner.size() + admin.size());
     }
 
     /**
-     * 系统手续费
+     * The system fee.
      *
-     * @return 若资产是NEO，GAS则费用为0
+     * @return If the asset is NEO\Gas,the fee is 0
      */
     @Override
     public Fixed8 getSystemFee() {
+        TR.enter();
         if (assetType == AssetType.GoverningToken || assetType == AssetType.UtilityToken) {
-            return Fixed8.ZERO;
+            return TR.exit(Fixed8.ZERO);
         }
-        return super.getSystemFee();
+        return TR.exit(super.getSystemFee());
     }
 
     /**
-     * 获取待验证签名的脚本hash集合
+     * get a hash list which is waiting for verifying
      *
-     * @param snapshot 数据库快照
-     * @return 交易的其他验证脚本 和 资产所有者地址脚本hash
+     * @param snapshot database snapshot
+     * @return transaction verification script hash and asset owner address script hash
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+        TR.enter();
         // C# code
         // return super.getScriptHashesForVerifying(snapshot).Union(new[] { owner }).OrderBy(p => p).ToArray();
         UInt160 ownerHash = UInt160.parseToScriptHash(Contract.createSignatureRedeemScript(owner));
@@ -114,31 +121,35 @@ public class RegisterTransaction extends Transaction {
         results[0] = ownerHash;
         System.arraycopy(hashes, 0, results, 1, hashes.length);
         Arrays.sort(results);
-        return results;
+        return TR.exit(results);
     }
 
     /**
-     * 反序列化后的处理
+     * Handling deserialized transactions
      *
-     * @throws FormatException 若资产是NEO，GAS，但是hash值不对应时，抛出该异常
+     * @throws FormatException If the asset is NEO/GAS, but the hash value does not correspond
      */
     @Override
     protected void onDeserialized() {
+        TR.enter();
         super.onDeserialized();
         if (assetType == AssetType.GoverningToken && !hash().equals(Blockchain.GoverningToken.hash()))
             throw new FormatException();
         if (assetType == AssetType.UtilityToken && !hash().equals(Blockchain.UtilityToken.hash()))
             throw new FormatException();
+        TR.exit();
     }
 
     /**
-     * 反序列化非data数据
+     * Deserialization exclusive data
      *
-     * @param reader 二进制输入流
-     * @throws FormatException 1. 如果版本号不为0. 2. 如果资产不是NEO/GAS且未指定Owner
+     * @param reader The binary input reader
+     * @throws FormatException 1. If the version number is not 0<br/> 2. If the asset is not NEO/GAS
+     *                         and not specify owner.
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
         if (version != 0) {
             throw new FormatException();
         }
@@ -147,45 +158,53 @@ public class RegisterTransaction extends Transaction {
         amount = reader.readSerializable(Fixed8::new);
         precision = (byte) reader.readByte();
         owner = ECPoint.deserializeFrom(reader, ECC.Secp256r1.getCurve());
-        if (owner.isInfinity() && assetType != AssetType.GoverningToken && assetType != AssetType.UtilityToken)
+
+        if (owner.isInfinity()
+                && assetType != AssetType.GoverningToken
+                && assetType != AssetType.UtilityToken) {
             throw new FormatException();
+        }
         admin = reader.readSerializable(UInt160::new);
+        TR.exit();
     }
 
 
     /**
-     * 序列化非data数据
+     * Serialize exclusive data
      *
-     * <p>序列化字段包括：</p>
+     * <p>Fields:</p>
      * <ul>
-     * <li>AssetType: 资产类型</li>
-     * <li>Name: 名字</li>
-     * <li>Amount: 总量</li>
-     * <li>Precision: 精度</li>
-     * <li>Owner: 所有者</li>
-     * <li>Admin: 管理员</li>
+     * <li>AssetType: type of asset</li>
+     * <li>Name: name of asset</li>
+     * <li>Amount: total amount of asset</li>
+     * <li>Precision: precision of asset</li>
+     * <li>Owner: asset owner</li>
+     * <li>Admin: asset admin</li>
      * </ul>
      *
-     * @param writer 二进制输出流
+     * @param writer The binary output writer
      */
     @Override
     protected void serializeExclusiveData(BinaryWriter writer) {
+        TR.enter();
         writer.writeByte(assetType.value());
         writer.writeVarString(name);
         writer.writeSerializable(amount);
         writer.writeByte(precision);
-        writer.writeSerializable(owner); // TODO
+        writer.writeSerializable(owner);
         writer.writeSerializable(admin);
+        TR.exit();
     }
 
 
     /**
-     * 转成json对象
+     * Convert to json object
      *
-     * @return json对象
+     * @return json object
      */
     @Override
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = super.toJson();
         JsonObject asset = new JsonObject();
         json.add("asset", asset);
@@ -200,19 +219,20 @@ public class RegisterTransaction extends Transaction {
         asset.addProperty("precision", precision);
         asset.addProperty("owner", owner.toString());
         asset.addProperty("admin", admin.toAddress());
-        return json;
+        return TR.exit(json);
     }
 
 
     /**
-     * 校验交易。已经弃用。禁止注册新的资产。
+     * The transaction verification which is deprecated
      *
-     * @param snapshot 数据库快照
-     * @param mempool  内存池交易
-     * @return 固定值false，已弃用
+     * @param snapshot The snapshot of database
+     * @param mempool  transactions in mempool
+     * @return The fixed value is false.
      */
     @Override
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
-        return false;
+        TR.enter();
+        return TR.exit(false);
     }
 }

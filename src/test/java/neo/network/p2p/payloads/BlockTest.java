@@ -7,7 +7,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -18,10 +17,10 @@ import akka.actor.Props;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
+import neo.Utils;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
-import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.io.caching.DataCache;
 import neo.ledger.BlockState;
@@ -32,8 +31,6 @@ import neo.persistence.Snapshot;
 import neo.persistence.leveldb.BlockchainDemo;
 import neo.persistence.leveldb.LevelDBStore;
 import neo.vm.OpCode;
-
-import static org.junit.Assert.*;
 
 public class BlockTest {
 
@@ -195,13 +192,7 @@ public class BlockTest {
         }};
         block.rebuildMerkleRoot();
 
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
-        block.serialize(writer);
-
-        ByteArrayInputStream inputStream = new ByteArrayInputStream(byteArrayOutputStream.toByteArray());
-        Block tmp = new Block();
-        tmp.deserialize(new BinaryReader(inputStream));
+        Block tmp = Utils.copyFromSerialize(block, Block::new);
 
         Assert.assertEquals(block.version, tmp.version);
         Assert.assertEquals(block.prevHash, tmp.prevHash);

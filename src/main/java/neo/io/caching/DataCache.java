@@ -242,6 +242,9 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
 
     public TValue tryGet(TKey key) {
         TR.enter();
+        if (key == null) {
+            return TR.exit(null);
+        }
 
         if (map.containsKey(key)) {
             Trackable trackable = map.get(key);
