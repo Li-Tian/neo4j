@@ -1,6 +1,7 @@
 package neo.ledger;
 
-import neo.common.ByteEnum;
+
+import neo.csharp.common.ByteEnum;
 
 /**
  * 存储标记

@@ -1,6 +1,7 @@
 package neo.ledger;
 
-import neo.common.ByteEnum;
+
+import neo.csharp.common.ByteEnum;
 
 /**
  * 对接受到的转发消息的处理结果描述

@@ -1,6 +1,7 @@
 package neo.smartcontract;
 
-import neo.common.ByteEnum;
+
+import neo.csharp.common.ByteEnum;
 
 /**
  * 合约参数类型，为byte类型

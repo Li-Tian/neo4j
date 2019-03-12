@@ -1,7 +1,7 @@
 package neo.network.p2p.payloads;
 
 
-import neo.common.ByteEnum;
+import neo.csharp.common.ByteEnum;
 
 /**
  * The enum class for the transaction type

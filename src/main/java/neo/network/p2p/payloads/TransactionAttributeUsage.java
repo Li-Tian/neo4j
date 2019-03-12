@@ -1,6 +1,7 @@
 package neo.network.p2p.payloads;
 
-import neo.common.ByteEnum;
+
+import neo.csharp.common.ByteEnum;
 
 /**
  * 交易属性用途。新增的交易属性参考 NEP-9
