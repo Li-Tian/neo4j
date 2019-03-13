@@ -6,11 +6,12 @@ import com.google.gson.JsonObject;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 
 import neo.Fixed8;
 import neo.UInt160;
 import neo.cryptography.ecc.ECC;
+import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -18,7 +19,6 @@ import neo.exception.InvalidOperationException;
 import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
-import neo.cryptography.ecc.ECPoint;
 
 
 /**
@@ -27,7 +27,7 @@ import neo.cryptography.ecc.ECPoint;
 public class StateTransaction extends Transaction {
 
     /**
-     * The descriptor for transactions
+     * The descriptor for transactions, max 16 descriptors.
      */
     public StateDescriptor[] descriptors;
 
@@ -35,7 +35,7 @@ public class StateTransaction extends Transaction {
      * Constructor of transaction for voting and validator application
      */
     public StateTransaction() {
-        super(TransactionType.StateTransaction);
+        super(TransactionType.StateTransaction, StateTransaction::new);
     }
 
     /**
@@ -88,7 +88,7 @@ public class StateTransaction extends Transaction {
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
         TR.enter();
         UInt160[] hashes = super.getScriptHashesForVerifying(snapshot);
-        List<UInt160> list = Arrays.asList(hashes);
+        HashSet<UInt160> hashSet = new HashSet<>(Arrays.asList(hashes));
 
         /* C# code
         HashSet<UInt160> hashes = new HashSet<UInt160>(base.GetScriptHashesForVerifying(snapshot));
@@ -112,16 +112,18 @@ public class StateTransaction extends Transaction {
         for (StateDescriptor descriptor : descriptors) {
             switch (descriptor.type) {
                 case Account:
-                    list.addAll(getScriptHashesForVerifyingAccount(descriptor));
+                    Collection<UInt160> addrHashList = getScriptHashesForVerifyingAccount(descriptor);
+                    System.out.println(addrHashList.size());
+                    hashSet.addAll(addrHashList);
                     break;
                 case Validator:
-                    list.addAll(getScriptHashesForVerifying_Validator(descriptor));
+                    hashSet.addAll(getScriptHashesForVerifying_Validator(descriptor));
                     break;
                 default:
                     throw new InvalidOperationException();
             }
         }
-        return TR.exit((UInt160[]) list.stream().distinct().sorted().toArray());
+        return TR.exit(hashSet.stream().sorted().toArray(UInt160[]::new));
     }
 
     private Collection<UInt160> getScriptHashesForVerifyingAccount(StateDescriptor descriptor) {

@@ -104,6 +104,7 @@ public abstract class UIntBase implements ISerializable, Comparable<UIntBase> {
             return 0;
         }
         byte[] bytes = Arrays.copyOf(dataBytes, dataBytes.length);
+        // be careful with ByteBuffer, it will modify the bytes
         int code = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
         return TR.exit(code);
     }

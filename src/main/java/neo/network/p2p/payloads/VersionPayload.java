@@ -8,37 +8,75 @@ import neo.csharp.Ushort;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.tr.TR;
+import neo.network.p2p.LocalNode;
 
 /**
- * 记录版本数据和区块高度的数据对象
+ * Record version data and block height
  */
 public class VersionPayload implements ISerializable {
 
+    /**
+     * The version number
+     */
     public Uint version;
+
+    /**
+     * The descriptor of the function of node. The fixed value is one
+     */
     public Ulong services;
+
+    /**
+     * The timestamp, which is the seconds from the epoch time
+     */
     public Uint timestamp;
+
+    /**
+     * The listening port of server side
+     */
     public Ushort port;
+
+    /**
+     * A random number which stands for localNode
+     */
     public Uint nonce;
+
+    /**
+     * The name of the node software and the description of version
+     */
     public String userAgent;
+
+    /**
+     * The height of block
+     */
     public Uint startHeight;
+
+    /**
+     * If has the relay function. The default value is true
+     */
     public boolean relay;
 
     /**
-     * 存储大小
+     * Size of data block
      */
     @Override
     public int size() {
-        //C# code Size => sizeof(uint) + sizeof(ulong) + sizeof(uint) + sizeof(ushort) + sizeof(uint) + UserAgent.GetVarSize() + sizeof(uint) + sizeof(bool);
-        return Uint.BYTES + Ulong.BYTES + Uint.BYTES + Ushort.BYTES + Uint.BYTES + BitConverter.getVarSize(userAgent) + Uint.BYTES + Byte.BYTES;
+        TR.enter();
+        //C# code Size => sizeof(uint) + sizeof(ulong) + sizeof(uint) + sizeof(ushort) + sizeof(uint)
+        // + UserAgent.GetVarSize() + sizeof(uint) + sizeof(bool);
+        // 4 + 8 + 4 + 2 + 4 + usergent + 4 + 1 =
+        return TR.exit(Uint.BYTES + Ulong.BYTES + Uint.BYTES + Ushort.BYTES + Uint.BYTES
+                + BitConverter.getVarSize(userAgent) + Uint.BYTES + Byte.BYTES);
     }
 
     /**
-     * 序列化
+     * Serialization
      *
-     * @param writer 二进制输出器
+     * @param writer The binary output writer
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeUint(version);
         writer.writeUlong(services);
         writer.writeUint(timestamp);
@@ -47,15 +85,17 @@ public class VersionPayload implements ISerializable {
         writer.writeVarString(userAgent);
         writer.writeUint(startHeight);
         writer.writeBoolean(relay);
+        TR.exit();
     }
 
     /**
-     * 发序列化
+     * Deserialization
      *
-     * @param reader 二进制读入器
+     * @param reader binary input reader
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         version = reader.readUint();
         services = reader.readUlong();
         timestamp = reader.readUint();
@@ -64,28 +104,30 @@ public class VersionPayload implements ISerializable {
         userAgent = reader.readVarString(1024);
         startHeight = reader.readUint();
         relay = reader.readBoolean();
+        TR.exit();
     }
 
     /**
-     * 构建一个VersionPayload对象
+     * Build a version payload object
      *
-     * @param port        接收端监听的端口
-     * @param nonce       本地节点的一个随机数
-     * @param userAgent   节点软件的名称和版本的描述信息
-     * @param startHeight 区块高度
-     * @return 生成的VersionPayload对象
+     * @param port        The port of listener
+     * @param nonce       The random number of local node
+     * @param userAgent   The name of node software and the description of the version
+     * @param startHeight The height of blocks
+     * @return The VersionPayload build with these parameter
      */
     public static VersionPayload create(int port, Uint nonce, String userAgent, Uint startHeight) {
+        TR.enter();
         VersionPayload payload = new VersionPayload();
-        // TODO waiting for LocalNode
-//        payload.version = LocalNode.ProtocolVersion;
-//        payload.services = NetworkAddressWithTime.NODE_NETWORK;
+        payload.version = LocalNode.ProtocolVersion;
+        payload.services = NetworkAddressWithTime.NODE_NETWORK;
+        //  DateTime.Now.ToTimestamp(),
         payload.timestamp = new Uint(Long.valueOf(TimeProvider.current().utcNow().getTime()).intValue());
         payload.port = new Ushort(port);
         payload.nonce = nonce;
         payload.userAgent = userAgent;
         payload.startHeight = startHeight;
         payload.relay = true;
-        return payload;
+        return TR.exit(payload);
     }
 }

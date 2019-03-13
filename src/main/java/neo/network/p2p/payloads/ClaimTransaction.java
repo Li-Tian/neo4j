@@ -34,7 +34,7 @@ public class ClaimTransaction extends Transaction {
      * NetworkFee，the default is 0
      */
     public ClaimTransaction() {
-        super(TransactionType.ClaimTransaction);
+        super(TransactionType.ClaimTransaction, ClaimTransaction::new);
     }
 
     /**

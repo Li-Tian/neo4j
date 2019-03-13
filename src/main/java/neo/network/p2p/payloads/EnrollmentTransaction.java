@@ -34,7 +34,7 @@ public class EnrollmentTransaction extends Transaction {
      * Constructor：create a EnrollmentTransaction object
      */
     public EnrollmentTransaction() {
-        super(TransactionType.EnrollmentTransaction);
+        super(TransactionType.EnrollmentTransaction, EnrollmentTransaction::new);
     }
 
     /**

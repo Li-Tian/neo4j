@@ -8,13 +8,14 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.tr.TR;
 
 /**
  * Witness <br/>
  *
  * @doc When verifying, first read the verification script (VerificationScript)and push it onto the
  * stack. Then read the execution script (InvocationScript) and push it onto the stack. Then execute
- * and determine the result.
+ * and determine the result. The length of script cannot over 65536.
  */
 public class Witness implements ISerializable {
 
@@ -34,10 +35,11 @@ public class Witness implements ISerializable {
      * Verification scripts hash
      */
     public UInt160 scriptHash() {
+        TR.enter();
         if (scriptHash == null) {
             scriptHash = UInt160.parseToScriptHash(verificationScript);
         }
-        return scriptHash;
+        return TR.exit(scriptHash);
     }
 
     /**
@@ -45,8 +47,9 @@ public class Witness implements ISerializable {
      */
     @Override
     public int size() {
+        TR.enter();
         // InvocationScript.GetVarSize() + VerificationScript.GetVarSize();
-        return BitConverter.getVarSize(invocationScript) + BitConverter.getVarSize(verificationScript);
+        return TR.exit(BitConverter.getVarSize(invocationScript) + BitConverter.getVarSize(verificationScript));
     }
 
     /**
@@ -56,8 +59,10 @@ public class Witness implements ISerializable {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeVarBytes(invocationScript);
         writer.writeVarBytes(verificationScript);
+        TR.exit();
     }
 
     /**
@@ -67,17 +72,20 @@ public class Witness implements ISerializable {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         invocationScript = reader.readVarBytes(65536);
         verificationScript = reader.readVarBytes(65536);
+        TR.exit();
     }
 
     /**
      * Convert to JObject object
      */
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = new JsonObject();
         json.addProperty("invocation", BitConverter.toHexString(invocationScript));
         json.addProperty("verification", BitConverter.toHexString(verificationScript));
-        return json;
+        return TR.exit(json);
     }
 }

@@ -23,7 +23,7 @@ public class IssueTransaction extends Transaction {
      * Constructor: create the transaction for issuing asset
      */
     public IssueTransaction() {
-        super(TransactionType.IssueTransaction);
+        super(TransactionType.IssueTransaction, IssueTransaction::new);
     }
 
     /**

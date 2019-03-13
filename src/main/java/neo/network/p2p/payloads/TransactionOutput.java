@@ -9,6 +9,7 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 import neo.exception.FormatException;
+import neo.log.tr.TR;
 
 /**
  * The transaction Output
@@ -35,7 +36,8 @@ public class TransactionOutput implements ISerializable {
      */
     @Override
     public int size() {
-        return assetId.size() + value.size() + scriptHash.size();
+        TR.enter();
+        return TR.exit(assetId.size() + value.size() + scriptHash.size());
     }
 
     /**
@@ -45,9 +47,11 @@ public class TransactionOutput implements ISerializable {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeSerializable(assetId);
         writer.writeSerializable(value);
         writer.writeSerializable(scriptHash);
+        TR.exit();
     }
 
     /**
@@ -58,10 +62,12 @@ public class TransactionOutput implements ISerializable {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         this.assetId = reader.readSerializable(UInt256::new);
         this.value = reader.readSerializable(Fixed8::new);
         if (value.compareTo(Fixed8.ZERO) <= 0) throw new FormatException();
         this.scriptHash = reader.readSerializable(UInt160::new);
+        TR.exit();
     }
 
     /**
@@ -71,11 +77,12 @@ public class TransactionOutput implements ISerializable {
      * @return json object
      */
     public JsonObject toJson(int index) {
+        TR.enter();
         JsonObject json = new JsonObject();
         json.addProperty("n", index);
         json.addProperty("asset", assetId.toString());
         json.addProperty("value", value.toString());
         json.addProperty("address", scriptHash.toAddress());
-        return json;
+        return TR.exit(json);
     }
 }

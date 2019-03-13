@@ -34,7 +34,7 @@ public class InvocationTransaction extends Transaction {
      * The construct function: creating the InvocationTransaction
      */
     public InvocationTransaction() {
-        super(TransactionType.InvocationTransaction);
+        super(TransactionType.InvocationTransaction, InvocationTransaction::new);
     }
 
     /**

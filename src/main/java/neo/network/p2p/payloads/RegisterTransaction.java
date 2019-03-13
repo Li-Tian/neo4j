@@ -63,7 +63,7 @@ public class RegisterTransaction extends Transaction {
      * The constructor method.Create a registration transaction
      */
     public RegisterTransaction() {
-        super(TransactionType.RegisterTransaction);
+        super(TransactionType.RegisterTransaction, RegisterTransaction::new);
     }
 
     /**

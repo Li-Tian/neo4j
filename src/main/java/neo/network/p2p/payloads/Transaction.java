@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,8 +14,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import neo.Fixed8;
 import neo.ProtocolSettings;
@@ -32,6 +31,7 @@ import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
 import neo.ledger.AssetState;
 import neo.ledger.Blockchain;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 
 /**
@@ -89,10 +89,12 @@ public abstract class Transaction implements IInventory {
     /**
      * Create a transaction
      *
-     * @param type Transaction type
+     * @param type      Transaction type
+     * @param generator Transaction generator, it will registered in TransactionBuilder
      */
-    public Transaction(TransactionType type) {
+    public Transaction(TransactionType type, Supplier<? extends Transaction> generator) {
         this.type = type;
+        TransactionBuilder.register(type, generator);
     }
 
 
@@ -103,10 +105,11 @@ public abstract class Transaction implements IInventory {
      * has been completely built (no longer modified).</para>
      */
     public Fixed8 getFeePerByte() {
+        TR.enter();
         if (feePerByte.equals(Fixed8.negate(Fixed8.SATOSHI))) {
             feePerByte = Fixed8.divide(getNetworkFee(), size());
         }
-        return feePerByte;
+        return TR.exit(feePerByte);
     }
 
     /**
@@ -115,10 +118,11 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public UInt256 hash() {
+        TR.enter();
         if (hash == null) {
             hash = new UInt256(Crypto.Default.hash256(this.getHashData()));
         }
-        return hash;
+        return TR.exit(hash);
     }
 
     /**
@@ -126,7 +130,8 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public InventoryType inventoryType() {
-        return InventoryType.Tr;
+        TR.enter();
+        return TR.exit(InventoryType.Tr);
     }
 
     /**
@@ -134,7 +139,8 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public Witness[] getWitnesses() {
-        return this.witnesses;
+        TR.enter();
+        return TR.exit(this.witnesses);
     }
 
     /**
@@ -142,7 +148,9 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public void setWitnesses(Witness[] witnesses) {
+        TR.enter();
         this.witnesses = witnesses;
+        TR.exit();
     }
 
     /**
@@ -152,9 +160,10 @@ public abstract class Transaction implements IInventory {
     @Override
     public int size() {
         // 6
-        return TransactionType.BYTES + Byte.BYTES + BitConverter.getVarSize(attributes)
+        TR.enter();
+        return TR.exit(TransactionType.BYTES + Byte.BYTES + BitConverter.getVarSize(attributes)
                 + BitConverter.getVarSize(inputs) + BitConverter.getVarSize(outputs)
-                + BitConverter.getVarSize(witnesses);
+                + BitConverter.getVarSize(witnesses));
     }
 
 
@@ -165,8 +174,10 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         serializeUnsigned(writer);
         writer.writeArray(witnesses);
+        TR.exit();
     }
 
     /**
@@ -175,7 +186,8 @@ public abstract class Transaction implements IInventory {
      * @param writer BinaryWriter
      */
     protected void serializeExclusiveData(BinaryWriter writer) {
-
+        TR.enter();
+        TR.exit();
     }
 
     /**
@@ -185,12 +197,14 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public void serializeUnsigned(BinaryWriter writer) {
+        TR.enter();
         writer.writeByte(type.value());
         writer.writeByte(version);
         serializeExclusiveData(writer);
         writer.writeArray(attributes);
         writer.writeArray(inputs);
         writer.writeArray(outputs);
+        TR.exit();
     }
 
     /**
@@ -200,7 +214,8 @@ public abstract class Transaction implements IInventory {
      * @return Transaction object
      */
     public static Transaction deserializeFrom(byte[] value) {
-        return deserializeFrom(value, 0);
+        TR.enter();
+        return TR.exit(deserializeFrom(value, 0));
     }
 
     /**
@@ -211,9 +226,10 @@ public abstract class Transaction implements IInventory {
      * @return Transaction
      */
     public static Transaction deserializeFrom(byte[] value, int offset) {
-        byte[] sub = BitConverter.subBytes(value, offset, value.length - offset - 1);
+        TR.enter();
+        byte[] sub = BitConverter.subBytes(value, offset, value.length - offset);
         ByteArrayInputStream inputStream = new ByteArrayInputStream(sub);
-        return deserializeFrom(new BinaryReader(inputStream));
+        return TR.exit(deserializeFrom(new BinaryReader(inputStream)));
     }
 
     /**
@@ -224,12 +240,13 @@ public abstract class Transaction implements IInventory {
      * @throws neo.exception.FormatException when parse failed, throw this exception.
      */
     public static Transaction deserializeFrom(BinaryReader reader) {
+        TR.enter();
         TransactionType type = TransactionType.parse((byte) reader.readByte());
         Transaction transaction = TransactionBuilder.build(type);
         transaction.deserializeUnsignedWithoutType(reader);
         transaction.witnesses = reader.readArray(Witness[]::new, Witness::new);
         transaction.onDeserialized();
-        return transaction;
+        return TR.exit(transaction);
     }
 
 
@@ -240,9 +257,11 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         this.deserializeUnsigned(reader);
         witnesses = reader.readArray(Witness[]::new, Witness::new);
         onDeserialized();
+        TR.exit();
     }
 
     /**
@@ -253,17 +272,21 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public void deserializeUnsigned(BinaryReader reader) {
+        TR.enter();
         if (TransactionType.parse((byte) reader.readByte()) != type)
             throw new FormatException();
         deserializeUnsignedWithoutType(reader);
+        TR.exit();
     }
 
     private void deserializeUnsignedWithoutType(BinaryReader reader) {
+        TR.enter();
         version = (byte) reader.readByte();
         deserializeExclusiveData(reader);
         attributes = reader.readArray(TransactionAttribute[]::new, TransactionAttribute::new, MaxTransactionAttributes);
         inputs = reader.readArray(CoinReference[]::new, CoinReference::new);
         outputs = reader.readArray(TransactionOutput[]::new, TransactionOutput::new, Ushort.MAX_VALUE + 1);
+        TR.exit();
     }
 
     /**
@@ -272,12 +295,16 @@ public abstract class Transaction implements IInventory {
      * @param reader BinaryReader
      */
     protected void deserializeExclusiveData(BinaryReader reader) {
+        TR.enter();
+        TR.exit();
     }
 
     /**
      * Handling deserialized transactions.Depending on the type of transaction.
      */
     protected void onDeserialized() {
+        TR.enter();
+        TR.exit();
     }
 
     /**
@@ -288,12 +315,19 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == this) return true;
-        if (obj == null) return false;
-        if (!(obj instanceof Transaction)) return false;
+        TR.enter();
+        if (obj == this) {
+            return TR.exit(true);
+        }
+        if (obj == null) {
+            return TR.exit(false);
+        }
+        if (!(obj instanceof Transaction)) {
+            return TR.exit(false);
+        }
 
         Transaction other = (Transaction) obj;
-        return this.hash().equals(other.hash());
+        return TR.exit(this.hash().equals(other.hash()));
     }
 
     /**
@@ -303,7 +337,8 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public int hashCode() {
-        return hash().hashCode();
+        TR.enter();
+        return TR.exit(hash().hashCode());
     }
 
     /**
@@ -313,7 +348,8 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public byte[] getMessage() {
-        return this.getHashData();
+        TR.enter();
+        return TR.exit(this.getHashData());
     }
 
     /**
@@ -322,15 +358,17 @@ public abstract class Transaction implements IInventory {
      * config，default value is 0.001GAS。
      */
     public boolean isLowPriority() {
-        return getNetworkFee().compareTo(ProtocolSettings.Default.lowPriorityThreshold) < 0;
+        TR.enter();
+        return TR.exit(getNetworkFee().compareTo(ProtocolSettings.Default.lowPriorityThreshold) < 0);
     }
 
     /**
      * SystemFee. Depending on the type of transaction.
      */
     public Fixed8 getSystemFee() {
+        TR.enter();
         Fixed8 fee = ProtocolSettings.Default.systemFee.get(type);
-        return fee == null ? Fixed8.ZERO : fee;
+        return TR.exit(fee == null ? Fixed8.ZERO : fee);
     }
 
     /**
@@ -338,6 +376,7 @@ public abstract class Transaction implements IInventory {
      * output of transaction -  system free.
      */
     public Fixed8 getNetworkFee() {
+        TR.enter();
         Fixed8 amountIn = Fixed8.ZERO;
         Fixed8 amountOut = Fixed8.ZERO;
         if (networkFee.equals(Fixed8.negate(Fixed8.SATOSHI))) {
@@ -359,7 +398,7 @@ public abstract class Transaction implements IInventory {
             // Sum(p = > p.Value);
             // networkFee = input - output - SystemFee;
         }
-        return networkFee;
+        return TR.exit(networkFee);
     }
 
     /**
@@ -369,6 +408,7 @@ public abstract class Transaction implements IInventory {
      * TransactionOutputs pointed by inputs are not exist.
      */
     public HashMap<CoinReference, TransactionOutput> getReferences() {
+        TR.enter();
         if (references == null) {
             HashMap<CoinReference, TransactionOutput> map = new HashMap<>();
             for (Map.Entry<UInt256, List<CoinReference>> entry : Arrays.stream(inputs)
@@ -379,7 +419,7 @@ public abstract class Transaction implements IInventory {
 
                 Transaction tx = Blockchain.singleton().getStore().getTransaction(key);
                 if (tx == null) {
-                    return null;
+                    return TR.exit(null);
                 }
                 for (CoinReference input : group) {
                     map.put(input, tx.outputs[input.prevIndex.intValue()]);
@@ -403,7 +443,7 @@ public abstract class Transaction implements IInventory {
             //            }
             //            _references = dictionary;
         }
-        return references;
+        return TR.exit(references);
     }
 
     /**
@@ -415,7 +455,8 @@ public abstract class Transaction implements IInventory {
      * outputs' asset.
      */
     public Collection<TransactionResult> getTransactionResults() {
-        if (getReferences() == null) return null;
+        TR.enter();
+        if (getReferences() == null) return TR.exit(null);
         /*
         // C# code
         return References.Values.Select(p => new
@@ -456,7 +497,7 @@ public abstract class Transaction implements IInventory {
                 result.add(txResult);
             }
         }
-        return result;
+        return TR.exit(result);
     }
 
 
@@ -467,7 +508,8 @@ public abstract class Transaction implements IInventory {
      * @return Verification result
      */
     public boolean verify(Snapshot snapshot) {
-        return verify(snapshot, Collections.emptyList());
+        TR.enter();
+        return TR.exit(verify(snapshot, Collections.emptyList()));
     }
 
     /**
@@ -510,16 +552,17 @@ public abstract class Transaction implements IInventory {
      * </ul>
      */
     public boolean verify(Snapshot snapshot, Collection<Transaction> mempool) {
+        TR.enter();
         // 1. check size
         if (size() > MaxTransactionSize) {
-            return false;
+            return TR.exit(false);
         }
         // 2. check this tx's whether repeat input
         for (int i = 1; i < inputs.length; i++) {
             for (int j = 0; j < i; j++) {
                 if (inputs[i].prevHash == inputs[j].prevHash
                         && inputs[i].prevIndex == inputs[j].prevIndex) {
-                    return false;
+                    return TR.exit(false);
                 }
             }
         }
@@ -532,18 +575,18 @@ public abstract class Transaction implements IInventory {
                 .anyMatch(others -> {
                     for (int i = 0; i < others.length; i++) {
                         if (inputSet.contains(others[i])) {
-                            return true;
+                            return TR.exit(true);
                         }
                     }
-                    return false;
+                    return TR.exit(false);
                 });
         if (isRepeatInput) {
-            return false;
+            return TR.exit(false);
         }
 
         // 4. double spend check
         if (snapshot.isDoubleSpend(this)) {
-            return false;
+            return TR.exit(false);
         }
 
         // 5. check asset
@@ -555,18 +598,18 @@ public abstract class Transaction implements IInventory {
 
             AssetState asset = snapshot.getAssets().tryGet(assetId);
             if (asset == null) {
-                return false;
+                return TR.exit(false);
             }
             // check asset expiration
             if (asset.expiration.compareTo(snapshot.getHeight().add(new Uint(1))) <= 0
                     && asset.assetType != AssetType.GoverningToken
                     && asset.assetType != AssetType.UtilityToken) {
-                return false;
+                return TR.exit(false);
             }
             // check value precision
             for (TransactionOutput output : group) {
                 if (output.value.getData() % Math.pow(10, 8 - asset.precision) != 0) {
-                    return false;
+                    return TR.exit(false);
                 }
             }
         }
@@ -574,25 +617,25 @@ public abstract class Transaction implements IInventory {
         Collection<TransactionResult> results = getTransactionResults();
         // must one result is not equal zero, as the gas asset, which inputs' gas > outputs' gas
         if (results == null) {
-            return false;
+            return TR.exit(false);
         }
 
         List<TransactionResult> results_destroy = results.stream()
                 .filter(result -> Fixed8.bigger(result.amount, Fixed8.ZERO))
                 .collect(Collectors.toList());
         if (results_destroy.size() > 1) { // only gas global asset can be destroyed.
-            return false;
+            return TR.exit(false);
         }
         if (results_destroy.size() == 1
                 && !results_destroy.get(0).assetId.equals(Blockchain.UtilityToken.hash())) {
-            return false; // must be gas asset
+            return TR.exit(false); // must be gas asset
         }
         // check system fee, systemfee must less than the amount of destroyed gas
         Fixed8 system_fee = getSystemFee();
         if (system_fee.compareTo(Fixed8.ZERO) > 0
                 && (results_destroy.size() == 0
                 || results_destroy.get(0).amount.compareTo(system_fee) < 0)) {
-            return false;
+            return TR.exit(false);
         }
 
         // check issue asset:
@@ -603,19 +646,19 @@ public abstract class Transaction implements IInventory {
             case ClaimTransaction:
                 // only gas can be claimed or as a bonus in minerTx
                 if (results_issue.stream().anyMatch(p -> !p.assetId.equals(Blockchain.UtilityToken.hash()))) {
-                    return false;
+                    return TR.exit(false);
                 }
                 break;
             case IssueTransaction:
                 // Gas asset can not be issue in IssueTx
                 if (results_issue.stream().anyMatch(p -> p.assetId.equals(Blockchain.UtilityToken.hash()))) {
-                    return false;
+                    return TR.exit(false);
                 }
                 break;
             default:
                 // otherwise cannot issue global asset
                 if (results_issue.size() > 0) {
-                    return false;
+                    return TR.exit(false);
                 }
                 break;
         }
@@ -625,12 +668,12 @@ public abstract class Transaction implements IInventory {
                 .filter(attr -> attr.usage == TransactionAttributeUsage.ECDH02
                         || attr.usage == TransactionAttributeUsage.ECDH03)
                 .count() > 1) {
-            return false;
+            return TR.exit(false);
         }
 
         // check witness and scripts
-        if (!verifyReceivingScripts()) return false;
-        return IVerifiable.verifyWitnesses(this, snapshot);
+        if (!verifyReceivingScripts()) return TR.exit(false);
+        return TR.exit(IVerifiable.verifyWitnesses(this, snapshot));
 
         // C# code:
         //        if (Size > MaxTransactionSize) return false;
@@ -684,6 +727,7 @@ public abstract class Transaction implements IInventory {
     }
 
     private boolean verifyReceivingScripts() {
+        TR.enter();
         //TODO: run ApplicationEngine
         //foreach (UInt160 hash in Outputs.Select(p => p.ScriptHash).Distinct())
         //{
@@ -705,7 +749,7 @@ public abstract class Transaction implements IInventory {
         //        if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
         //    }
         //}
-        return true;
+        return TR.exit(true);
     }
 
     /**
@@ -722,6 +766,7 @@ public abstract class Transaction implements IInventory {
      */
     @Override
     public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+        TR.enter();
         if (getReferences() == null) throw new InvalidOperationException();
 
         Set<UInt160> set1 = Arrays.stream(inputs)
@@ -739,7 +784,7 @@ public abstract class Transaction implements IInventory {
         UInt160[] results = new UInt160[set1.size()];
         set1.toArray(results);
         Arrays.sort(results);
-        return results;
+        return TR.exit(results);
 
         //        C# code
         //        hashes.UnionWith(Attributes.Where(p = > p.Usage == TransactionAttributeUsage.Script).Select(p = > new UInt160(p.Data)))
@@ -761,13 +806,15 @@ public abstract class Transaction implements IInventory {
      * @return serialized data
      */
     public byte[] getHashData() {
-        return IVerifiable.getHashData(this);
+        TR.enter();
+        return TR.exit(IVerifiable.getHashData(this));
     }
 
     /**
      * Convert to JObject object
      */
     public JsonObject toJson() {
+        TR.enter();
         JsonObject json = new JsonObject();
         json.addProperty("txid", hash().toString());
         json.addProperty("size", size());
@@ -794,6 +841,6 @@ public abstract class Transaction implements IInventory {
         JsonArray scriptsArray = new JsonArray(inputs.length);
         Arrays.stream(inputs).map(p -> p.toJson()).forEach(p -> scriptsArray.add(p));
         json.add("vin", scriptsArray);
-        return json;
+        return TR.exit(json);
     }
 }

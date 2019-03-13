@@ -4,203 +4,212 @@ package neo.network.p2p.payloads;
 import neo.csharp.common.ByteEnum;
 
 /**
- * 交易属性用途。新增的交易属性参考 NEP-9
+ * The usage of transaction attribute. for more about the new attribute usage, you can see NEP-9 in
+ * details.
+ *
+ * @note be careful with the limit length of attribute's value.
+ * <ul>
+ * <li> ContractHash: the length must be 32 bytes </li>
+ * <li> Vote: the length must be 32 bytes </li>
+ * <li> Hash1 ~ Hash15: the length must be 32 bytes </li>
+ * <li> ECDH02: the length must be 32 bytes </li>
+ * <li> ECDH03: the length must be 32 bytes </li>
+ * <li> Script: the length must be 20 bytes </li>
+ * <li> DescriptionUrl: the max length is 255 bytes  </li>
+ * <li> Description: the max length is 65535 bytes  </li>
+ * <li> Remark ~ Remark15: the max length is 65535 bytes </li>
+ * </ul>
  */
 public enum TransactionAttributeUsage implements ByteEnum {
 
     /**
-     * 外部合同的散列值
+     * The hash of the contract, value is 0x00
      */
     ContractHash((byte) 0x00),
     /**
-     * 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x02
+     * The public key which is used for ECDH. The first byte of that public key is 0x02
      */
     ECDH02((byte) 0x02),
 
     /**
-     * 用于ECDH密钥交换的公钥，该公钥的第一个字节为0x03
+     * The public key which is used for ECDH. The first byte of that public key is 0x03
      */
     ECDH03((byte) 0x03),
 
     /**
-     * 用于对交易进行额外的验证, 如股权类转账，存放收款人的脚本hash
+     * The additional verification for the transaction, such as share transfer, value is 0x20
      */
     Script((byte) 0x20),
 
     /**
-     * 投票
+     * Votes, value is 0x30
      */
     Vote((byte) 0x30),
 
     /**
-     * 外部介绍信息地址
+     * The description url of external description, value is 0x81
      */
     DescriptionUrl((byte) 0x81),
 
     /**
-     * 简短的介绍信息
+     * The simple introduction, value is 0x90
      */
     Description((byte) 0x90),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa1
      */
     Hash1((byte) 0xa1),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa2
      */
     Hash2((byte) 0xa2),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa3
      */
-    Hash3((byte) 0xa2),
+    Hash3((byte) 0xa3),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa4
      */
     Hash4((byte) 0xa4),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa5
      */
     Hash5((byte) 0xa5),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa6
      */
     Hash6((byte) 0xa6),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa7
      */
     Hash7((byte) 0xa7),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa8
      */
     Hash8((byte) 0xa8),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xa9
      */
     Hash9((byte) 0xa9),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xaa
      */
     Hash10((byte) 0xaa),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xab
      */
     Hash11((byte) 0xab),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xac
      */
     Hash12((byte) 0xac),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xad
      */
     Hash13((byte) 0xad),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xae
      */
     Hash14((byte) 0xae),
 
     /**
-     * 用于存放自定义的散列值
+     * Save customize hash value, value is 0xaf
      */
     Hash15((byte) 0xaf),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf0
      */
     Remark((byte) 0xf0),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf1
      */
     Remark1((byte) 0xf1),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf2
      */
     Remark2((byte) 0xf2),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf3
      */
     Remark3((byte) 0xf3),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf4
      */
     Remark4((byte) 0xf4),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf5
      */
     Remark5((byte) 0xf5),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf6
      */
     Remark6((byte) 0xf6),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf7
      */
     Remark7((byte) 0xf7),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf8
      */
     Remark8((byte) 0xf8),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xf9
      */
     Remark9((byte) 0xf9),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xfa
      */
     Remark10((byte) 0xfa),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xfb
      */
     Remark11((byte) 0xfb),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xfc
      */
     Remark12((byte) 0xfc),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xfd
      */
     Remark13((byte) 0xfd),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xfe
      */
     Remark14((byte) 0xfe),
 
     /**
-     * 用于存放自定义的备注
+     * Save customize notes, value is 0xff
      */
     Remark15((byte) 0xff);
-
-    /**
-     * 占用字节数大小
-     */
-    public static final int BYTES = Byte.BYTES;
 
     private byte value;
 
@@ -209,20 +218,27 @@ public enum TransactionAttributeUsage implements ByteEnum {
     }
 
     /**
-     * 查询TransactionAttributeUsage类型的具体byte值
+     * get the type's value
      */
     @Override
     public byte value() {
         return this.value;
     }
 
+    /**
+     * get unsigned int value, as byte is signed in java
+     */
+    public int getUint() {
+        return this.value & 0xff;
+    }
+
 
     /**
-     * 从byte中解析TransactionAttributeUsage类型
+     * Parse Usage type from the byte value
      *
-     * @param type TransactionAttributeUsage类型
+     * @param type TransactionAttributeUsage
      * @return TransactionAttributeUsage
-     * @throws IllegalArgumentException 当类型不存在时，抛出该异常
+     * @throws IllegalArgumentException throws the exception when the type is not exist.
      */
     public static TransactionAttributeUsage parse(byte type) {
         return ByteEnum.parse(TransactionAttributeUsage.values(), type);

@@ -1,20 +1,41 @@
 package neo.network.p2p.payloads;
 
+import java.util.HashMap;
+import java.util.function.Supplier;
+
 import neo.exception.FormatException;
 
+/**
+ * Transaction builder, create tx by tx's type
+ */
 public class TransactionBuilder {
 
+    private static final HashMap<TransactionType, Supplier<? extends Transaction>> map = new HashMap<>(10);
+
+    /**
+     * register transaction generator
+     *
+     * @param type      transaction type
+     * @param generator transaction generator
+     * @param <T>       specific transaction
+     */
+    protected static <T extends Transaction> void register(TransactionType type, Supplier<T> generator) {
+        map.put(type, generator);
+    }
+
+    /**
+     * Create a transaction by the given type .
+     *
+     * @param type transaction type
+     * @return Transaction
+     * @throws FormatException if the transaction's generator is not registered.
+     */
     public static Transaction build(TransactionType type) {
-        if (type == TransactionType.MinerTransaction) return new MinerTransaction();
-        if (type == TransactionType.ClaimTransaction) return new ClaimTransaction();
-        if (type == TransactionType.ContractTransaction) return new ContractTransaction();
-        if (type == TransactionType.InvocationTransaction) return new InvocationTransaction();
-        if (type == TransactionType.StateTransaction) return new StateTransaction();
-        if (type == TransactionType.IssueTransaction) return new IssueTransaction();
-        if (type == TransactionType.EnrollmentTransaction) return new EnrollmentTransaction();
-        if (type == TransactionType.PublishTransaction) return new PublishTransaction();
-        if (type == TransactionType.RegisterTransaction) return new RegisterTransaction();
-        throw new FormatException(String.format("TransactionType %d is not exist!", type));
+        Supplier<? extends Transaction> gen = map.get(type);
+        if (gen == null) {
+            throw new FormatException(String.format("TransactionType %d has not add generator method in this function!", type));
+        }
+        return gen.get();
     }
 
 }

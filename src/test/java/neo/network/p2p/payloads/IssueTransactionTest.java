@@ -1,17 +1,11 @@
 package neo.network.p2p.payloads;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
-import akka.actor.ActorSystem;
-import akka.actor.Props;
 import neo.Fixed8;
 import neo.ProtocolSettings;
 import neo.UInt160;
@@ -27,38 +21,8 @@ import neo.ledger.CoinState;
 import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.persistence.Snapshot;
-import neo.persistence.leveldb.BlockchainDemo;
-import neo.persistence.leveldb.LevelDBStore;
 
-public class IssueTransactionTest {
-
-    private final static String LEVELDB_TEST_PATH = "Chain_test";
-
-    private LevelDBStore store;
-    private BlockchainDemo blockchainDemo;
-
-    @Before
-    public void before() throws IOException {
-        store = new LevelDBStore(LEVELDB_TEST_PATH);
-
-        ActorSystem system = ActorSystem.create("neosystem");
-        system.actorOf(Props.create(BlockchainDemo.class, store));
-        blockchainDemo = (BlockchainDemo) BlockchainDemo.singleton();
-    }
-
-    @After
-    public void after() throws IOException {
-        store.close();
-        // free leveldb file
-        File file = new File(LEVELDB_TEST_PATH);
-        if (file.exists()) {
-            for (File subFile : file.listFiles()) {
-                subFile.delete();
-            }
-            file.delete();
-        }
-    }
-
+public class IssueTransactionTest  extends AbstractBlockchainTest {
 
     @Test
     public void getSystemFee() {

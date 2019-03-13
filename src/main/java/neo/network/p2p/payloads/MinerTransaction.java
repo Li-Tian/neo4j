@@ -32,7 +32,7 @@ public class MinerTransaction extends Transaction {
      * make a miner transaction
      */
     public MinerTransaction() {
-        super(TransactionType.MinerTransaction);
+        super(TransactionType.MinerTransaction, MinerTransaction::new);
     }
 
     /**

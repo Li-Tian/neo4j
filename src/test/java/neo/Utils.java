@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.function.Supplier;
 
+import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
@@ -14,6 +15,8 @@ public class Utils {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         BinaryWriter writer = new BinaryWriter(output);
         serializable.serialize(writer);
+
+        System.out.println(output.toByteArray().length);
 
         ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray());
         BinaryReader reader = new BinaryReader(input);

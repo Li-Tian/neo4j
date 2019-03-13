@@ -27,6 +27,8 @@ import neo.ledger.AccountState;
 import neo.ledger.BlockState;
 import neo.ledger.Blockchain;
 import neo.ledger.CoinState;
+import neo.ledger.ContractPropertyState;
+import neo.ledger.ContractState;
 import neo.ledger.HashIndexState;
 import neo.ledger.SpentCoin;
 import neo.ledger.SpentCoinState;
@@ -44,6 +46,7 @@ import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.leveldb.BlockchainDemo;
+import neo.smartcontract.ContractParameterType;
 
 
 public abstract class SnapshotTest {
@@ -1014,6 +1017,34 @@ public abstract class SnapshotTest {
         utxos.delete(minerTransaction.hash());
         snapshot.commit();
     }
+
+    @Test
+    public void getScript() {
+        ContractState state = new ContractState();
+        state.parameterList = new ContractParameterType[]{
+                ContractParameterType.Signature,
+                ContractParameterType.String,
+                ContractParameterType.Hash160
+        };
+        state.author = "test";
+        state.codeVersion = "1.0";
+        state.contractProperties = new ContractPropertyState((byte) ((1 << 0) | (1 << 1) | (1 << 2)));
+        state.name = "test";
+        state.email = "test@neo.org";
+        state.description = "desc";
+        state.returnType = ContractParameterType.Void;
+        state.script = new byte[]{0x01, 0x02, 0x03, 0x04};
+        UInt160 key = state.getScriptHash();
+        snapshot.getContracts().add(key, state);
+        snapshot.commit();
+
+        byte[] sourceCode = snapshot.getScript(key.toArray());
+        Assert.assertArrayEquals(state.script, sourceCode);
+
+        snapshot.getContracts().delete(key);
+        snapshot.commit();
+    }
+
 
     @Test
     public void close() {

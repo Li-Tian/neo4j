@@ -13,7 +13,7 @@ public class ContractTransaction extends Transaction {
      * constructor
      */
     public ContractTransaction() {
-        super(TransactionType.ContractTransaction);
+        super(TransactionType.ContractTransaction, ContractTransaction::new);
     }
 
     /**

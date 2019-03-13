@@ -104,7 +104,7 @@ public class PublishTransaction extends Transaction {
      * Construct the contract publication transaction
      */
     public PublishTransaction() {
-        super(TransactionType.PublishTransaction);
+        super(TransactionType.PublishTransaction, PublishTransaction::new);
     }
 
 

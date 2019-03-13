@@ -2,18 +2,12 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 
-import akka.actor.ActorSystem;
-import akka.actor.Props;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
@@ -28,39 +22,9 @@ import neo.ledger.Blockchain;
 import neo.ledger.TransactionState;
 import neo.ledger.TrimmedBlock;
 import neo.persistence.Snapshot;
-import neo.persistence.leveldb.BlockchainDemo;
-import neo.persistence.leveldb.LevelDBStore;
 import neo.vm.OpCode;
 
-public class BlockTest {
-
-    private final static String LEVELDB_TEST_PATH = "Chain_test";
-
-    private LevelDBStore store;
-    private BlockchainDemo blockchainDemo;
-
-    @Before
-    public void before() throws IOException {
-        store = new LevelDBStore(LEVELDB_TEST_PATH);
-
-        ActorSystem system = ActorSystem.create("neosystem");
-        system.actorOf(Props.create(BlockchainDemo.class, store));
-        blockchainDemo = (BlockchainDemo) BlockchainDemo.singleton();
-    }
-
-    @After
-    public void after() throws IOException {
-        store.close();
-        // free leveldb file
-        File file = new File(LEVELDB_TEST_PATH);
-        if (file.exists()) {
-            for (File subFile : file.listFiles()) {
-                subFile.delete();
-            }
-            file.delete();
-        }
-    }
-
+public class BlockTest  extends AbstractBlockchainTest {
     @Test
     public void inventoryType() {
         Block block = new Block();

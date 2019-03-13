@@ -31,35 +31,7 @@ import neo.persistence.leveldb.LevelDBStore;
 
 import static org.junit.Assert.*;
 
-public class StateDescriptorTest {
-
-    private final static String LEVELDB_TEST_PATH = "Chain_test";
-
-    private LevelDBStore store;
-    private BlockchainDemo blockchainDemo;
-
-    @Before
-    public void before() throws IOException {
-        store = new LevelDBStore(LEVELDB_TEST_PATH);
-
-        ActorSystem system = ActorSystem.create("neosystem");
-        system.actorOf(Props.create(BlockchainDemo.class, store));
-        blockchainDemo = (BlockchainDemo) BlockchainDemo.singleton();
-    }
-
-    @After
-    public void after() throws IOException {
-        store.close();
-        // free leveldb file
-        File file = new File(LEVELDB_TEST_PATH);
-        if (file.exists()) {
-            for (File subFile : file.listFiles()) {
-                subFile.delete();
-            }
-            file.delete();
-        }
-    }
-
+public class StateDescriptorTest extends AbstractBlockchainTest {
 
     @Test
     public void size() {
