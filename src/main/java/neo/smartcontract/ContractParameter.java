@@ -276,8 +276,7 @@ public class ContractParameter {
                 sb.append(']');
                 return sb.toString();
             }
-        }
-        else {
+        } else {
             return parameter.value.toString();
         }
     }
