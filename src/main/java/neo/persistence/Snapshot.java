@@ -47,12 +47,13 @@ import neo.network.p2p.payloads.StateDescriptor;
 import neo.network.p2p.payloads.StateTransaction;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionOutput;
+import neo.vm.IScriptTable;
 
 
 /**
  * Snapshot
  */
-public abstract class Snapshot extends AbstractPersistence {
+public abstract class Snapshot extends AbstractPersistence implements IScriptTable {
 
     protected Block persistingBlock;
     protected DataCache<UInt256, BlockState> blocks;
@@ -668,6 +669,18 @@ public abstract class Snapshot extends AbstractPersistence {
         }
         Collections.sort(results);
         return results;
+    }
+
+
+    /**
+     * get script by script hash
+     *
+     * @param script_hash script hash
+     * @return script source code
+     */
+    public byte[] getScript(byte[] script_hash) {
+        UInt160 hash = new UInt160(script_hash);
+        return getContracts().get(hash).script;
     }
 
 }
