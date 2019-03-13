@@ -1,6 +1,8 @@
 package neo.persistence;
 
 
+import neo.log.notr.TR;
+
 /**
  * Snapshot's clone
  */
@@ -12,6 +14,7 @@ public class CloneSnapshot extends Snapshot {
      * @param snapshot snapshot
      */
     public CloneSnapshot(Snapshot snapshot) {
+        TR.enter();
         this.persistingBlock = snapshot.getPersistingBlock();
         this.blocks = snapshot.getBlocks();
         this.transactions = snapshot.getTransactions();
@@ -26,6 +29,7 @@ public class CloneSnapshot extends Snapshot {
         this.validatorsCount = snapshot.getValidatorsCount();
         this.blockHashIndex = snapshot.getBlockHashIndex();
         this.headerHashIndex = snapshot.getHeaderHashIndex();
+        TR.exit();
     }
 
 }

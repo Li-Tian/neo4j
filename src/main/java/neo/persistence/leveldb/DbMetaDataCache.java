@@ -10,6 +10,7 @@ import neo.io.ICloneable;
 import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.io.caching.MetaDataCache;
+import neo.log.notr.TR;
 
 public class DbMetaDataCache<T extends ISerializable & ICloneable<T>> extends MetaDataCache<T> {
 
@@ -31,23 +32,28 @@ public class DbMetaDataCache<T extends ISerializable & ICloneable<T>> extends Me
 
     @Override
     protected void addInternal(T item) {
+        TR.enter();
         byte[] bytes = new byte[]{prefix};
         batch.put(bytes, SerializeHelper.toBytes(item));
+        TR.exit();
     }
 
     @Override
     protected T tryGetInternal() {
+        TR.enter();
         byte[] bytes = new byte[]{prefix};
         byte[] value = db.get(bytes, options);
 
         if (value == null || value.length == 0) {
-            return null;
+            return TR.exit(null);
         }
-        return SerializeHelper.parse(valueGenerator, value);
+        return TR.exit(SerializeHelper.parse(valueGenerator, value));
     }
 
     @Override
     protected void updateInternal(T item) {
+        TR.enter();
         addInternal(item);
+        TR.exit();
     }
 }

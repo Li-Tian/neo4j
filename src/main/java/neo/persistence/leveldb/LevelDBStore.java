@@ -32,6 +32,7 @@ import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 import neo.persistence.Store;
 
@@ -51,6 +52,8 @@ public class LevelDBStore extends Store {
      * @throws IOException throw it when open db failed.
      */
     public LevelDBStore(String path) throws IOException {
+        TR.enter();
+
         DBFactory factory = new JniDBFactory();
         // 默认如果没有则创建
         Options options = new Options();
@@ -79,6 +82,9 @@ public class LevelDBStore extends Store {
         }
         db.put(keys, Properties.Default.version.getBytes(CHARSET));
         db.write(batch);
+
+
+        TR.exit();
     }
 
 
@@ -89,16 +95,19 @@ public class LevelDBStore extends Store {
      */
     @Override
     public Snapshot getSnapshot() {
-        return new DbSnapshot(db);
+        TR.enter();
+        return TR.exit(new DbSnapshot(db));
     }
 
     /**
      * Release resources
      */
     public void close() throws IOException {
+        TR.enter();
         if (db != null) {
             db.close();
         }
+        TR.exit();
     }
 
     /**

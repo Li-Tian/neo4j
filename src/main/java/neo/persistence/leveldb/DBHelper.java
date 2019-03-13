@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 import neo.csharp.BitConverter;
+import neo.log.notr.TR;
 
 /**
  * leveldb helper
@@ -25,6 +26,7 @@ public class DBHelper {
      * @return Collection<R>, empty set will be return if not found
      */
     public static <R> Collection<R> find(DB db, byte[] keyPrefix, BiFunction<byte[], byte[], R> generator) {
+        TR.enter();
         DBIterator iterator = db.iterator();
         iterator.seek(keyPrefix);
         ArrayList<R> list = new ArrayList<>();
@@ -39,7 +41,7 @@ public class DBHelper {
             }
             list.add(generator.apply(tmpKeyBytes, valueBytes));
         }
-        return list;
+        return TR.exit(list);
     }
 
 }

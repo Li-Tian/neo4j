@@ -22,6 +22,7 @@ import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 import neo.cryptography.ecc.ECPoint;
 
@@ -32,6 +33,7 @@ public class DbSnapshot extends Snapshot {
     private final WriteBatch batch;
 
     public DbSnapshot(DB db) {
+        TR.enter();
         this.db = db;
         this.snapshot = db.getSnapshot();
         this.batch = db.createWriteBatch();
@@ -53,17 +55,22 @@ public class DbSnapshot extends Snapshot {
         validatorsCount = new DbMetaDataCache<>(db, options, batch, Prefixes.IX_ValidatorsCount, ValidatorsCountState::new);
         blockHashIndex = new DbMetaDataCache<>(db, options, batch, Prefixes.IX_CurrentBlock, HashIndexState::new);
         headerHashIndex = new DbMetaDataCache<>(db, options, batch, Prefixes.IX_CurrentHeader, HashIndexState::new);
+        TR.exit();
     }
 
     @Override
     public void commit() {
+        TR.enter();
         super.commit();
         db.write(batch);
+        TR.exit();
     }
 
     @Override
     public void close() throws IOException {
+        TR.enter();
         snapshot.close();
+        TR.exit();
     }
 
 }

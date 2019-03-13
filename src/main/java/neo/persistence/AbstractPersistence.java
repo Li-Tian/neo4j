@@ -19,6 +19,7 @@ import neo.ledger.CoinState;
 import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.ledger.ValidatorState;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.Header;
@@ -37,9 +38,12 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return If it contains,return true.Otherwise,return false
      */
     public boolean containsBlock(UInt256 hash) {
+        TR.enter();
         BlockState state = getBlocks().tryGet(hash);
-        if (state == null) return false;
-        return state.trimmedBlock.isBlock();
+        if (state == null) {
+            return TR.exit(false);
+        }
+        return TR.exit(state.trimmedBlock.isBlock());
     }
 
     /**
@@ -49,8 +53,9 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return If it contains,return true.Otherwise,return false
      */
     public boolean containsTransaction(UInt256 hash) {
+        TR.enter();
         TransactionState state = getTransactions().tryGet(hash);
-        return state != null;
+        return TR.exit(state != null);
     }
 
     /**
@@ -60,9 +65,12 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return Returns the block corresponding to the specified height, or null if it does not exist
      */
     public Block getBlock(Uint index) {
+        TR.enter();
         UInt256 hash = Blockchain.singleton().getBlockHash(index);
-        if (hash == null) return null;
-        return getBlock(hash);
+        if (hash == null) {
+            return TR.exit(null);
+        }
+        return TR.exit(getBlock(hash));
     }
 
     /**
@@ -72,10 +80,15 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return Returns the block corresponding to the specified block hash,  otherwise null.
      */
     public Block getBlock(UInt256 hash) {
+        TR.enter();
         BlockState state = getBlocks().tryGet(hash);
-        if (state == null) return null;
-        if (!state.trimmedBlock.isBlock()) return null;
-        return state.trimmedBlock.getBlock(getTransactions());
+        if (state == null) {
+            return TR.exit(null);
+        }
+        if (!state.trimmedBlock.isBlock()) {
+            return TR.exit(null);
+        }
+        return TR.exit(state.trimmedBlock.getBlock(getTransactions()));
     }
 
     /**
@@ -84,16 +97,18 @@ public abstract class AbstractPersistence implements IPersistence {
      * validator.
      */
     public Collection<ValidatorState> getEnrollments() {
+        TR.enter();
+
         HashSet<ECPoint> sv = new HashSet<>();
         for (ECPoint ecpoint : Blockchain.StandbyValidators) {
             sv.add(ecpoint);
         }
-        return getValidators()
+        return TR.exit(getValidators()
                 .find()
                 .stream()
                 .map(p -> p.getValue())
                 .filter(p -> p.registered || sv.contains(p.publicKey))
-                .collect(Collectors.toList());
+                .collect(Collectors.toList()));
     }
 
     /**
@@ -103,11 +118,12 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return specified block header.Return null if it does not exist
      */
     public Header getHeader(Uint index) {
+        TR.enter();
         UInt256 hash = Blockchain.singleton().getBlockHash(index);
         if (hash == null) {
-            return null;
+            return TR.exit(null);
         }
-        return getHeader(hash);
+        return TR.exit(getHeader(hash));
     }
 
     /**
@@ -117,11 +133,12 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return specified block header. Return null if it does not exist
      */
     public Header getHeader(UInt256 hash) {
+        TR.enter();
         BlockState state = getBlocks().tryGet(hash);
         if (state == null) {
-            return null;
+            return TR.exit(null);
         }
-        return state.trimmedBlock.getHeader();
+        return TR.exit(state.trimmedBlock.getHeader());
     }
 
     /**
@@ -131,13 +148,14 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return next block hash.Return null if it does not exist
      */
     public UInt256 getNextBlockHash(UInt256 hash) {
+        TR.enter();
         BlockState state = getBlocks().tryGet(hash);
         if (state == null) {
-            return null;
+            return TR.exit(null);
         }
 
         Uint index = new Uint(state.trimmedBlock.index.intValue() + 1);
-        return Blockchain.singleton().getBlockHash(index);
+        return TR.exit(Blockchain.singleton().getBlockHash(index));
     }
 
     /**
@@ -147,8 +165,9 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return total system fee amount
      */
     public long getSysFeeAmount(Uint height) {
+        TR.enter();
         UInt256 hash = Blockchain.singleton().getBlockHash(height);
-        return getSysFeeAmount(hash);
+        return TR.exit(getSysFeeAmount(hash));
     }
 
     /**
@@ -159,9 +178,12 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return total system fee amount
      */
     public long getSysFeeAmount(UInt256 hash) {
+        TR.enter();
         BlockState block_state = getBlocks().tryGet(hash);
-        if (block_state == null) return 0;
-        return block_state.systemFeeAmount;
+        if (block_state == null) {
+            return TR.exit(0);
+        }
+        return TR.exit(block_state.systemFeeAmount);
     }
 
     /**
@@ -171,11 +193,12 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return transaction output corresponding to transaction hash
      */
     public Transaction getTransaction(UInt256 hash) {
+        TR.enter();
         TransactionState state = getTransactions().tryGet(hash);
         if (state == null) {
-            return null;
+            return TR.exit(null);
         }
-        return state.transaction;
+        return TR.exit(state.transaction);
     }
 
     /**
@@ -189,18 +212,19 @@ public abstract class AbstractPersistence implements IPersistence {
      * of being spent.
      */
     public TransactionOutput getUnspent(UInt256 hash, Ushort index) {
+        TR.enter();
         UnspentCoinState state = getUnspentCoins().tryGet(hash);
         if (state == null) {
-            return null;
+            return TR.exit(null);
         }
         if (index.intValue() >= state.items.length) {
-            return null;
+            return TR.exit(null);
         }
         if (state.items[index.intValue()].hasFlag(CoinState.Spent)) {
-            return null;
+            return TR.exit(null);
         }
 
-        return getTransaction(hash).outputs[index.intValue()];
+        return TR.exit(getTransaction(hash).outputs[index.intValue()]);
     }
 
     /**
@@ -210,6 +234,7 @@ public abstract class AbstractPersistence implements IPersistence {
      * @return all unspent transcation outputs of the transaction
      */
     public Collection<TransactionOutput> getUnspent(UInt256 hash) {
+        TR.enter();
         ArrayList<TransactionOutput> outputs = new ArrayList<>();
         UnspentCoinState state = getUnspentCoins().tryGet(hash);
         if (state != null) {
@@ -220,7 +245,7 @@ public abstract class AbstractPersistence implements IPersistence {
                 }
             }
         }
-        return outputs;
+        return TR.exit(outputs);
     }
 
     /**
@@ -231,8 +256,9 @@ public abstract class AbstractPersistence implements IPersistence {
      * input exists and is not spent, otherwise,return true.
      */
     public boolean isDoubleSpend(Transaction tx) {
+        TR.enter();
         if (tx.inputs.length == 0) {
-            return false;
+            return TR.exit(false);
         }
 
         Map<UInt256, List<CoinReference>> groupMap = Arrays.stream(tx.inputs)
@@ -241,16 +267,16 @@ public abstract class AbstractPersistence implements IPersistence {
         for (Map.Entry<UInt256, List<CoinReference>> entry : groupMap.entrySet()) {
             UnspentCoinState state = getUnspentCoins().tryGet(entry.getKey());
             if (state == null) {
-                return true;
+                return TR.exit(true);
             }
             // C# code: if (group.Any(p => p.PrevIndex >= state.Items.Length || state.Items[p.PrevIndex].HasFlag(CoinState.Spent)))
             for (CoinReference input : entry.getValue()) {
                 if (input.prevIndex.intValue() >= state.items.length ||
                         state.items[input.prevIndex.intValue()].hasFlag(CoinState.Spent)) {
-                    return true;
+                    return TR.exit(true);
                 }
             }
         }
-        return false;
+        return TR.exit(false);
     }
 }

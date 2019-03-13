@@ -1,21 +1,20 @@
 package neo.persistence.leveldb;
 
 import org.iq80.leveldb.DB;
-import org.iq80.leveldb.DBIterator;
 import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import neo.csharp.BitConverter;
-import neo.io.ICloneable;
 import neo.csharp.io.ISerializable;
+import neo.io.ICloneable;
 import neo.io.SerializeHelper;
 import neo.io.caching.DataCache;
+import neo.log.notr.TR;
 
 /**
  * Table cache
@@ -59,39 +58,48 @@ public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValu
      */
     @Override
     protected TValue getInternal(TKey key) {
+        TR.enter();
         byte[] bytes = BitConverter.merge(prefix, SerializeHelper.toBytes(key));
         byte[] value = options == null ? db.get(bytes) : db.get(bytes, options);
 
         if (value == null || value.length == 0) {
-            return null;
+            return TR.exit(null);
         }
-        return SerializeHelper.parse(valueGenerator, value);
+        return TR.exit(SerializeHelper.parse(valueGenerator, value));
     }
 
     @Override
     protected void addInternal(TKey key, TValue value) {
+        TR.enter();
         byte[] bytes = BitConverter.merge(prefix, SerializeHelper.toBytes(key));
         batch.put(bytes, SerializeHelper.toBytes(value));
+        TR.exit();
     }
 
     @Override
     protected TValue tryGetInternal(TKey key) {
-        return getInternal(key);
+        TR.enter();
+        return TR.exit(getInternal(key));
     }
 
     @Override
     protected void updateInternal(TKey key, TValue value) {
+        TR.enter();
         addInternal(key, value);
+        TR.exit();
     }
 
     @Override
     public void deleteInternal(TKey key) {
+        TR.enter();
         byte[] bytes = BitConverter.merge(prefix, SerializeHelper.toBytes(key));
         db.delete(bytes);
+        TR.exit();
     }
 
     @Override
     protected Collection<Map.Entry<TKey, TValue>> findInternal(byte[] keyPrefix) {
+        TR.enter();
         byte[] keyBytes = BitConverter.merge(prefix, keyPrefix);
 
         // C# code
@@ -99,8 +107,8 @@ public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValu
         //            (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(1),
         //            v.ToArray().AsSerializable<TValue>()));
         // be careful with the prefix!
-        return DBHelper.find(db, keyBytes, (key, value) ->
+        return TR.exit(DBHelper.find(db, keyBytes, (key, value) ->
                 new AbstractMap.SimpleEntry<>(SerializeHelper.parse(keyGenerator, key, 1),
-                        SerializeHelper.parse(valueGenerator, value)));
+                        SerializeHelper.parse(valueGenerator, value))));
     }
 }

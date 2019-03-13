@@ -38,7 +38,7 @@ import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
 import neo.cryptography.ecc.ECPoint;
@@ -75,6 +75,8 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      * free resource
      */
     public void close() throws IOException {
+        TR.enter();
+        TR.exit();
     }
 
     /**
@@ -240,6 +242,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      * Persist to disk
      */
     public void commit() {
+        TR.enter();
         // C# code
         // accounts.DeleteWhere((k, v) =>
         //        !v.IsFrozen && v.Votes.Length == 0 && v.Balances.All(p = > p.Value <= Fixed8.Zero));
@@ -265,6 +268,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
         validatorsCount.commit();
         blockHashIndex.commit();
         headerHashIndex.commit();
+        TR.exit();
     }
 
 
@@ -278,6 +282,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      * does not exist
      */
     public HashMap<Ushort, SpentCoin> getUnclaimed(UInt256 hash) {
+        TR.enter();
         /*
             C# code
              return coin_state.items.ToDictionary(p = > p.Key,p =>new SpentCoin
@@ -288,10 +293,10 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
             });
          */
         TransactionState tx_state = getTransactions().tryGet(hash);
-        if (tx_state == null) return null;
+        if (tx_state == null) return TR.exit(null);
         SpentCoinState coin_state = getSpentCoins().tryGet(hash);
         if (coin_state == null) {
-            return new HashMap<>();
+            return TR.exit(new HashMap<>());
         }
         HashMap<Ushort, SpentCoin> resultMap = new HashMap<>(coin_state.items.size());
         for (Map.Entry<Ushort, Uint> entry : coin_state.items.entrySet()) {
@@ -301,7 +306,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
             spentCoin.endHeight = entry.getValue();
             resultMap.put(entry.getKey(), spentCoin);
         }
-        return resultMap;
+        return TR.exit(resultMap);
     }
 
     /**
@@ -315,7 +320,8 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      *                                  <br/> Throw the exception.
      */
     public Fixed8 calculateBonus(Collection<CoinReference> inputs) {
-        return calculateBonus(inputs, true);
+        TR.enter();
+        return TR.exit(calculateBonus(inputs, true));
     }
 
 
@@ -335,6 +341,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      *                                  <br/> Throw the exception.
      */
     public Fixed8 calculateBonus(Collection<CoinReference> inputs, boolean ignoreClaimed) {
+        TR.enter();
         // C# code
         //        foreach (var group in inputs.GroupBy(p => p.PrevHash))
         //        {
@@ -361,6 +368,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
             HashMap<Ushort, SpentCoin> claimable = getUnclaimed(key);
             if (claimable == null || claimable.isEmpty()) {
                 if (ignoreClaimed) {
+                    TR.exit();
                     return;
                 }
                 throw new IllegalArgumentException();
@@ -377,7 +385,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
                 unclaimed.add(claimed);
             }
         });
-        return calculateBonusInternal(unclaimed);
+        return TR.exit(calculateBonusInternal(unclaimed));
     }
 
     /**
@@ -391,6 +399,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      *                                  transaction output is not NEO asset, Throw an exception.
      */
     public Fixed8 calculateBonus(Collection<CoinReference> inputs, Uint height_end) {
+        TR.enter();
         /*
             C# code
             foreach(var group in inputs.GroupBy(p = > p.PrevHash))
@@ -433,10 +442,11 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
                 }
             }
         });
-        return calculateBonusInternal(unclaimed);
+        return TR.exit(calculateBonusInternal(unclaimed));
     }
 
     private Fixed8 calculateBonusInternal(Collection<SpentCoin> unclaimed) {
+        TR.enter();
         /*
             C# code:
             Fixed8 amount_claimed = Fixed8.Zero;
@@ -506,7 +516,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
             amount_claimed = Fixed8.add(amount_claimed, sub_amount_claimed);
 
         }
-        return amount_claimed;
+        return TR.exit(amount_claimed);
     }
 
     private ECPoint[] validatorPubkeys = null;
@@ -518,12 +528,13 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      * @return The list of Validators for the consensus in point's (x,y) ascending order.
      */
     public ECPoint[] getValidatorPubkeys() {
+        TR.enter();
         if (validatorPubkeys == null) {
             Collection<ECPoint> points = getValidators(Collections.emptyList());
             validatorPubkeys = new ECPoint[points.size()];
             points.toArray(validatorPubkeys);
         }
-        return validatorPubkeys;
+        return TR.exit(validatorPubkeys);
     }
 
     /**
@@ -534,6 +545,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      * @return The list of Validators participating in the consensus
      */
     public Collection<ECPoint> getValidators(Collection<Transaction> others) {
+        TR.enter();
         Snapshot snapshot = clone();
 
         // 计算因交易产生的票数变化
@@ -658,7 +670,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
                 .map(p -> p.publicKey).limit(count).collect(Collectors.toList());
 
         if (results.size() == count) {
-            return results;
+            return TR.exit(results);
         } else {
             HashSet<ECPoint> set = new HashSet<>(results);
             for (int i = 0; i < Blockchain.StandbyValidators.length && set.size() < count; i++) {
@@ -668,7 +680,7 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
             results.addAll(set);
         }
         Collections.sort(results);
-        return results;
+        return TR.exit(results);
     }
 
 
@@ -679,8 +691,9 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
      * @return script source code
      */
     public byte[] getScript(byte[] script_hash) {
+        TR.enter();
         UInt160 hash = new UInt160(script_hash);
-        return getContracts().get(hash).script;
+        return TR.exit(getContracts().get(hash).script);
     }
 
 }
