@@ -90,7 +90,7 @@ public class ContractParameter {
                     parameter.value = UInt256.parse(json.get("value").getAsString());
                     break;
                 case PublicKey:
-                    parameter.value = ECPoint.fromBytes(new BigInteger(json.get("value").getAsString(), 16).toByteArray(), ECC.Secp256r1.getCurve());
+                    parameter.value = ECPoint.fromBytes(BitConverter.hexToBytes(json.get("value").getAsString()), ECC.Secp256r1.getCurve());
                     break;
                 case String:
                     parameter.value = json.get("value").getAsString();
@@ -145,7 +145,7 @@ public class ContractParameter {
                 value = BitConverter.hexToBytes(text);
                 break;
             case PublicKey:
-                value = ECPoint.fromBytes(new BigInteger(text, 16).toByteArray(), ECC.Secp256r1.getCurve());
+                value = ECPoint.fromBytes(BitConverter.hexToBytes(text), ECC.Secp256r1.getCurve());
                 break;
             case String:
                 value = text;
