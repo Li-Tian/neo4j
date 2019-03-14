@@ -1047,13 +1047,9 @@ public abstract class SnapshotTest {
 
 
     @Test
-    public void close() {
-        try {
-            snapshot.close();
-            Assert.assertTrue(true);
-        } catch (IOException e) {
-            Assert.assertTrue(false);
-        }
+    public void dispose() {
+        snapshot.dispose();
+        Assert.assertTrue(true);
     }
 
 }
