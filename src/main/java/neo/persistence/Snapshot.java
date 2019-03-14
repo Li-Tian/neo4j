@@ -1,5 +1,7 @@
 package neo.persistence;
 
+import org.iq80.leveldb.WriteBatch;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import neo.UInt160;
 import neo.UInt256;
 import neo.csharp.Uint;
 import neo.csharp.Ushort;
+import neo.csharp.common.IDisposable;
 import neo.io.caching.DataCache;
 import neo.io.caching.MetaDataCache;
 import neo.io.wrappers.UInt32Wrapper;
@@ -53,7 +56,7 @@ import neo.vm.IScriptTable;
 /**
  * Snapshot
  */
-public abstract class Snapshot extends AbstractPersistence implements IScriptTable {
+public abstract class Snapshot extends AbstractPersistence implements IScriptTable, IDisposable {
 
     protected Block persistingBlock;
     protected DataCache<UInt256, BlockState> blocks;
@@ -70,11 +73,18 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
     protected MetaDataCache<HashIndexState> blockHashIndex;
     protected MetaDataCache<HashIndexState> headerHashIndex;
 
+    /**
+     * Get write batch
+     *
+     * @return write batch
+     */
+    public abstract WriteBatch getWriteBatch();
 
     /**
      * free resource
      */
-    public void close() throws IOException {
+    @Override
+    public void dispose() {
         TR.enter();
         TR.exit();
     }

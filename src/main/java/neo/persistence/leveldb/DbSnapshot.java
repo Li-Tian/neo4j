@@ -67,10 +67,22 @@ public class DbSnapshot extends Snapshot {
     }
 
     @Override
-    public void close() throws IOException {
+    public void dispose() {
         TR.enter();
-        snapshot.close();
+        try {
+            snapshot.close();
+        } catch (IOException e) {
+            TR.error(e);
+            // just log the error
+        }
         TR.exit();
     }
+
+
+    @Override
+    public WriteBatch getWriteBatch() {
+        return batch;
+    }
+
 
 }

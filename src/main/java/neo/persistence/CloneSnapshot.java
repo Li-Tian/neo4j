@@ -1,12 +1,16 @@
 package neo.persistence;
 
 
+import org.iq80.leveldb.WriteBatch;
+
 import neo.log.notr.TR;
 
 /**
  * Snapshot's clone
  */
 public class CloneSnapshot extends Snapshot {
+
+    private WriteBatch writeBatch;
 
     /**
      * Copy from snapshot
@@ -29,7 +33,12 @@ public class CloneSnapshot extends Snapshot {
         this.validatorsCount = snapshot.getValidatorsCount();
         this.blockHashIndex = snapshot.getBlockHashIndex();
         this.headerHashIndex = snapshot.getHeaderHashIndex();
+        this.writeBatch = snapshot.getWriteBatch();
         TR.exit();
     }
 
+    @Override
+    public WriteBatch getWriteBatch() {
+        return writeBatch;
+    }
 }
