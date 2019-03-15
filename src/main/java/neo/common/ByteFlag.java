@@ -9,11 +9,11 @@ import neo.csharp.io.ISerializable;
 /**
  * 标志类
  */
-public class Flag implements ISerializable {
+public class ByteFlag implements ISerializable {
 
     protected byte value;
 
-    public Flag(byte value) {
+    public ByteFlag(byte value) {
         this.value = value;
     }
 
@@ -30,7 +30,7 @@ public class Flag implements ISerializable {
      *
      * @param flag 属性
      */
-    public boolean hasFlag(Flag flag) {
+    public boolean hasFlag(ByteFlag flag) {
         return (this.value & flag.value) != (byte) 0x00;
     }
 
@@ -38,7 +38,7 @@ public class Flag implements ISerializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Flag that = (Flag) o;
+        ByteFlag that = (ByteFlag) o;
         return value == that.value;
     }
 

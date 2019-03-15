@@ -1,12 +1,12 @@
 package neo.ledger;
 
 
-import neo.common.Flag;
+import neo.common.ByteFlag;
 
 /**
  * 智能合约属性状态
  */
-public class ContractPropertyState extends Flag {
+public class ContractPropertyState extends ByteFlag {
 
     /**
      * 合约不包含属性

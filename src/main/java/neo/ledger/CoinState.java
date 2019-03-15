@@ -1,11 +1,11 @@
 package neo.ledger;
 
-import neo.common.Flag;
+import neo.common.ByteFlag;
 
 /**
  * 一个代表了当前NEO状态的enum类
  */
-public class CoinState extends Flag {
+public class CoinState extends ByteFlag {
 
     /**
      * 未确认的
