@@ -111,7 +111,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(blockState.trimmedBlock.nextConsensus, dbblock.trimmedBlock.nextConsensus);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -125,7 +125,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(blockState.trimmedBlock.nextConsensus, dbblock.trimmedBlock.nextConsensus);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getBlocks();
         dbblock = cache.tryGet(key);     // read null from
@@ -155,7 +155,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.blockIndex, dbtx.blockIndex);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -167,7 +167,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.blockIndex, dbtx.blockIndex);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getTransactions();
         dbtx = cache.tryGet(key); // read null from
@@ -203,7 +203,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.balances.get(Blockchain.UtilityToken.hash()), dbtx.balances.get(Blockchain.UtilityToken.hash()));
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -217,7 +217,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.balances.get(Blockchain.UtilityToken.hash()), dbtx.balances.get(Blockchain.UtilityToken.hash()));
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getAccounts();
         dbtx = cache.tryGet(key); // read null from
@@ -249,7 +249,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.items[3], dbtx.items[3]);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -264,7 +264,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.items[3], dbtx.items[3]);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getUnspentCoins();
         dbtx = cache.tryGet(key); // read null from
@@ -300,7 +300,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.items.get(new Ushort(2)), dbtx.items.get(new Ushort(2)));
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -315,7 +315,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.items.get(new Ushort(2)), dbtx.items.get(new Ushort(2)));
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getSpentCoins();
         dbtx = cache.tryGet(key); // read null from
@@ -347,7 +347,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.votes, dbtx.votes);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -360,7 +360,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.votes, dbtx.votes);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getValidators();
         dbtx = cache.tryGet(key); // read null from
@@ -395,7 +395,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.votes[3], dbtx.votes[3]);
         cache.getAndChange();
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -408,7 +408,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.votes[3], dbtx.votes[3]);
         dbtx.votes = new Fixed8[0];
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         dbtx = cache.get(); // get empty array
         Assert.assertNotNull(dbtx);
@@ -454,7 +454,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.isFrozen, dbtx.isFrozen);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -475,7 +475,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.isFrozen, dbtx.isFrozen);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getAssets();
         dbtx = cache.tryGet(key); // read null from
@@ -525,7 +525,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.parameterList[2], dbtx.parameterList[2]);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -545,7 +545,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.parameterList[2], dbtx.parameterList[2]);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getContracts();
         dbtx = cache.tryGet(key); // read null from
@@ -578,7 +578,7 @@ public class LevelDBStoreTest {
         Assert.assertArrayEquals(state.value, dbtx.value);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -590,7 +590,7 @@ public class LevelDBStoreTest {
         Assert.assertArrayEquals(state.value, dbtx.value);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getStorages();
         dbtx = cache.tryGet(key); // read null from
@@ -611,7 +611,7 @@ public class LevelDBStoreTest {
         HeaderHashList state = new HeaderHashList();
         state.hashes = new UInt256[]{UInt256.Zero, UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01")};
 
-        UInt32Wrapper key = new UInt32Wrapper(UInt32.parse("0xff00ff01"));
+        UInt32Wrapper key = new UInt32Wrapper(new Uint(10));
 
         cache.add(key, state);
         snapshot.commit();
@@ -619,7 +619,7 @@ public class LevelDBStoreTest {
         Assert.assertArrayEquals(state.hashes, dbtx.hashes);
         cache.getAndChange(key);
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -630,7 +630,7 @@ public class LevelDBStoreTest {
         Assert.assertArrayEquals(state.hashes, dbtx.hashes);
         cache.delete(key); // delete
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         cache = store.getHeaderHashList();
         dbtx = cache.tryGet(key); // read null from
@@ -658,7 +658,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.index, dbtx.index);
         cache.getAndChange();
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -668,7 +668,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.index, dbtx.index);
         dbtx.hash = UInt256.Zero;
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         dbtx = cache.get(); // get empty array
         Assert.assertNotNull(dbtx);
@@ -691,7 +691,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.index, dbtx.index);
         cache.getAndChange();
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         // read from db
         snapshot = store.getSnapshot();
@@ -701,7 +701,7 @@ public class LevelDBStoreTest {
         Assert.assertEquals(state.index, dbtx.index);
         dbtx.hash = UInt256.Zero;
         snapshot.commit();
-        snapshot.close();
+        snapshot.dispose();
 
         dbtx = cache.get(); // get empty array
         Assert.assertNotNull(dbtx);
