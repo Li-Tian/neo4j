@@ -2,57 +2,82 @@ package neo.io.wrappers;
 
 
 import neo.UInt32;
+import neo.csharp.Uint;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.log.notr.TR;
 
-public final class UInt32Wrapper extends SerializableWrapper<UInt32> {
+/**
+ * A subclass of SerializableWrapper, used to encapsulate data objects of  uint type
+ */
+public final class UInt32Wrapper extends SerializableWrapper<Uint> {
 
+
+    /**
+     * Constructor without arguments
+     */
     public UInt32Wrapper() {
-        this.value = UInt32.Zero;
+        this.value = Uint.ZERO;
     }
 
-    public UInt32Wrapper(UInt32 value) {
+    /**
+     * Constructor
+     *
+     * @param value uint type data that needs to be encapsulated
+     */
+    public UInt32Wrapper(Uint value) {
         this.value = value;
     }
 
-    //   C#中的 隐式转换方法
-    //    public static implicit operator UInt32Wrapper(uint value)
-    //    {
-    //        return new UInt32Wrapper(value);
-    //    }
-    public static UInt32Wrapper parseFrom(UInt32 value) {
+    /**
+     * Convert a uint type data to a UInt32Wrapper object
+     *
+     * @param value uint value
+     * @return UInt32Wrapper
+     */
+    public static UInt32Wrapper parseFrom(Uint value) {
         return new UInt32Wrapper(value);
     }
 
+    /**
+     * Size, the default is the size of the internally encapsulated uint type data object
+     */
     @Override
     public int size() {
         TR.enter();
         return TR.exit(UInt32.Zero.size());
     }
 
+    /**
+     * Serialize method
+     *
+     * @param writer BinaryWriter
+     */
     @Override
     public void serialize(BinaryWriter writer) {
         TR.enter();
-        // NOTE 这里必须与C# uint存储大小保持一致
-        this.value.serialize(writer);
+        writer.writeUint(this.value);
         TR.exit();
     }
 
+    /**
+     * Deserialize method
+     *
+     * @param reader BinaryReader
+     */
     @Override
     public void deserialize(BinaryReader reader) {
         TR.enter();
-        // NOTE 这里必须与C# uint存储大小保持一致
-        this.value = reader.readSerializable(UInt32::new);
+        this.value = reader.readUint();
         TR.exit();
     }
 
-    //   C#中的 隐式转换方法
-    //    public static implicit operator uint(UInt32Wrapper wrapper)
-    //    {
-    //        return wrapper.value;
-    //    }
-    public UInt32 toUint32() {
+    /**
+     * Convert a UInt32Wrapper object to a uint type data
+     *
+     * @return uint
+     */
+    public Uint toUint32() {
         TR.enter();
         return TR.exit(this.value);
     }
