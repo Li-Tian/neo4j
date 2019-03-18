@@ -9,21 +9,53 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import neo.csharp.Uint;
+import neo.log.tr.TR;
 import neo.network.p2p.payloads.TransactionType;
 
 /**
- * NEO 网络协议配置
+ * NEO network protocol configuration
  */
 public class ProtocolSettings {
 
-    public final int magic;
+    /**
+     * magic number,
+     */
+    public final Uint magic;
+
+    /**
+     * address version
+     */
     public final byte addressVersion;
+
+    /**
+     * standby validators
+     */
     public final List<String> standbyValidators;
+
+    /**
+     * seed node list
+     */
     public final List<String> seedList;
+
+    /**
+     * transaction's system fee
+     */
     public final HashMap<TransactionType, Fixed8> systemFee;
+
+    /**
+     * the low priority threshold of transaction
+     */
     public final Fixed8 lowPriorityThreshold;
+
+    /**
+     * block internal
+     */
     public final int secondsPerBlock;
 
+    /**
+     * default protocol
+     */
     public static ProtocolSettings Default;
 
     static {
@@ -32,8 +64,9 @@ public class ProtocolSettings {
     }
 
     private ProtocolSettings(Config config) {
+        TR.enter();
         Config protocolConfig = config.getConfig("ProtocolConfiguration");
-        magic = protocolConfig.getInt("Magic");
+        magic = new Uint(protocolConfig.getInt("Magic"));
         addressVersion = Byte.parseByte(protocolConfig.getString("AddressVersion"));
         standbyValidators = protocolConfig.getStringList("StandbyValidators");
         seedList = protocolConfig.getStringList("SeedList");
@@ -53,6 +86,7 @@ public class ProtocolSettings {
             Fixed8 fee = Fixed8.fromDecimal(BigDecimal.valueOf(feeConfig.getDouble(key)));
             systemFee.put(transactionType, fee);
         }
+        TR.exit();
     }
 
 
