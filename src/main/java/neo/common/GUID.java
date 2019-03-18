@@ -2,6 +2,8 @@ package neo.common;
 
 import java.util.UUID;
 
+import neo.log.notr.TR;
+
 /**
  * GUID helper, generate a unique id
  */
@@ -13,7 +15,8 @@ public class GUID {
      * @return guid string
      */
     public static String newGuid() {
+        TR.enter();
         UUID uuid = UUID.randomUUID();
-        return uuid.toString();
+        return TR.exit(uuid.toString());
     }
 }

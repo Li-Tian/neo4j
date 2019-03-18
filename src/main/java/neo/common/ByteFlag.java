@@ -5,9 +5,10 @@ import java.util.Objects;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.log.notr.TR;
 
 /**
- * 标志类
+ * Byte flag
  */
 public class ByteFlag implements ISerializable {
 
@@ -19,46 +20,85 @@ public class ByteFlag implements ISerializable {
 
 
     /**
-     * 属性值
+     * byte value
      */
     public byte value() {
-        return value;
+        TR.enter();
+        return TR.exit(value);
     }
 
     /**
-     * 是否包含某属性
+     * check whether has the specific flag
      *
-     * @param flag 属性
+     * @param flag specific flag
      */
     public boolean hasFlag(ByteFlag flag) {
-        return (this.value & flag.value) != (byte) 0x00;
+        TR.enter();
+        return TR.exit((this.value & flag.value) != (byte) 0x00);
     }
 
+    /**
+     * check whether the two flag are equal.
+     *
+     * @param o the other flag
+     * @return true - the same value, otherwise is false.
+     */
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        TR.enter();
+        if (this == o) {
+            return TR.exit(true);
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return TR.exit(false);
+        }
+
         ByteFlag that = (ByteFlag) o;
-        return value == that.value;
+        return TR.exit(value == that.value);
     }
 
+    /**
+     * get hash code
+     *
+     * @return hash code
+     */
     @Override
     public int hashCode() {
-        return Objects.hash(value);
+        TR.enter();
+        return TR.exit(Objects.hash(value));
     }
 
+    /**
+     * size for storage
+     */
     @Override
     public int size() {
-        return Byte.BYTES;
+        TR.enter();
+        return TR.exit(Byte.BYTES);
     }
 
+
+    /**
+     * serialize the flag
+     *
+     * @param writer BinaryWriter
+     */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         writer.writeByte(value);
+        TR.exit();
     }
 
+    /**
+     * deserialize from the reader
+     *
+     * @param reader BinaryReader
+     */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         this.value = (byte) reader.readByte();
+        TR.exit();
     }
 }
