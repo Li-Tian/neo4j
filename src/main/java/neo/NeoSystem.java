@@ -1,6 +1,8 @@
 package neo;
 
+import akka.actor.ActorRef;
 import neo.ledger.Blockchain;
+import neo.network.p2p.LocalNode;
 import neo.persistence.Store;
 
 /**
@@ -9,6 +11,10 @@ import neo.persistence.Store;
 public class NeoSystem {
 
     public Blockchain blockchain;
+
+    public ActorRef localNode;
+
+    public  ActorRef taskManager;
 
     public NeoSystem(Store store) {
         // TODO
