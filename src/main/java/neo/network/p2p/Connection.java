@@ -3,19 +3,20 @@ package neo.network.p2p;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Cancellable;
-import akka.actor.UntypedActor;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
+import akka.japi.pf.ReceiveBuilder;
 import akka.util.ByteString;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * An abstract class that describes a connection established between the local node and the remote
  * node.
  */
-public abstract class Connection extends UntypedActor {
+public abstract class Connection extends AbstractActor {
 
     static class Timer {
         public static Timer Instance = new Timer();
@@ -147,40 +148,29 @@ public abstract class Connection extends UntypedActor {
         }
     }
 
-
     /**
-     * Processing method when receiving a message delivered by the Akka framework<br/> The main
-     * message types are:
+     * create a message receiver, the message as following:
      * <ul>
-     * <li>1、 timeout</li>
-     * <li>2、TCP ACK response</li>
-     * <li>3、received TCP data</li>
-     * <li>4、TCP connection is closed</li>
+     * <li>Connection.Timer: timer</li>
+     * <li>Connection.Ack: tcp ack message received</li>
+     * <li>Tcp.Received: data received </li>
+     * <li>Tcp.ConnectionClosed: TCP connection is closed</li>
      * </ul>
-     *
-     * @param message a message delivered by the Akka framework
      */
     @Override
-    public void onReceive(Object message) throws Throwable {
-        if (message instanceof Timer) {
-            disconnect(true);
-            return;
-        }
+    public Receive createReceive() {
+        return getReceiveBuilder().build();
+    }
 
-        if (message instanceof Ack) {
-            onAck();
-            return;
-        }
 
-        if (message instanceof Tcp.Received) {
-            Tcp.Received received = (Tcp.Received) message;
-            onReceived(received.data());
-            return;
-        }
-
-        if (message instanceof Tcp.ConnectionClosed) {
-            context().stop(self());
-            return;
-        }
+    /**
+     * get a receiver builder
+     */
+    protected ReceiveBuilder getReceiveBuilder() {
+        return receiveBuilder()
+                .match(Connection.Timer.class, timer -> disconnect(true))
+                .match(Connection.Ack.class, ack -> onAck())
+                .match(Tcp.Received.class, received -> onReceived(received.data()))
+                .match(Tcp.ConnectionClosed.class, task -> context().stop(self()));
     }
 }

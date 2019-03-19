@@ -5,10 +5,9 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * IP helper, provide converting method ipv4 with ipv6.
@@ -26,6 +25,8 @@ public class IpHelper {
         if (address instanceof Inet4Address) {
             return address;
         }
+
+        // TODO to complete ipv6Toipv4
 
         Inet6Address ipv6 = (Inet6Address) address;
         if (ipv6.isIPv4CompatibleAddress()) {
@@ -118,7 +119,6 @@ public class IpHelper {
         }
         return new InetSocketAddress(newAddress, socketAddress.getPort());
     }
-
 
 
 }

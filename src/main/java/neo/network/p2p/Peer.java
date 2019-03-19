@@ -14,24 +14,25 @@ import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.Terminated;
-import akka.actor.UntypedActor;
 import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.io.Inet.SocketOption;
 import akka.io.TcpSO;
+import akka.japi.pf.ReceiveBuilder;
 import neo.common.GUID;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * The peer class in the P2P network used by NEO. Describe the basic network functions of the node.
  */
-public abstract class Peer extends UntypedActor {
+public abstract class Peer extends AbstractActor {
 
     /**
      * Custom Akka message type, which represents the startup of the node, describes the node's
@@ -66,7 +67,7 @@ public abstract class Peer extends UntypedActor {
     }
 
     /**
-     * Custom Akka message type, which represents the connection node, describes the IP and port
+     * Custom Akka message type, which represents the connected node, describes the IP and port
      * connected to the node, whether it is trusted, etc.
      */
     public static class Connect {
@@ -405,60 +406,39 @@ public abstract class Peer extends UntypedActor {
 
 
     /**
-     * Callback method for handling akka message
+     * create a message receiver
      *
-     * @param message akka message
+     * @docs message customized message as the following:
+     * <ul>
+     * <li>Peer.Start: startup of the node</li>
+     * <li>Peer.Timer: timer</li>
+     * <li>Peer.Peers: adding a list of unconnected nodes</li>
+     * <li>Peer.Connect: the connected node</li>
+     * <li>Terminated: the actor close</li>
+     * <li>Tcp.Bound: tcp bound</li>
+     * <li>Tcp.CommandFailed: tcp command failed</li>
+     * <li>Tcp.Connected: tcp connected</li>
+     * </ul>
      */
     @Override
-    public void onReceive(Object message) {
-        if (message instanceof Start) {
-            Start start = (Start) message;
-            onStart(start.port, start.minDesiredConnections, start.maxConnections);
-            return;
-        }
+    public AbstractActor.Receive createReceive() {
+        return getReceiveBuilder().build();
+    }
 
-        if (message instanceof Timer) {
-            onTimer();
-            return;
-        }
-
-        if (message instanceof Peers) {
-            Peers peers = (Peers) message;
-            addPeers(peers.endPoints);
-            return;
-        }
-
-        if (message instanceof Connect) {
-            Connect connect = (Connect) message;
-            connectToPeer(connect.endPoint, connect.isTrusted);
-            return;
-        }
-
-        if (message instanceof Tcp.Connected) {
-            Tcp.Connected connected = (Tcp.Connected) message;
-            InetSocketAddress remoteAddr = IpHelper.toIPv4(connected.remoteAddress());
-            InetSocketAddress localAddr = IpHelper.toIPv4(connected.localAddress());
-            onTcpConnected(remoteAddr, localAddr);
-            return;
-        }
-
-        if (message instanceof Tcp.Bound) {
-            tcpListener = getSender();
-            return;
-        }
-
-        if (message instanceof Tcp.CommandFailed) {
-            Tcp.CommandFailed commandFailed = (Tcp.CommandFailed) message;
-            onTcpCommandFailed(commandFailed.cmd());
-            return;
-        }
-
-        if (message instanceof Terminated) {
-            Terminated terminated = (Terminated) message;
-            onTerminated(terminated.getActor());
-            return;
-        }
-
+    /**
+     * get receiver builder
+     */
+    protected ReceiveBuilder getReceiveBuilder() {
+        return receiveBuilder()
+                .match(Peer.Start.class, start -> onStart(start.port, start.minDesiredConnections, start.maxConnections))
+                .match(Peer.Timer.class, timer -> onTimer())
+                .match(Peer.Peers.class, peers -> addPeers(peers.endPoints))
+                .match(Peer.Connect.class, connect -> connectToPeer(connect.endPoint, connect.isTrusted))
+                .match(Terminated.class, terminated -> onTerminated(terminated.getActor()))
+                .match(Tcp.Bound.class, bound -> tcpListener = getSender())
+                .match(Tcp.CommandFailed.class, commandFailed -> onTcpCommandFailed(commandFailed.cmd()))
+                .match(Tcp.Connected.class, connected ->
+                        onTcpConnected(IpHelper.toIPv4(connected.remoteAddress()), IpHelper.toIPv4(connected.localAddress())));
     }
 
     /**

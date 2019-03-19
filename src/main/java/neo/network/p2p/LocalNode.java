@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import neo.NeoSystem;
@@ -18,7 +19,7 @@ import neo.csharp.Uint;
 import neo.csharp.io.ISerializable;
 import neo.exception.InvalidOperationException;
 import neo.ledger.RelayResultReason;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.IInventory;
 import neo.network.p2p.payloads.Transaction;
 
@@ -283,7 +284,7 @@ public class LocalNode extends Peer {
             // TODO waiting for consensus
             // system.Consensus ?.Tell(transaction);
         }
-        system.blockchain.getSelf().tell(inventory, self());
+        system.blockchain.tell(inventory, self());
     }
 
 
@@ -322,40 +323,35 @@ public class LocalNode extends Peer {
     }
 
     /**
-     * Processing method when receiving a message delivered by the Akka framework
+     * create a message receiver
      *
-     * @param message message
+     * @docs message customized message as the following:
+     * <ul>
+     * <li>Peer.Start: startup of the node</li>
+     * <li>Peer.Timer: timer</li>
+     * <li>Peer.Peers: adding a list of unconnected nodes</li>
+     * <li>Peer.Connect: the connected node</li>
+     * <li>Terminated: the actor close</li>
+     * <li>Tcp.Bound: tcp bound</li>
+     * <li>Tcp.CommandFailed: tcp command failed</li>
+     * <li>Tcp.Connected: tcp connected</li>
+     * <li>Message: neo p2p message</li>
+     * <li>LocalNode.Relay: the data to be relayed</li>
+     * <li>LocalNode.RelayDirectly: relay the inventory to all the connected peer</li>
+     * <li>LocalNode.SendDirectly: send inventory to all the connected peers</li>
+     * <li>LocalNode.RelayResultReason: the result of the relay message</li>
+     * </ul>
      */
     @Override
-    public void onReceive(Object message) {
-        super.onReceive(message);
-
-        if (message instanceof Message) {
-            Message msg = (Message) message;
-            broadcastMessage(msg);
-            return;
-        }
-
-        if (message instanceof Relay) {
-            Relay relay = (Relay) message;
-            onRelay(relay.inventory);
-            return;
-        }
-
-        if (message instanceof RelayDirectly) {
-            RelayDirectly relayDirectly = (RelayDirectly) message;
-            onRelayDirectly(relayDirectly.inventory);
-            return;
-        }
-
-        if (message instanceof SendDirectly) {
-            SendDirectly sendDirectly = (SendDirectly) message;
-            onSendDirectly(sendDirectly.inventory);
-            return;
-        }
-
-        if (message instanceof RelayResultReason) {
-            return;
-        }
+    public AbstractActor.Receive createReceive() {
+        return super.getReceiveBuilder()
+                .match(Message.class, msg -> broadcastMessage(msg))
+                .match(Relay.class, relay -> onRelay(relay.inventory))
+                .match(RelayDirectly.class, relayDirectly -> onRelayDirectly(relayDirectly.inventory))
+                .match(SendDirectly.class, sendDirectly -> onSendDirectly(sendDirectly.inventory))
+                .match(RelayResultReason.class, msg -> { })
+                .build();
     }
+
+
 }

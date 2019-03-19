@@ -1,15 +1,20 @@
 package neo.network.p2p;
 
+import com.typesafe.config.Config;
+
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
+import akka.actor.ActorSystem;
 import akka.actor.OneForOneStrategy;
 import akka.actor.Props;
 import akka.actor.SupervisorStrategy;
 import akka.io.Tcp;
+import akka.japi.pf.ReceiveBuilder;
 import akka.util.ByteString;
 import neo.NeoSystem;
 import neo.UInt256;
@@ -39,7 +44,10 @@ import neo.network.p2p.payloads.VersionPayload;
  */
 public class RemoteNode extends Connection {
 
-    static class Relay {
+    /**
+     * relay the inventory data
+     */
+    public static class Relay {
         public IInventory inventory;
     }
 
@@ -280,50 +288,37 @@ public class RemoteNode extends Connection {
 
 
     /**
-     * The callback function to processed different types message
+     * create a message receiver
      *
-     * @param message a message delivered by the Akka framework
+     * @docs message customized message as the following:
+     * <ul>
+     * <li>Connection.Timer: timer</li>
+     * <li>Connection.Ack: tcp ack message received</li>
+     * <li>Tcp.Received: data received </li>
+     * <li>Tcp.ConnectionClosed: TCP connection is closed</li>
+     * <li>Message: block message</li>
+     * <li>IInventory: a new inv message received</li>
+     * <li>Relay: relay the inventory data</li>
+     * <li>ProtocolHandler.SetVersion:  the related remote node send version message.</li>
+     * <li>ProtocolHandler.SetVerack:  the related remote has been response to the `version`
+     * command
+     * </li>
+     * <li>ProtocolHandler.SetFilter:  received the related remote node about `filter` command
+     * </li>
+     * </ul>
      */
     @Override
-    public void onReceive(Object message) throws Throwable {
-        super.onReceive(message);
-
-        if (message instanceof Message) {
-            Message msg = (Message) message;
-            enqueueMessage(msg);
-            return;
-        }
-
-        if (message instanceof IInventory) {
-            IInventory inventory = (IInventory) message;
-            onSend(inventory);
-            return;
-        }
-
-        if (message instanceof Relay) {
-            Relay relay = (Relay) message;
-            onRelay(relay.inventory);
-            return;
-        }
-
-        if (message instanceof ProtocolHandler.SetVersion) {
-            ProtocolHandler.SetVersion setVersion = (ProtocolHandler.SetVersion) message;
-            onSetVersion(setVersion.version);
-            return;
-        }
-
-        if (message instanceof ProtocolHandler.SetVerack) {
-            onSetVerack();
-            return;
-        }
-
-        if (message instanceof ProtocolHandler.SetFilter) {
-            ProtocolHandler.SetFilter setFilter = (ProtocolHandler.SetFilter) message;
-            onSetFilter(setFilter.filter);
-            return;
-        }
+    public AbstractActor.Receive createReceive() {
+        ReceiveBuilder builder = super.getReceiveBuilder();
+        return builder
+                .match(Message.class, msg -> enqueueMessage(msg))
+                .match(IInventory.class, inventory -> onSend(inventory))
+                .match(RemoteNode.Relay.class, relay -> onRelay(relay.inventory))
+                .match(ProtocolHandler.SetVersion.class, setVersion -> onSetVersion(setVersion.version))
+                .match(ProtocolHandler.SetVerack.class, setVerack -> onSetVerack())
+                .match(ProtocolHandler.SetFilter.class, setFilter -> onSetFilter(setFilter.filter))
+                .build();
     }
-
 
     /**
      * Use OneForOneStrategy for anomalous child actor,and directly stop it
@@ -345,6 +340,10 @@ public class RemoteNode extends Connection {
      * Remote priority mailbox. Only the Tcp.ConnectionClosed is high priority.
      */
     public static class RemoteNodeMailbox extends PriorityMailbox {
+
+        public RemoteNodeMailbox(ActorSystem.Settings setting, Config config) {
+            super();
+        }
 
         @Override
         protected boolean isHighPriority(Object message) {

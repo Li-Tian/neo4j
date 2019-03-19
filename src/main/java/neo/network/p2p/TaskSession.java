@@ -9,7 +9,8 @@ import neo.UInt256;
 import neo.network.p2p.payloads.VersionPayload;
 
 /**
- * Task session, store each remote node's task of synchronized blocks and headers
+ * Task session, store each remote node's task. It has two main task list, the `tasks` is the
+ * executing task list, the `availableTasks` is the available block task to be executed.
  */
 public class TaskSession {
 
@@ -24,13 +25,14 @@ public class TaskSession {
     public final VersionPayload version;
 
     /**
-     * task set, bind with the start date of the task.
+     * Currently, executing task list
      */
     public final HashMap<UInt256, Date> tasks = new HashMap<>();
 
     /**
-     * current
+     * Available block task to be executed, here it maybe use for task retry mechanism
      */
+    //TODO 确认 availableTasks 的用途以及命名是否正确
     public final HashSet<UInt256> availableTasks = new HashSet<>();
 
     /**

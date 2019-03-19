@@ -10,7 +10,7 @@ import neo.persistence.Store;
  */
 public class NeoSystem {
 
-    public Blockchain blockchain;
+    public ActorRef blockchain;
 
     public ActorRef localNode;
 
@@ -18,7 +18,7 @@ public class NeoSystem {
 
     public NeoSystem(Store store) {
         // TODO
-        blockchain = new Blockchain(this, store);
+//        blockchain = new Blockchain(this, store);
     }
 
 }

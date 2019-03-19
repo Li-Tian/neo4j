@@ -1,16 +1,18 @@
 package neo.network.p2p;
 
+import com.typesafe.config.Config;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import akka.actor.AbstractActor;
+import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.actor.UntypedActor;
 import neo.NeoSystem;
 import neo.UInt256;
 import neo.cryptography.BloomFilter;
@@ -46,7 +48,7 @@ import static neo.network.p2p.payloads.InventoryType.Block;
  * <a href="https://docs.neo.org/developerguide/en/articles/network_protocol.html">
  * https://docs.neo.org/developerguide/en/articles/network_protocol.html</a>
  */
-public class ProtocolHandler extends UntypedActor {
+public class ProtocolHandler extends AbstractActor {
 
     /**
      * Customized akka message, it means the related remote node send version message. and this
@@ -72,7 +74,11 @@ public class ProtocolHandler extends UntypedActor {
     }
 
     private final NeoSystem system;
+
+    // inventory data received already
     private final HashSet<UInt256> knownHashes = new HashSet<>();
+
+    // inventory data send already
     private final HashSet<UInt256> sentHashes = new HashSet<>();
 
     private VersionPayload version;
@@ -281,7 +287,7 @@ public class ProtocolHandler extends UntypedActor {
         if (payload.headers.length == 0) {
             return;
         }
-        system.blockchain.self().tell(payload.headers, context().parent());
+        system.blockchain.tell(payload.headers, context().parent());
     }
 
 
@@ -366,6 +372,10 @@ public class ProtocolHandler extends UntypedActor {
      */
     public static class ProtocolHandlerMailbox extends PriorityMailbox {
 
+        public ProtocolHandlerMailbox(ActorSystem.Settings setting, Config config) {
+            super();
+        }
+
         @Override
         protected boolean isHighPriority(Object object) {
             if (!(object instanceof Message)) {
@@ -410,17 +420,16 @@ public class ProtocolHandler extends UntypedActor {
 
 
     /**
-     * The callback function to processed different types message
+     * create a receiver builder
      *
-     * @param object a message delivered by the RemoteNode{@link RemoteNode}, received from the
-     *               remote node by network.
+     * @return Receive
      */
     @Override
-    public void onReceive(Object object) throws Throwable {
-        if (!(object instanceof Message)) {
-            return;
-        }
-        Message msg = (Message) object;
+    public AbstractActor.Receive createReceive() {
+        return receiveBuilder().match(Message.class, msg -> handleMsg(msg)).build();
+    }
+
+    private void handleMsg(Message msg) {
         if (version == null) {
             if (!"version".equals(msg.command)) {
                 throw new ProtocolViolationException();
