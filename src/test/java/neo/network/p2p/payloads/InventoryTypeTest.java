@@ -3,8 +3,6 @@ package neo.network.p2p.payloads;
 import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class InventoryTypeTest {
 
     @Test
@@ -15,7 +13,7 @@ public class InventoryTypeTest {
     @Test(expected = IllegalArgumentException.class)
     public void parse() {
         InventoryType type = InventoryType.parse((byte) 0x01);
-        Assert.assertEquals(InventoryType.Tr, type);
+        Assert.assertEquals(InventoryType.Tx, type);
 
         InventoryType.parse((byte) 0x05);
     }

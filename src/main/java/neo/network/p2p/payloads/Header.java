@@ -49,7 +49,7 @@ public class Header extends BlockBase {
      * <li>MerkleRoot: The root of Merkle tree</li>
      * <li>Timestamp: The timestamp</li>
      * <li>Index: The height of block</li>
-     * <li>ConsensusData: The consensus data, default is block nonce</li>
+     * <li>ConsensusData: The consensus data, default is block NONCE</li>
      * <li>NextConsensus: The next consensus node address</li>
      * <li>0: Fixed 0</li>
      * </ul>

@@ -174,7 +174,7 @@ public class ContractTransactionTest extends AbstractBlockchainTest {
     @Test
     public void inventoryType() {
         ContractTransaction transaction = new ContractTransaction();
-        Assert.assertEquals(InventoryType.Tr, transaction.inventoryType());
+        Assert.assertEquals(InventoryType.Tx, transaction.inventoryType());
     }
 
     @Test

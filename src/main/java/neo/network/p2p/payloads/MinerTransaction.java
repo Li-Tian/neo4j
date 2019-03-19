@@ -24,7 +24,7 @@ public class MinerTransaction extends Transaction {
      */
 
     /**
-     * transaction nonce
+     * transaction NONCE
      */
     public Uint nonce = Uint.ZERO;
 
@@ -54,7 +54,7 @@ public class MinerTransaction extends Transaction {
     }
 
     /**
-     * Deserialize exclusive data，read nonce
+     * Deserialize exclusive data，read NONCE
      *
      * @param reader BinaryReader
      */
@@ -86,7 +86,7 @@ public class MinerTransaction extends Transaction {
     /**
      * Serialize exclusive data, the following is the fields:
      * <ul>
-     * <li>Nonce: transaction nonce</li>
+     * <li>Nonce: transaction NONCE</li>
      * </ul>
      *
      * @param writer BinaryWriter
@@ -106,7 +106,7 @@ public class MinerTransaction extends Transaction {
     public JsonObject toJson() {
         TR.enter();
         JsonObject json = super.toJson();
-        json.addProperty("nonce", nonce);
+        json.addProperty("NONCE", nonce);
         return json;
     }
 }

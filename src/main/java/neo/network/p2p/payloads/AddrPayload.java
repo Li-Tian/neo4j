@@ -16,7 +16,7 @@ public class AddrPayload implements ISerializable {
     /**
      * The max number of records sent at a time. The fixed value is 200.
      */
-    public static int MaxCountToSend = 200;
+    public static final int MAX_COUNT_TO_SEND = 200;
 
     /**
      * other known node address information. Includes the IP address of these nodes, the listening

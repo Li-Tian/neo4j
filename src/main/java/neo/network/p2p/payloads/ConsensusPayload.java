@@ -17,7 +17,7 @@ import neo.smartcontract.Contract;
 
 /**
  * P2p consensus message payload consensus message data（Wrap specific consensus messages. When p2p
- * broadcasts, it will be stored in the payload of the Inventory message.）
+ * broadcasts, it will be stored in the payload of the inventory message.）
  */
 public class ConsensusPayload implements IInventory {
 
