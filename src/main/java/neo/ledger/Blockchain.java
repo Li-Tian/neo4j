@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import akka.actor.Props;
 import akka.actor.UntypedActor;
@@ -18,11 +20,14 @@ import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.io.SerializeHelper;
+import neo.io.caching.RelayCache;
 import neo.log.tr.TR;
 import neo.network.p2p.payloads.AssetType;
+import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.RegisterTransaction;
 import neo.network.p2p.payloads.StateDescriptor;
+import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
@@ -150,7 +155,9 @@ public class Blockchain extends UntypedActor {
 
 
     private ArrayList<UInt256> headerIndex = new ArrayList<>();
-
+    private Snapshot currentSnapshot;
+    public RelayCache relayCache = new RelayCache(100);
+    private final ConcurrentHashMap<UInt256, Block> blockCache = new ConcurrentHashMap<>();
 
     /**
      * Query block hash by block index
@@ -163,6 +170,64 @@ public class Blockchain extends UntypedActor {
             return null;
         }
         return headerIndex.get(index.intValue());
+    }
+
+    public Uint getHeight() {
+        return currentSnapshot.getHeight();
+    }
+
+    public Transaction getTransaction(UInt256 hash) {
+        // TODO waiting for mempool
+//        if (MemPool.TryGetValue(hash, out Transaction transaction))
+//            return trans action;
+        return store.getTransaction(hash);
+    }
+
+    public Block getBlock(UInt256 hash) {
+//        if (block_cache.TryGetValue(hash, out Block block))
+//            return block;
+        return store.getBlock(hash);
+    }
+
+    /**
+     * get current header height
+     *
+     * @return header height
+     */
+    public Uint getHeaderHeight() {
+        return new Uint(headerIndex.size() - 1);
+    }
+
+
+    /**
+     * Check if the blockchain contain the block with the specific block hash
+     *
+     * @param hash block hash
+     * @return true if contains, else false
+     */
+    public boolean containsBlock(UInt256 hash) {
+        if (blockCache.containsKey(hash)) {
+            return true;
+        }
+        return store.containsBlock(hash);
+    }
+
+    /**
+     * get the hash of current block
+     *
+     * @return hash of current block
+     */
+    public UInt256 getCurrentBlockHash() {
+        return currentSnapshot.getCurrentBlockHash();
+    }
+
+    /**
+     * get the hash of current header
+     *
+     * @return hash of current header
+     */
+    public UInt256 getCurrentHeaderHash() {
+        return headerIndex.get(headerIndex.size() - 1);
     }
 
 
