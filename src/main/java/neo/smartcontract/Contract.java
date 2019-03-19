@@ -34,6 +34,9 @@ public class Contract {
         return _scriptHash;
     }
 
+    public Contract() {
+    }
+
     public Contract(ContractParameterType[] parameterList, byte[] redeemScript) {
         this.script = redeemScript;
         this.parameterList = parameterList;

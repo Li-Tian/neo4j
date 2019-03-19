@@ -84,7 +84,7 @@ public class Helper {
         throw new RuntimeException("bug");
     }
 
-    public static String GetVersion() {
+    public static String getVersion() {
         return properties.getProperty("neo.version");
     }
 

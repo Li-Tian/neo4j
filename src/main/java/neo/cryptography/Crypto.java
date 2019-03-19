@@ -95,7 +95,7 @@ public class Crypto implements ICrypto {
      * @param privateKey 私钥
      * @return 签名数据
      */
-    public byte[] sign(byte[] message, byte[] privateKey) {
+    public byte[] sign(byte[] message, byte[] privateKey,byte[] publickey) {
         // TODO 尚未验证
         try {
             TR.enter();
