@@ -4,7 +4,7 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * 合约存储项目的数据结构

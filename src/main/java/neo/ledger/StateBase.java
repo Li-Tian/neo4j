@@ -5,7 +5,7 @@ import com.google.gson.JsonObject;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * 状态基类

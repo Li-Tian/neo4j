@@ -260,5 +260,16 @@ public abstract class Cache<TKey, TValue> implements Collection<TValue> {
         return TR.exit(false);
     }
 
+    public TValue tryGet(TKey key) {
+        TR.enter();
+
+        if (map.containsKey(key)) {
+            CacheItem item = map.get(key);
+            onAccess(item);
+            return item.value;
+        }
+        return TR.exit(null);
+    }
+
 
 }
