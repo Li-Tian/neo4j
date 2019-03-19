@@ -10,8 +10,9 @@ import java.math.BigInteger;
 import java.security.Security;
 
 import neo.cryptography.ecc.ECC;
-import neo.log.notr.TR;
 import neo.vm.ICrypto;
+
+import neo.log.notr.TR;
 
 import static neo.cryptography.Helper.ripeMD160;
 import static neo.cryptography.Helper.sha256;

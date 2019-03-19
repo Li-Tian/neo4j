@@ -1,6 +1,6 @@
 package neo.exception;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public class FormatException extends RuntimeException {
     

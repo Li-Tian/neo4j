@@ -11,7 +11,7 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
 

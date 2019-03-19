@@ -191,8 +191,6 @@ public class BlockTest  extends AbstractBlockchainTest {
 
         JsonObject jsonObject = block.toJson();
 
-        System.out.println(jsonObject);
-
         Assert.assertEquals(128, jsonObject.get("size").getAsInt());
         Assert.assertEquals(block.hash().toString(), jsonObject.get("hash").getAsString());
         Assert.assertEquals("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01", jsonObject.get("previousblockhash").getAsString());

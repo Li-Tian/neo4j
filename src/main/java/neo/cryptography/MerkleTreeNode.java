@@ -1,7 +1,7 @@
 package neo.cryptography;
 
 import neo.UInt256;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 class MerkleTreeNode {
     public UInt256 hash;

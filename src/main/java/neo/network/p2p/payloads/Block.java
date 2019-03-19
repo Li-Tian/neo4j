@@ -17,6 +17,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.ledger.Blockchain;
 import neo.ledger.TrimmedBlock;
+
 import neo.log.notr.TR;
 
 /**

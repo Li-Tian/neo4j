@@ -11,7 +11,7 @@ import akka.actor.ActorRef;
 import akka.dispatch.Envelope;
 import akka.dispatch.MessageQueue;
 import akka.dispatch.UnboundedMessageQueueSemantics;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * Customized priority message queue, has defined two priorities: high priority, and low priority.

@@ -2,7 +2,6 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
-import java.awt.*;
 import java.math.BigDecimal;
 import java.util.Collection;
 

@@ -7,7 +7,7 @@ import neo.csharp.Ushort;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * CoinReference

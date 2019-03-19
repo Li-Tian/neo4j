@@ -2,7 +2,7 @@ package neo.network.p2p.payloads;
 
 import neo.csharp.io.BinaryReader;
 import neo.exception.FormatException;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * common transaction (not issuing a smart contract)

@@ -20,7 +20,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.io.ICloneable;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.AssetType;
 import neo.cryptography.ecc.ECPoint;
 

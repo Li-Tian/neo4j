@@ -12,8 +12,9 @@ import neo.csharp.Ulong;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.InvalidOperationException;
-import neo.log.tr.TR;
 import neo.persistence.Snapshot;
+
+import neo.log.notr.TR;
 
 /**
  * Block base class

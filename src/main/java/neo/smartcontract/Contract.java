@@ -4,7 +4,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import neo.UInt160;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 import neo.vm.OpCode;
 import neo.vm.ScriptBuilder;
 import neo.cryptography.ecc.ECPoint;

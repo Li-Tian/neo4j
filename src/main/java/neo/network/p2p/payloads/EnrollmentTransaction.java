@@ -12,10 +12,11 @@ import neo.cryptography.ecc.ECC;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
-import neo.log.tr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.Contract;
 import neo.cryptography.ecc.ECPoint;
+
+import neo.log.notr.TR;
 
 /**
  * Registered Verifier【Abandoned, please use StateTransaction】

@@ -4,7 +4,8 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
-import neo.log.tr.TR;
+
+import neo.log.notr.TR;
 
 /**
  * This class describing a transport packet when replying to the addr message after the node
