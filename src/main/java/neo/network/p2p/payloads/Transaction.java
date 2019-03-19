@@ -131,7 +131,7 @@ public abstract class Transaction implements IInventory {
     @Override
     public InventoryType inventoryType() {
         TR.enter();
-        return TR.exit(InventoryType.Tr);
+        return TR.exit(InventoryType.Tx);
     }
 
     /**

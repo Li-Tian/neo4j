@@ -27,17 +27,15 @@ public class CryptoTest {
 
     @Test
     public void verifySignature() {
-        String data = "hello world";
-        String message = "";
-        String signature = "";
+        String message = "hello world";
+        String cshop_signature = "261e894dd456a190f9e99e39cea9f64ca4f939b24cf47ee3498bf883967035b446f554753d5f76219397bc2abb281a13a3c3acce43978c02c510ccb91cb03f87";
 
-//        Crypto.Default.verifySignature()
+        boolean result = Crypto.Default.verifySignature(message.getBytes(), BitConverter.hexToBytes(cshop_signature), BitConverter.hexToBytes(publicKey));
+        Assert.assertTrue(result);
+
+        byte[] output = Crypto.Default.sign(message.getBytes(), BitConverter.hexToBytes(privateKey));
+        result = Crypto.Default.verifySignature(message.getBytes(), output, BitConverter.hexToBytes(publicKey));
+        Assert.assertTrue(result);
     }
 
-    @Test
-    public void sign() {
-        String data = "hello world";
-//        byte[] output = Crypto.Default.sign(data.getBytes(), BitConverter.hexToBytes(privateKey));
-//        System.out.println(BitConverter.toHexString(output));
-    }
 }

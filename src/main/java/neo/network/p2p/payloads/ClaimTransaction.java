@@ -17,8 +17,9 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
 import neo.ledger.Blockchain;
-import neo.log.tr.TR;
 import neo.persistence.Snapshot;
+
+import neo.log.notr.TR;
 
 /**
  * Claim transaction, used to claim GAS

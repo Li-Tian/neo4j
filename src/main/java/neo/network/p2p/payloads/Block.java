@@ -17,6 +17,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.ledger.Blockchain;
 import neo.ledger.TrimmedBlock;
+
 import neo.log.notr.TR;
 
 /**
@@ -173,7 +174,7 @@ public class Block extends BlockBase implements IInventory {
      * <li>MerkleRoot: Merkle root</li>
      * <li>Timestamp: Timestamps</li>
      * <li>Index: Block height</li>
-     * <li>ConsensusData: Consensus data，default block nonce</li>
+     * <li>ConsensusData: Consensus data，default block NONCE</li>
      * <li>NextConsensus: Next block consensus address</li>
      * <li>Transactions: Transaction colection</li>
      * </ul>

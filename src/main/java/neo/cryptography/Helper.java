@@ -1,7 +1,6 @@
 package neo.cryptography;
 
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidAlgorithmParameterException;
@@ -14,7 +13,6 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -22,9 +20,10 @@ import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.exception.FormatException;
 import neo.io.SerializeHelper;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.RegisterTransaction;
 import neo.network.p2p.payloads.Transaction;
+
 
 public class Helper {
     public static byte[] aes256Decrypt(byte[] block, byte[] key) {

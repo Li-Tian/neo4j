@@ -19,7 +19,7 @@ import neo.io.ICloneable;
 import neo.Fixed8;
 import neo.cryptography.ecc.ECPoint;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * 用户状态
