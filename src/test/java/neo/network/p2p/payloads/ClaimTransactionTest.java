@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import neo.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;

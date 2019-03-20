@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 
+import neo.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.Utils;

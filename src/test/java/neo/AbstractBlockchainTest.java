@@ -1,4 +1,4 @@
-package neo.network.p2p.payloads;
+package neo;
 
 import org.junit.After;
 import org.junit.Before;
@@ -8,7 +8,6 @@ import java.io.IOException;
 
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import neo.persistence.leveldb.BlockchainDemo;
 import neo.persistence.leveldb.LevelDBStore;
 
 public abstract class AbstractBlockchainTest {
