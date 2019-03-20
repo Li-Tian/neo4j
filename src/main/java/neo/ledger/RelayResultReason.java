@@ -26,17 +26,22 @@ public enum RelayResultReason implements ByteEnum {
     /**
      * 不能进行验证
      */
-    Invalid((byte) 3),
+    UnableToVerify((byte) 3),
 
     /**
      * 非法数据
      */
-    PolicyFail((byte) 4),
+    Invalid((byte) 4),
+
+    /**
+     * 策略失效
+     */
+    PolicyFail((byte) 5),
 
     /**
      * 未知
      */
-    Unknown((byte) 5);
+    Unknown((byte) 6);
 
 
     RelayResultReason(byte value) {
