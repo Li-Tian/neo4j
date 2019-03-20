@@ -23,6 +23,7 @@ import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.actor.ActorRef;
 import neo.Fixed8;
+import neo.Helper;
 import neo.NeoSystem;
 import neo.ProtocolSettings;
 import neo.UInt160;
@@ -170,7 +171,9 @@ public class Blockchain extends AbstractActor {
                         {
                             nonce = new Uint(2083236893);
                             attributes = new TransactionAttribute[0];
-                            inputs = new CoinReference[0];
+                            inputs = new CoinReference
+
+                                    [0];
                             outputs = new TransactionOutput[0];
                             witnesses = new Witness[0];
                         }
@@ -214,7 +217,7 @@ public class Blockchain extends AbstractActor {
     private final ConcurrentHashMap<Uint, LinkedList<Block>> block_cache_unverified = new ConcurrentHashMap<Uint, LinkedList<Block>>();
     public final RelayCache relayCache = new RelayCache(100);
     private final HashSet<ActorRef> subscribers = new HashSet<ActorRef>();
-    private AtomicReference<Snapshot> currentSnapshot;
+    private AtomicReference<Snapshot> currentSnapshot = new AtomicReference<>();
 
     private Store store;
     private MemoryPool memPool;
@@ -256,13 +259,12 @@ public class Blockchain extends AbstractActor {
                 TR.exit();
                 throw new InvalidOperationException();
             }
+            // rebuild merkleroot
+            GenesisBlock.rebuildMerkleRoot();
+
             //header_index.AddRange(store.GetHeaderHashList().Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
-            ArrayList<Map.Entry<UInt32Wrapper, HeaderHashList>> rankedHeaderHashList = new ArrayList<Map.Entry<UInt32Wrapper, HeaderHashList>>(store.getHeaderHashList().find());
-            Collections.sort(rankedHeaderHashList, new Comparator<Map.Entry<UInt32Wrapper, HeaderHashList>>() {
-                public int compare(Map.Entry<UInt32Wrapper, HeaderHashList> a, Map.Entry<UInt32Wrapper, HeaderHashList> b) {
-                    return a.getKey().toUint32().compareTo(b.getKey().toUint32());
-                }
-            });
+            ArrayList<Map.Entry<UInt32Wrapper, HeaderHashList>> rankedHeaderHashList = new ArrayList<>(store.getHeaderHashList().find());
+            Collections.sort(rankedHeaderHashList, Comparator.comparing(a -> a.getKey().toUint32()));
             for (Map.Entry<UInt32Wrapper, HeaderHashList> entry : rankedHeaderHashList) {
                 for (UInt256 value : entry.getValue().hashes) {
                     header_index.add(value);
@@ -271,12 +273,8 @@ public class Blockchain extends AbstractActor {
             stored_header_count = stored_header_count.add(new Uint(header_index.size()));
             if (stored_header_count.equals(Uint.ZERO)) {
                 //header_index.AddRange(store.GetBlocks().Find().OrderBy(p = > p.Value.TrimmedBlock.Index).Select(p = > p.Key));
-                ArrayList<Map.Entry<UInt256, BlockState>> rankedBlockList = new ArrayList<Map.Entry<UInt256, BlockState>>(store.getBlocks().find());
-                Collections.sort(rankedBlockList, new Comparator<Map.Entry<UInt256, BlockState>>() {
-                    public int compare(Map.Entry<UInt256, BlockState> a, Map.Entry<UInt256, BlockState> b) {
-                        return a.getValue().trimmedBlock.index.compareTo(b.getValue().trimmedBlock.index);
-                    }
-                });
+                ArrayList<Map.Entry<UInt256, BlockState>> rankedBlockList = new ArrayList<>(store.getBlocks().find());
+                Collections.sort(rankedBlockList, Comparator.comparing(a -> a.getValue().trimmedBlock.index));
                 rankedBlockList.forEach(p -> header_index.add(p.getKey()));
             } else {
                 HashIndexState hashIndex = store.getHeaderHashIndex().get();
@@ -295,8 +293,9 @@ public class Blockchain extends AbstractActor {
             }
             singleton = this;
         } catch (Exception e) {
-            TR.error(e);
-            throw new RuntimeException(e);
+            e.printStackTrace();
+//            TR.error(e);
+//            throw new RuntimeException(e);
         } finally {
             lockObj.unlock();
         }
@@ -556,25 +555,22 @@ public class Blockchain extends AbstractActor {
     @Override
     public Receive createReceive() {
         TR.enter();
-        return TR.exit(receiveBuilder().match(Register.class, message -> {
-            onRegister();
-        }).match(Import.class, message -> {
-            onImport(message.blocks);
-        }).match(Header[].class, message -> {
-            onNewHeaders(message);
-        }).match(Block.class, message -> {
-            sender().tell(onNewBlock(message), self());
-        }).match(Transaction.class, message -> {
-            sender().tell(onNewTransaction(message), self());
-        }).match(ConsensusPayload.class, message -> {
-            sender().tell(onNewConsensus(message), self());
-        }).match(Idle.class, message -> {
-            if (memPool.reVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot.get())) {
-                self().tell(Idle.instance(), ActorRef.noSender());
-            }
-        }).match(Terminated.class, message -> {
-            subscribers.remove(message.getActor());
-        }).build());
+        return TR.exit(
+                receiveBuilder()
+                        .match(Register.class, message -> onRegister())
+                        .match(Import.class, message -> onImport(message.blocks))
+                        .match(Header[].class, message -> onNewHeaders(message))
+                        .match(Block.class, message -> sender().tell(onNewBlock(message), self()))
+                        .match(Transaction.class, message -> sender().tell(onNewTransaction(message), self()))
+                        .match(ConsensusPayload.class, message -> sender().tell(onNewConsensus(message), self()))
+                        .match(Idle.class, message -> {
+                            if (memPool.reVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot.get())) {
+                                self().tell(Idle.instance(), ActorRef.noSender());
+                            }
+                        })
+                        .match(Terminated.class, message -> subscribers.remove(message.getActor()))
+                        .build()
+        );
     }
 
     private void onRegister() {
@@ -783,6 +779,24 @@ public class Blockchain extends AbstractActor {
         updateCurrentSnapshot();
         onPersistCompleted(block);
         TR.exit();*/
+
+
+        // TODO 待移除，等上面代码完成ok，移除下面代码，目前是方便测试
+        Snapshot snapshot = getSnapshot();
+        if (block.index.intValue() == header_index.size()) {
+            header_index.add(block.hash());
+            snapshot.getHeaderHashIndex().getAndChange().hash = block.hash();
+            snapshot.getHeaderHashIndex().getAndChange().index = block.index;
+        }
+        snapshot.setPersistingBlock(block);
+        snapshot.getBlocks().add(block.hash(), new BlockState() {
+            {
+                systemFeeAmount = snapshot.getSysFeeAmount(block.prevHash) + Fixed8.toLong(Helper.sum(Arrays.asList(block.transactions), p -> p.getSystemFee()));
+                trimmedBlock = block.trim();
+            }
+        });
+        snapshot.commit();
+        updateCurrentSnapshot();
     }
 
     @Override

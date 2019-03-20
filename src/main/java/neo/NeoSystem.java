@@ -1,5 +1,8 @@
 package neo;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import neo.Wallets.Wallet;
@@ -19,7 +22,9 @@ import neo.plugins.Plugin;
 public class NeoSystem {
     private Peer.Start start_message = null;
     private boolean suspend = false;
-    public ActorSystem actorSystem = ActorSystem.create(NeoSystem.class.getSimpleName());
+
+    public ActorSystem actorSystem = ActorSystem.create(NeoSystem.class.getSimpleName(),
+            ConfigFactory.load("akka.conf"));
 
     public ActorRef blockchain;
 
