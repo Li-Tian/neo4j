@@ -1,16 +1,34 @@
 package neo.plugins;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import com.sun.jna.Library;
+import com.sun.jna.Native;
+import com.sun.jna.Platform;
+
 import java.awt.datatransfer.Clipboard;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.security.auth.login.Configuration;
 
@@ -28,11 +46,13 @@ public abstract class Plugin {
     private static final ArrayList<IRpcPlugin> rpcPlugins = new ArrayList<IRpcPlugin>();
     private static final ArrayList<IPersistencePlugin> persistencePlugins = new ArrayList<IPersistencePlugin>();
     private static final ArrayList<IMemoryPoolTxObserverPlugin> txObserverPlugins = new ArrayList<IMemoryPoolTxObserverPlugin>();
+    private static final HashMap<WatchKey, Path> keys = new HashMap<WatchKey, Path>();
 
-    private static final String pluginsPath = ".\\Plugins";
+    private static final String pluginsPath = System.getProperty("user.dir") + "/Plugins";
     private static WatchService configWatcher = null;
+    private boolean hasBeenInitialized = false;
 
-    private static int suspend = 0;
+    private static AtomicInteger suspend = new AtomicInteger(0);
 
     private static NeoSystem system;
 
@@ -65,43 +85,24 @@ public abstract class Plugin {
         return TR.exit(this.getClass().getSimpleName());
     }
 
-    /*public String version() {
+    public String configFile() {
         TR.enter();
-        return TR.exit("");
-    }*/
+        return TR.exit(Paths.get(pluginsPath).resolve(name()).resolve("config.json").toString());
+    }
 
-    public String configFile = ".\\config.json";
+    static <T> WatchEvent<T> cast(WatchEvent<?> event) {
+        TR.enter();
+        return TR.exit((WatchEvent<T>) event);
+    }
 
-    public Plugin() {
+    /**
+     * Register the given directory with the WatchService
+     */
+    private void register(Path dir) {
         try {
             TR.enter();
-            Path toWatch = Paths.get(pluginsPath);
-            if (toWatch == null) {
-                TR.exit();
-                throw new RuntimeException("Plugin directory not found");
-            }
-            configWatcher = FileSystems.getDefault().newWatchService();
-            toWatch.register(configWatcher, ENTRY_CREATE, ENTRY_MODIFY);
-            Thread thread = new Thread() {
-                public void run() {
-                    try {
-                        WatchKey key = configWatcher.take();
-                        while (key != null) {
-                            for (WatchEvent event : key.pollEvents()) {
-                                if (event.kind() == ENTRY_CREATE || event.kind() == ENTRY_MODIFY) {
-                                    configWatcher_Changed();
-                                }
-                            }
-                            key.reset();
-                            key = configWatcher.take();
-                        }
-                    } catch (InterruptedException e) {
-                        TR.error(e);
-                        throw new RuntimeException(e);
-                    }
-                }
-            };
-            thread.start();
+            WatchKey key = dir.register(configWatcher, ENTRY_CREATE, ENTRY_MODIFY);
+            keys.put(key, dir);
         } catch (IOException e) {
             TR.error(e);
             throw new RuntimeException(e);
@@ -109,8 +110,86 @@ public abstract class Plugin {
         TR.exit();
     }
 
-    /*protected Plugin() {
-        TR.enter();
+    /**
+     * Register the given directory, and all its sub-directories, with the WatchService.
+     */
+    private void registerAll(final Path start) {
+        // register directory and sub-directories
+        try {
+            TR.enter();
+            Files.walkFileTree(start, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                        throws IOException {
+                    register(dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
+        TR.exit();
+    }
+
+    public Plugin() {
+        if (!hasBeenInitialized) {
+            try {
+                TR.enter();
+                Path toWatch = Paths.get(pluginsPath);
+                if (toWatch == null) {
+                    TR.exit();
+                    throw new RuntimeException("Plugin directory not found");
+                }
+                configWatcher = FileSystems.getDefault().newWatchService();
+                registerAll(toWatch);
+                Thread thread = new Thread() {
+                    public void run() {
+                        try {
+                            WatchKey key = configWatcher.take();
+                            while (key != null) {
+                                Path dir = keys.get(key);
+                                for (WatchEvent event : key.pollEvents()) {
+                                    WatchEvent.Kind kind = event.kind();
+                                    WatchEvent<Path> ev = cast(event);
+                                    Path name = ev.context();
+                                    Path child = dir.resolve(name);
+                                    if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
+                                        if (kind == ENTRY_CREATE) {
+                                            registerAll(child);
+                                        }
+                                    } else {
+                                        if (!event.context().toString().toLowerCase().endsWith(".json"))
+                                            continue;
+                                        if (kind == ENTRY_CREATE || kind == ENTRY_MODIFY) {
+                                            configWatcher_Changed(child);
+                                        }
+                                    }
+                                }
+                                // reset key and remove from set if directory no longer accessible
+                                boolean valid = key.reset();
+                                if (!valid) {
+                                    keys.remove(key);
+                                    // all directories are inaccessible
+                                    if (keys.isEmpty()) {
+                                        //TBD: When no directory exists
+                                    }
+                                }
+                                key = configWatcher.take();
+                            }
+                        } catch (InterruptedException e) {
+                            TR.error(e);
+                            throw new RuntimeException(e);
+                        }
+                    }
+                };
+                thread.start();
+                hasBeenInitialized = true;
+            } catch (IOException e) {
+                TR.error(e);
+                throw new RuntimeException(e);
+            }
+        }
         plugins.add(this);
         if (this instanceof ILogPlugin) loggers.add((ILogPlugin) this);
         if (this instanceof IPolicyPlugin) policies.add((IPolicyPlugin) this);
@@ -118,10 +197,9 @@ public abstract class Plugin {
         if (this instanceof IPersistencePlugin) persistencePlugins.add((IPersistencePlugin) this);
         if (this instanceof IMemoryPoolTxObserverPlugin)
             txObserverPlugins.add((IMemoryPoolTxObserverPlugin) this);
-
         configure();
         TR.exit();
-    }*/
+    }
 
     public static boolean checkPolicy(Transaction tx) {
         TR.enter();
@@ -135,13 +213,28 @@ public abstract class Plugin {
 
     public abstract void configure();
 
-    private static void configWatcher_Changed() {
+    private static void configWatcher_Changed(Path path) {
         TR.enter();
+        for (Plugin plugin : plugins) {
+            if (plugin.configFile().equals(path.toString())) {
+                plugin.configure();
+                plugin.log("Reloaded config for " + plugin.name(), null);
+                break;
+            }
+        }
         TR.exit();
     }
 
-    protected Configuration GetConfiguration() {
-        return null;
+    protected JsonArray GetConfiguration() {
+        try {
+            TR.enter();
+            JsonParser parser = new JsonParser();
+            JsonObject object = (JsonObject) parser.parse(new FileReader("test.json"));
+            return TR.exit(object.getAsJsonArray("PluginConfiguration"));
+        } catch (FileNotFoundException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
     }
 
     public static void loadPlugins(NeoSystem system) {
@@ -155,19 +248,15 @@ public abstract class Plugin {
                 return TR.exit(pathname.getName().endsWith(".dll"));
             }
         })) {
-            /*Assembly assembly = Assembly.LoadFile(filename);
-            foreach(Type type in assembly.ExportedTypes)
-            {
-                if (!type.IsSubclassOf(typeof(Plugin))) continue;
-                if (type.IsAbstract) continue;
-
-                ConstructorInfo constructor = type.GetConstructor(Type.EmptyTypes);
-                try {
-                    constructor ?.Invoke(null);
-                } catch (Exception ex) {
-                    Log(nameof(Plugin), LogLevel.Error, $"Failed to initialize plugin: {ex.Message}");
-                }
-            }*/
+            System.load(file.getAbsolutePath());
+            //TODO: Current code is not correct. Should find a better way to do.
+            try {
+                Class<?> cl = Class.forName(file.getName().split(".")[0]);
+                Constructor<?> cons = cl.getConstructor(null);
+            } catch (Exception e) {
+                TR.error(e);
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -195,9 +284,9 @@ public abstract class Plugin {
 
     protected static boolean resumeNodeStartup() {
         TR.enter();
-        /*if (Interlocked.Decrement(ref suspend) != 0) {
+        if (suspend.decrementAndGet() != 0) {
             return TR.exit(false);
-        }*/
+        }
         system.resumeNodeStartup();
         return TR.exit(true);
     }
@@ -213,10 +302,7 @@ public abstract class Plugin {
     }
 
     protected static void SuspendNodeStartup() {
-        //Interlocked.Increment(ref suspend);
-        //system.suspendNodeStartup();
-    }
-
-    private static void CurrentDomain_AssemblyResolve() {
+        suspend.incrementAndGet();
+        system.suspendNodeStartup();
     }
 }
