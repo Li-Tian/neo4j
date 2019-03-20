@@ -17,7 +17,7 @@ import neo.plugins.Plugin;
 /**
  * NEO core system class for controlling and running NEO functions
  */
-public class NeoSystem extends AbstractActor {
+public class NeoSystem {
     private Peer.Start start_message = null;
     private boolean suspend = false;
     public ActorSystem actorSystem = ActorSystem.create(NeoSystem.class.getSimpleName());
@@ -55,7 +55,7 @@ public class NeoSystem extends AbstractActor {
         TR.enter();
         suspend = false;
         if (start_message != null) {
-            localNode.tell(start_message, self());
+            localNode.tell(start_message, ActorRef.noSender());
             start_message = null;
         }
         TR.exit();
@@ -78,7 +78,7 @@ public class NeoSystem extends AbstractActor {
             }
         };
         if (!suspend) {
-            localNode.tell(start_message, self());
+            localNode.tell(start_message, ActorRef.noSender());
             start_message = null;
         }
         TR.exit();
@@ -88,10 +88,5 @@ public class NeoSystem extends AbstractActor {
         TR.enter();
         suspend = true;
         TR.exit();
-    }
-
-    @Override
-    public Receive createReceive () {
-        return null;
     }
 }
