@@ -1,5 +1,7 @@
 package neo.ledger;
 
+import com.typesafe.config.Config;
+
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -16,6 +18,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import akka.actor.AbstractActor;
+import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.Terminated;
 import akka.actor.ActorRef;
@@ -209,7 +212,7 @@ public class Blockchain extends AbstractActor {
     private Uint stored_header_count = Uint.ZERO;
     private final ConcurrentHashMap<UInt256, Block> block_cache = new ConcurrentHashMap<UInt256, Block>();
     private final ConcurrentHashMap<Uint, LinkedList<Block>> block_cache_unverified = new ConcurrentHashMap<Uint, LinkedList<Block>>();
-    private final RelayCache relayCache = new RelayCache(100);
+    public final RelayCache relayCache = new RelayCache(100);
     private final HashSet<ActorRef> subscribers = new HashSet<ActorRef>();
     private AtomicReference<Snapshot> currentSnapshot;
 
@@ -994,6 +997,11 @@ public class Blockchain extends AbstractActor {
 }
 
 class BlockchainMailbox extends PriorityMailbox {
+
+    public BlockchainMailbox(ActorSystem.Settings setting, Config config) {
+        super();
+    }
+
     @Override
     protected boolean isHighPriority(Object message) {
         TR.enter();
