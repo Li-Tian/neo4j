@@ -6,6 +6,8 @@ import java.math.BigInteger;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import neo.UInt160;
 import neo.UInt256;
@@ -201,38 +203,62 @@ public class Helper {
             ContractParameter>> context) {
         ContractParameter parameter = null;
         if (item instanceof Array) {
-
-            /*
-            VMArray array:
-            if (context == null)
+            if (context == null) {
                 context = new ArrayList<AbstractMap.SimpleEntry<StackItem, ContractParameter>>();
-            else
-                parameter = context.FirstOrDefault(p -> ReferenceEquals(p.Item1, item)) ?.Item2;
-            if (parameter == null) {
-                parameter = new ContractParameter {
-                    Type = ContractParameterType.Array
-                } ;
-                context.add(new AbstractMap.SimpleEntry<StackItem, ContractParameter>(item, parameter));
-                parameter.value = array.Select(p = > ToParameter(p, context)).ToList();
+            } else {
+                //LINQ START
+                //parameter = context.FirstOrDefault(p -> ReferenceEquals(p.Item1, item)) ?.Item2;
+                List<AbstractMap.SimpleEntry<StackItem, ContractParameter>> templist =
+                        context.stream().filter(p -> p.getKey() == item).collect(Collectors
+                                .toList());
+                if (templist.size() != 0) {
+                    parameter = templist.get(0).getValue();
+                } else {
+                    parameter = null;
+                }
+                //LINQ END
             }
-            break;
+            if (parameter == null) {
+                parameter = new ContractParameter(ContractParameterType.Array);
+                context.add(new AbstractMap.SimpleEntry<StackItem, ContractParameter>(item, parameter));
+                List<AbstractMap.SimpleEntry<StackItem, ContractParameter>> finalContext = context;
+                parameter.value = StreamSupport.stream(((Array) item).getEnumerator().spliterator(), false).map
+                        (p -> toParameter((StackItem) p, finalContext))
+                        .collect(Collectors.toList());
+            }
         } else if (item instanceof Map) {
-            case Map map:
             if (context == null)
                 context = new ArrayList<AbstractMap.SimpleEntry<StackItem, ContractParameter>>();
-            else
-                parameter = context.FirstOrDefault(p-> ReferenceEquals(p.Item1, item))?.Item2;
+            else {
+                //LINQ START
+                //parameter = context.FirstOrDefault(p -> ReferenceEquals(p.Item1, item)) ?.Item2;
+                List<AbstractMap.SimpleEntry<StackItem, ContractParameter>> templist =
+                        context.stream().filter(p -> p.getKey() == item).collect(Collectors
+                                .toList());
+                if (templist.size() != 0) {
+                    parameter = templist.get(0).getValue();
+                } else {
+                    parameter = null;
+                }
+                //LINQ END
                 if (parameter == null) {
                     parameter = new ContractParameter(ContractParameterType.Map);
                     context.add(new AbstractMap.SimpleEntry<StackItem, ContractParameter>(item, parameter));
-                    parameter.value = map.Select(p -> new AbstractMap.SimpleEntry<ContractParameter,
+                    //LINQ START
+/*                    parameter.value = map.Select(p -> new AbstractMap.SimpleEntry<ContractParameter,
                             ContractParameter>(toParameter(p.key, context),
                             toParameter(p.Value, context))).
-                            ToList();
+                            ToList();*/
+                    List<AbstractMap.SimpleEntry<StackItem, ContractParameter>> finalContext = context;
+                    parameter.value = StreamSupport.stream(((Map) item).getEnumerator().spliterator
+                            (), false).map(p -> new AbstractMap.SimpleEntry<ContractParameter,
+                            ContractParameter>(toParameter(p.getKey(), finalContext),
+                            toParameter(p.getValue(), finalContext)))
+                            .collect(Collectors.toList());
+                    //LINQ END
                 }
-                break;
+            }
 
-            */
         } else if (item instanceof Boolean) {
             parameter = new ContractParameter(ContractParameterType.Boolean);
             parameter.value = item.getBoolean();
