@@ -47,7 +47,7 @@ public class TaskManager extends AbstractActor {
 
     /**
      * Customized akka message, it represents a new remote peer connected, taskManager will check
-     * the remote peer's version to sync header and block.
+     * the remote peer's VERSION to sync header and block.
      */
     public static class Register {
         public VersionPayload version;
@@ -137,8 +137,6 @@ public class TaskManager extends AbstractActor {
     }
 
     private void onHeaderTaskCompleted() {
-        System.out.println(sender());
-
         if (!sessions.containsKey(sender())) {
             return;
         }
@@ -340,6 +338,10 @@ public class TaskManager extends AbstractActor {
         }
     }
 
+    /**
+     * TaskManager's priority mailbox. When messages are Register or NewTasks with block or
+     * consensus, is high priority. (this class will be create a instance by akka)
+     */
     public static class TaskManagerMailbox extends PriorityMailbox {
 
         public TaskManagerMailbox(ActorSystem.Settings setting, Config config) {
@@ -377,6 +379,11 @@ public class TaskManager extends AbstractActor {
     }
 
 
+    /**
+     * after stop the actor, release the timer
+     *
+     * @throws Exception when some errors occur
+     */
     @Override
     public void postStop() throws Exception {
         if (timer != null && !timer.isCancelled()) {
@@ -389,15 +396,15 @@ public class TaskManager extends AbstractActor {
      * create a message receiver
      *
      * @docs message customized message as the following:
-     *                <ul>
-     *                <li>Register: a remote peer connected message</li>
-     *                <li>NewTasks: a new inv message received</li>
-     *                <li>TaskCompleted: the inv message's data has been received</li>
-     *                <li>HeaderTaskCompleted: the block header has been synchronized </li>
-     *                <li>RestartTasks: restart to request the inv message </li>
-     *                <li>Timer: timer for check the session's task list </li>
-     *                <li>Terminated: the remote peer offline</li>
-     *                </ul>
+     * <ul>
+     * <li>Register: a remote peer connected message</li>
+     * <li>NewTasks: a new inv message received</li>
+     * <li>TaskCompleted: the inv message's data has been received</li>
+     * <li>HeaderTaskCompleted: the block header has been synchronized </li>
+     * <li>RestartTasks: restart to request the inv message </li>
+     * <li>Timer: timer for check the session's task list </li>
+     * <li>Terminated: the remote peer offline</li>
+     * </ul>
      */
     @Override
     public Receive createReceive() {

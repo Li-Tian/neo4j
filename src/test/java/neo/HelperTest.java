@@ -44,7 +44,7 @@ public class HelperTest {
 
     @Test
     public void getVersion() {
-        assertEquals("2.9.4.0", Helper.GetVersion());
+        assertEquals("2.9.4.0", Helper.getVersion());
     }
 
 

@@ -51,7 +51,7 @@ import static neo.network.p2p.payloads.InventoryType.Block;
 public class ProtocolHandler extends AbstractActor {
 
     /**
-     * Customized akka message, it means the related remote node send version message. and this
+     * Customized akka message, it means the related remote node send VERSION message. and this
      * message will be transfer to RemoteNode{@link RemoteNode} for processing.
      */
     public static class SetVersion {
@@ -59,7 +59,7 @@ public class ProtocolHandler extends AbstractActor {
     }
 
     /**
-     * Customized akka message, it means the related remote has been response to the `version`
+     * Customized akka message, it means the related remote has been response to the `VERSION`
      * command. Also this message will be send to RemoteNode{@link RemoteNode} for processing.
      */
     public static class SetVerack {
@@ -368,7 +368,7 @@ public class ProtocolHandler extends AbstractActor {
 
     /**
      * ProtocolHandler priority mailbox, high priority commands are: consensus, filteradd,
-     * filterclear, filterload, verack, version, alert(unimplemented). the others are low priority.
+     * filterclear, filterload, verack, VERSION, alert(unimplemented). the others are low priority.
      */
     public static class ProtocolHandlerMailbox extends PriorityMailbox {
 
@@ -431,7 +431,7 @@ public class ProtocolHandler extends AbstractActor {
 
     private void handleMsg(Message msg) {
         if (version == null) {
-            if (!"version".equals(msg.command)) {
+            if (!"VERSION".equals(msg.command)) {
                 throw new ProtocolViolationException();
             }
             onVersionMessageReceived(SerializeHelper.parse(VersionPayload::new, msg.payload));

@@ -61,13 +61,13 @@ public class RemoteNode extends Connection {
     private boolean verack = false;
 
     /**
-     * Record the current node's version data and block height
+     * Record the current node's VERSION data and block height
      */
     public VersionPayload version;
 
 
     /**
-     * constructor，create a RemoteNode object and sending the version data of the local node to the
+     * constructor，create a RemoteNode object and sending the VERSION data of the local node to the
      * connected remote node.
      *
      * @param system     Neo core system
@@ -299,8 +299,8 @@ public class RemoteNode extends Connection {
      * <li>Message: block message</li>
      * <li>IInventory: a new inv message received</li>
      * <li>Relay: relay the inventory data</li>
-     * <li>ProtocolHandler.SetVersion:  the related remote node send version message.</li>
-     * <li>ProtocolHandler.SetVerack:  the related remote has been response to the `version`
+     * <li>ProtocolHandler.SetVersion:  the related remote node send VERSION message.</li>
+     * <li>ProtocolHandler.SetVerack:  the related remote has been response to the `VERSION`
      * command
      * </li>
      * <li>ProtocolHandler.SetFilter:  received the related remote node about `filter` command
