@@ -304,7 +304,7 @@ public class LocalNode extends Peer {
      * @param system NeoSystem object
      * @return LocalNode object
      */
-    public static Props Props(NeoSystem system) {
+    public static Props props(NeoSystem system) {
         return Props.create(LocalNode.class, system);
     }
 

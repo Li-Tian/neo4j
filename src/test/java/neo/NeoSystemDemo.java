@@ -1,4 +1,4 @@
-package neo.network.p2p;
+package neo;
 
 import neo.NeoSystem;
 import neo.persistence.Store;

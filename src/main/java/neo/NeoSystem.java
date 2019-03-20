@@ -35,8 +35,8 @@ public class NeoSystem {
     public NeoSystem(Store store) {
         TR.enter();
         blockchain = actorSystem.actorOf(Blockchain.props(this, store));
-        //localNode = ActorSystem.actorOf(LocalNode.props(this));
-        //taskManager = ActorSystem.actorOf(TaskManager.props(this));
+        localNode = actorSystem.actorOf(LocalNode.props(this));
+        taskManager = actorSystem.actorOf(TaskManager.props(this));
         Plugin.loadPlugins(this);
         TR.exit();
     }
@@ -63,7 +63,7 @@ public class NeoSystem {
 
     public void startConsensus(Wallet wallet) {
         TR.enter();
-        //consensus = ActorSystem.actorOf(ConsensusService.Props(this.localNode, this.taskManager, wallet));
+        //consensus = ActorSystem.actorOf(ConsensusService.props(this.localNode, this.taskManager, wallet));
         //consensus.tell(new ConsensusService.start());
         TR.exit();
     }
