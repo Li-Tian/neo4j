@@ -1,0 +1,462 @@
+package neo.consensus;
+
+import java.security.SecureRandom;
+import java.util.Collection;
+import java.util.HashMap;
+
+import neo.Fixed8;
+import neo.UInt160;
+import neo.UInt256;
+import neo.Wallets.KeyPair;
+import neo.Wallets.Wallet;
+import neo.Wallets.WalletAccount;
+import neo.cryptography.MerkleTree;
+import neo.cryptography.ecc.ECPoint;
+import neo.csharp.BitConverter;
+import neo.csharp.Uint;
+import neo.csharp.Ulong;
+import neo.csharp.Ushort;
+import neo.csharp.common.IDisposable;
+import neo.csharp.io.ISerializable;
+import neo.io.SerializeHelper;
+import neo.ledger.Blockchain;
+import neo.network.p2p.payloads.Block;
+import neo.network.p2p.payloads.ConsensusPayload;
+import neo.network.p2p.payloads.Header;
+import neo.network.p2p.payloads.MinerTransaction;
+import neo.network.p2p.payloads.Transaction;
+import neo.network.p2p.payloads.TransactionOutput;
+import neo.network.p2p.payloads.TransactionType;
+import neo.persistence.Snapshot;
+import neo.smartcontract.Contract;
+
+/**
+ * Consensus context, it records the data in current consensus activity.
+ */
+public class ConsensusContext implements IDisposable {
+
+    /**
+     * Consensus message VERSION, it's fixed to 0 currently
+     */
+    public static final Uint VERSION = Uint.ZERO;
+
+    /**
+     * Context state
+     */
+    public ConsensusState state;
+
+    /**
+     * The previous block's hash
+     */
+    public UInt256 prevHash;
+
+    /**
+     * The proposal block's height
+     */
+    public Uint blockIndex;
+
+    /**
+     * Current view number
+     */
+    public byte viewNumber;
+
+    /**
+     * The public keys of consensus nodes in current round
+     */
+    public ECPoint[] validators;
+
+    /**
+     * My index in the validators array
+     */
+    public int myIndex;
+
+    /**
+     * The Speaker index in the validators array
+     */
+    public Uint primaryIndex;
+
+    /**
+     * The proposal block's Timestamp
+     */
+    public Uint timestamp;
+
+    /**
+     * The proposal block's nonce
+     */
+    public Ulong nonce;
+
+    /**
+     * The proposal block's NextConsensus, which binding the consensus nodes in the next round
+     */
+    public UInt160 nextConsensus;
+
+    /**
+     * The hash list of current proposal block's txs
+     */
+    public UInt256[] transactionHashes;
+
+    /**
+     * The proposal block's txs
+     */
+    public HashMap<UInt256, Transaction> transactions;
+
+    /**
+     * Store the proposal block's signatures recevied
+     */
+    public byte[][] signatures;
+
+    /**
+     * The expected view number of consensus nodes, mainly used in ChangeView processing. The index
+     * of the array is crresponding to the index of nodes.
+     */
+    public byte[] expectedView;
+
+
+    /**
+     * Snapshot of persistence layer
+     */
+    private Snapshot snapshot;
+
+    /**
+     * Key pair
+     */
+    private KeyPair keyPair;
+
+    /**
+     * Wallet
+     */
+    private Wallet wallet;
+
+
+    private Block header = null;
+
+
+    /**
+     * constructor a consensus context
+     */
+    public ConsensusContext(Wallet wallet) {
+        this.wallet = wallet;
+    }
+
+
+    /**
+     * get the minimum threshold of the normal nodes.
+     */
+    public int getM() {
+        return validators.length - (validators.length - 1) / 3;
+    }
+
+    /**
+     * get the previous block header
+     */
+    public Header getPrevHeader() {
+        return snapshot.getHeader(prevHash);
+    }
+
+    /**
+     * check whether the tx is exist
+     *
+     * @param hash tx hash
+     */
+    public boolean transactionExists(UInt256 hash) {
+        return snapshot.containsTransaction(hash);
+    }
+
+    /**
+     * verify the tx
+     *
+     * @param tx transaction
+     */
+    public boolean verifyTransaction(Transaction tx) {
+        return tx.verify(snapshot, transactions.values());
+    }
+
+
+    /**
+     * Change view number
+     *
+     * @param view_number new view number
+     * @docs 1. Update the context ViewNumber, PrimaryIndex and ExpectedView[Myindex] <br/> 2. If
+     * the node has the SignatureSent flag, reserve the signatures array (Mybe some signatures are
+     * arrived before the PrepareRequset received), else reset it
+     */
+    public void changeView(byte view_number) {
+//        state &= ConsensusState.SignatureSent;
+        state = new ConsensusState((byte) (state.value() & ConsensusState.SignatureSent.value()));
+        viewNumber = view_number;
+        primaryIndex = getPrimaryIndex(view_number);
+        if (state == ConsensusState.Initial) {
+            transactionHashes = null;
+            signatures = new byte[validators.length][];
+        }
+        if (myIndex >= 0)
+            expectedView[myIndex] = view_number;
+        header = null;
+    }
+
+    /**
+     * Create a full block with the context data
+     *
+     * @return block
+     */
+    public Block createBlock() {
+        Block block = makeHeader();
+//        if (block == null) return null;
+//        Contract contract = Contract.CreateMultiSigContract(M, Validators);
+//        ContractParametersContext sc = new ContractParametersContext(block);
+//        for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
+//            if (Signatures[i] != null)
+//            {
+//                sc.AddSignature(contract, Validators[i], Signatures[i]);
+//                j++;
+//            }
+//        sc.Verifiable.Witnesses = sc.GetWitnesses();
+//        block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
+        return block;
+    }
+
+
+    /**
+     * Construct the block header with context data
+     *
+     * @return block header
+     */
+    public Block makeHeader() {
+        if (transactionHashes == null) {
+            return null;
+        }
+
+        if (header == null) {
+            header = new Block();
+            header.version = VERSION;
+            header.prevHash = prevHash;
+            header.merkleRoot = MerkleTree.computeRoot(transactionHashes);
+            header.timestamp = timestamp;
+            header.index = blockIndex;
+            header.consensusData = nonce;
+            header.nextConsensus = nextConsensus;
+            header.transactions = new Transaction[0];
+        }
+        return header;
+    }
+
+    /**
+     * Create ConsensusPayload which contains the ConsensusMessage
+     *
+     * @param message consensus message
+     * @return ConsensusPayload
+     */
+    private ConsensusPayload makeSignedPayload(ConsensusMessage message) {
+        message.viewNumber = viewNumber;
+        ConsensusPayload payload = new ConsensusPayload();
+
+        payload.version = VERSION;
+        payload.prevHash = prevHash;
+        payload.blockIndex = blockIndex;
+        payload.validatorIndex = new Ushort(myIndex);
+        payload.timestamp = timestamp;
+        payload.data = SerializeHelper.toBytes(message);
+
+        signPayload(payload);
+        return payload;
+    }
+
+    /**
+     * Sign the block header
+     */
+    public void signHeader() {
+        // TODO sign
+        Block header = makeHeader();
+//        signatures[myIndex] = header == null? null : makeHeader()?.sign(keyPair);
+
+    }
+
+
+    private void signPayload(ConsensusPayload payload) {
+        // TODO waiting for context
+//        ContractParametersContext sc;
+//        try {
+//            sc = new ContractParametersContext(payload);
+//            wallet.Sign(sc);
+//        } catch (InvalidOperationException) {
+//            return;
+//        }
+//        sc.Verifiable.Witnesses = sc.GetWitnesses();
+    }
+
+    /**
+     * Create PrepareRequest message paylaod
+     *
+     * @return ConsensusPayload
+     */
+    public ConsensusPayload makePrepareRequest() {
+        PrepareRequest prepareRequest = new PrepareRequest();
+        prepareRequest.nonce = nonce;
+        prepareRequest.nextConsensus = nextConsensus;
+        prepareRequest.transactionHashes = transactionHashes;
+        prepareRequest.minerTransaction = (MinerTransaction) transactions.get(transactionHashes[0]);
+        prepareRequest.signature = signatures[myIndex];
+        return makeSignedPayload(prepareRequest);
+    }
+
+
+    /**
+     * construct a p2p consensus message payload
+     *
+     * @param signature proposal block signature
+     * @return ConsensusPayload with PrepareResponse
+     */
+    public ConsensusPayload makePrepareResponse(byte[] signature) {
+        PrepareResponse response = new PrepareResponse();
+        response.signature = signature;
+        return makeSignedPayload(response);
+    }
+
+
+    /**
+     * Get the Speaker index = (BlockIndex - view_number) % Validators.Length
+     *
+     * @param view_number current view number
+     * @return primary index
+     */
+    public Uint getPrimaryIndex(byte view_number) {
+        int p = (blockIndex.intValue() - view_number) % validators.length;
+        return p >= 0 ? new Uint(p) : new Uint(p + validators.length);
+    }
+
+
+    /**
+     * Reset the context
+     *
+     * @docs <ul>
+     * <li>1. Require the blockchain snapshot  </li>
+     * <li>2. Initial the context state </li>
+     * <li>3. Update snapshot and PreHash, BlockIndex </li>
+     * <li>4. Reset ViewNumber zero</li>
+     * <li>5. Get the latest validators</li>
+     * <li>6. Calculate the PriamryIndex, MyIndex and keyPair</li>
+     * <li>7. Clear Signatures, ExpectedView</li>
+     * </ul>
+     */
+    public void reset() {
+        snapshot.dispose();
+        snapshot = Blockchain.singleton().getStore().getSnapshot();
+        state = ConsensusState.Initial;
+        prevHash = snapshot.getCurrentBlockHash();
+        blockIndex = snapshot.getHeight().add(Uint.ONE);
+        viewNumber = 0;
+        validators = snapshot.getValidatorPubkeys();
+        myIndex = -1;
+        primaryIndex = new Uint(blockIndex.intValue() % validators.length);
+        transactionHashes = null;
+        signatures = new byte[validators.length][];
+        expectedView = new byte[validators.length];
+        keyPair = null;
+        for (int i = 0; i < validators.length; i++) {
+            WalletAccount account = wallet.getAccount(validators[i]);
+            if (account != null && account.hasKey() == true) {
+                myIndex = i;
+                keyPair = account.getKey();
+                break;
+            }
+        }
+        header = null;
+    }
+
+
+    /**
+     * Fill the proposal block, contains txs, MinerTransaction, NextConsensus
+     *
+     * @docs <ul>
+     * <li>1. Transaction, load from memory pool , sort and filter using plugin. </li>
+     * <li>2. MinerTransaction and Reward (Reward = Inputs.GAS - outputs.GAS - txs.systemfee) </li>
+     * <li>3. NextConsensus, calculated by combining the proposal block's txs with previous voting
+     * of the validotars</li>
+     * </ul>
+     */
+    public void Fill() {
+        // TODO waiting for Blockchain
+//        Collection<Transaction> mem_pool = Blockchain.singleton().getMemoryPool();
+//        foreach (IPolicyPlugin plugin in Plugin.Policies)
+//        mem_pool = plugin.FilterForBlock(mem_pool);
+//        List<Transaction> transactions = mem_pool.ToList();
+//        Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
+//        TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
+//        {
+//            AssetId = Blockchain.UtilityToken.Hash,
+//                    Value = amount_netfee,
+//                    ScriptHash = wallet.GetChangeAddress()
+//        } };
+//        while (true)
+//        {
+//            ulong nonce = GetNonce();
+//            MinerTransaction tx = new MinerTransaction
+//            {
+//                Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
+//                Attributes = new TransactionAttribute[0],
+//                        Inputs = new CoinReference[0],
+//                        Outputs = outputs,
+//                        Witnesses = new Witness[0]
+//            };
+//            if (!snapshot.ContainsTransaction(tx.Hash))
+//            {
+//                Nonce = nonce;
+//                transactions.Insert(0, tx);
+//                break;
+//            }
+//        }
+//        TransactionHashes = transactions.Select(p => p.Hash).ToArray();
+//        Transactions = transactions.ToDictionary(p => p.Hash);
+//        NextConsensus = Blockchain.GetConsensusAddress(snapshot.GetValidators(transactions).ToArray());
+//        Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
+    }
+
+
+    /**
+     * Get a new nonce
+     */
+    private static Ulong getNonce() {
+        byte[] nonce = new byte[Ulong.BYTES];
+        SecureRandom rand = new SecureRandom();
+        rand.nextBytes(nonce);
+        return BitConverter.toUlong(nonce);
+    }
+
+
+    /**
+     * Verify the proposal block, after received the PrepareRequest message
+     *
+     * @return If valid, then return true
+     * @docs 1. If hasn't received the `PrepareRequest` message, return false <br/> 2. Check whether
+     * the proposal block's NextConsensus is the same to the result, calculated by the current
+     * blockchain snapshot's validators <br/>  3. Check whether the MinerTransaction.output.value is
+     * equal to the proposal block's txs network fee
+     */
+    public boolean verifyRequest() {
+        if (!state.hasFlag(ConsensusState.RequestReceived))
+            return false;
+        // TODO waiting for blockchain
+//        if (!Blockchain.getConsensusAddress(snapshot.getValidators(transactions.values()).ToArray()).Equals(nextConsensus))
+//            return false;
+        Transaction tx_gen = transactions.values().stream()
+                .filter(p -> p.type == TransactionType.MinerTransaction)
+                .findFirst().get();
+
+        Fixed8 amountNetfee = Block.calculateNetFee(transactions.values());
+        Fixed8 sumOut = Fixed8.ZERO;
+
+        for (TransactionOutput output : tx_gen.outputs) {
+            sumOut = Fixed8.add(sumOut, output.value);
+        }
+
+        if (sumOut.compareTo(amountNetfee) != 0) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void dispose() {
+
+    }
+}
