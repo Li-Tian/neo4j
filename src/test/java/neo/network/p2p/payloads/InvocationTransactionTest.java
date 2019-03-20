@@ -2,17 +2,12 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import neo.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.Utils;
@@ -24,11 +19,7 @@ import neo.ledger.CoinState;
 import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.persistence.Snapshot;
-import neo.persistence.leveldb.BlockchainDemo;
-import neo.persistence.leveldb.LevelDBStore;
 import neo.vm.OpCode;
-
-import static org.junit.Assert.*;
 
 public class InvocationTransactionTest extends AbstractBlockchainTest {
 

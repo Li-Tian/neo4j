@@ -2,34 +2,24 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.concurrent.ConcurrentHashMap;
 
-import akka.actor.ActorSystem;
-import akka.actor.Props;
+import neo.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
 import neo.Utils;
 import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
-import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.ledger.AccountState;
 import neo.ledger.Blockchain;
 import neo.ledger.ValidatorState;
 import neo.persistence.Snapshot;
-import neo.persistence.leveldb.BlockchainDemo;
-import neo.persistence.leveldb.LevelDBStore;
-
-import static org.junit.Assert.*;
 
 public class StateDescriptorTest extends AbstractBlockchainTest {
 

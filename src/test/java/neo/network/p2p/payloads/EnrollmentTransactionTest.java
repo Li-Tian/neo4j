@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
+import neo.AbstractBlockchainTest;
 import neo.UInt160;
 import neo.Utils;
 import neo.cryptography.ecc.ECC;

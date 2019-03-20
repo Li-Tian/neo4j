@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
+import neo.AbstractBlockchainTest;
 import neo.UInt160;
 import neo.UInt256;
 import neo.Utils;

@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.util.concurrent.ConcurrentHashMap;
 
+import neo.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;

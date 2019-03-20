@@ -75,6 +75,6 @@ public class ValidatorsCountStateTest {
         countState.votes[2] = new Fixed8(3);
         countState.votes[3] = new Fixed8(0);
 
-        Assert.assertEquals("{\"version\":0}", countState.toJson().toString());
+        Assert.assertEquals("{\"VERSION\":0}", countState.toJson().toString());
     }
 }
