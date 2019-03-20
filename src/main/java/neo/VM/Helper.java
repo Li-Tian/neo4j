@@ -201,6 +201,8 @@ public class Helper {
             ContractParameter>> context) {
         ContractParameter parameter = null;
         if (item instanceof Array) {
+
+            /*
             VMArray array:
             if (context == null)
                 context = new ArrayList<AbstractMap.SimpleEntry<StackItem, ContractParameter>>();
@@ -229,6 +231,8 @@ public class Helper {
                             ToList();
                 }
                 break;
+
+            */
         } else if (item instanceof Boolean) {
             parameter = new ContractParameter(ContractParameterType.Boolean);
             parameter.value = item.getBoolean();

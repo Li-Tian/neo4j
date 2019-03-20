@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import javax.swing.*;
@@ -204,8 +205,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
             neo.VM.Helper.emitAppCall(sb, (neo.UInt160) asset_id, "decimals");
             script = sb.toArray();
 
-            ApplicationEngine engine = ApplicationEngine.run(script, extraGAS:neo.Fixed8.fromDecimal
-                    (0.2m) * accounts.length);
+            ApplicationEngine engine = ApplicationEngine.run(script, null, null, false, Fixed8.multiply(neo
+                    .Fixed8.fromDecimal(new BigDecimal("0.2")), accounts.length));
             if (engine.state.hasFlag(VMState.FAULT))
                 return new BigDecimal(BigInteger.ZERO, 0);
             byte decimals = engine.resultStack.pop().getBigInteger().byteValue();
@@ -286,7 +287,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
 
         byte[] encryptedkey = new byte[32];
         System.arraycopy(data, 7, encryptedkey, 0, 32);
-        byte[] prikey = Wallet.XOR(Helper.aes256Decrypt(encryptedkey, derivedhalf2), derivedhalf1));
+        byte[] prikey = Wallet.XOR(Helper.aes256Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
         ECPoint pubkey = (ECPoint) ECC.Secp256r1.getG().multiply(new BigInteger(prikey));
         UInt160 script_hash = neo.smartcontract.Helper.toScriptHash(Contract
                 .createSignatureRedeemScript(pubkey));
@@ -334,7 +335,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
 
         byte[] encryptedkey = new byte[32];
         System.arraycopy(data, 7, encryptedkey, 0, 32);
-        byte[] prikey = Wallet.XOR(Helper.aes256Decrypt(encryptedkey, derivedhalf2), derivedhalf1));
+        byte[] prikey = Wallet.XOR(Helper.aes256Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
         ECPoint pubkey = (ECPoint) ECC.Secp256r1.getG().multiply(new BigInteger(prikey));
         UInt160 script_hash = neo.smartcontract.Helper.toScriptHash(Contract
                 .createSignatureRedeemScript(pubkey));
@@ -393,7 +394,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
     }
 
 
-    public WalletAccount imports(X509Certificate2 cert) {
+ /*   public WalletAccount imports(X509Certificate2 cert) {
         byte[] privateKey;
         ECDsa ecdsa = cert.GetECDsaPrivateKey())
         {
@@ -402,7 +403,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         WalletAccount account = createAccount(privateKey);
         Arrays.fill(privateKey, 0, privateKey.length, (byte) 0x00);
         return account;
-    }
+    }*/
 
     public WalletAccount imports(String wif) {
         byte[] privateKey = getPrivateKeyFromWIF(wif);
@@ -430,18 +431,29 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
             tx.attributes = new TransactionAttribute[0];
         }
         fee = neo.Fixed8.add(fee, tx.getSystemFee());
-        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> pay_total = Arrays.asList((tx instanceof
-                IssueTransaction) ? new
-                TransactionOutput[0] : tx.outputs).stream().collect(Collectors.groupingBy(
 
-        ));
-        GroupBy
-                (p = > p.AssetId,
-                (k, g) =>new
+        //LINQ START
+/*        var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : tx.Outputs).GroupBy(p => p.AssetId, (k, g) => new
         {
             AssetId = k,
-                    Value = g.Sum(p = > p.Value)
-        }).ToDictionary(p = > p.AssetId);
+                    Value = g.Sum(p => p.Value)
+        }).ToDictionary(p => p.AssetId);*/
+
+        Map<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> temp_pay_total = Arrays.asList(
+                (tx instanceof IssueTransaction) ? new TransactionOutput[0] : tx.outputs)
+                .stream()
+                .map(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(p.assetId, p.value))
+                .collect(Collectors.groupingBy(AbstractMap.SimpleEntry<UInt256, Fixed8>::getKey));
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> pay_total = new HashMap<>();
+        for (Map.Entry<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> e : temp_pay_total
+                .entrySet()) {
+            Fixed8 temp = Fixed8.ZERO;
+            for (AbstractMap.SimpleEntry<UInt256, Fixed8> f : e.getValue()) {
+                Fixed8.add(temp, f.getValue());
+            }
+        }
+
+        //LINQ END
         if (fee.compareTo(neo.Fixed8.ZERO) > 0) {
             if (pay_total.containsKey(Blockchain.UtilityToken.hash())) {
                 pay_total.put(Blockchain.UtilityToken.hash(), new AbstractMap.SimpleEntry<UInt256, Fixed8>(
@@ -454,97 +466,216 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                 ));
             }
         }
-        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Coin[]>> pay_coins = pay_total.select(p -> new
-        {
-            AssetId = p.Key,
-                    Unspents = from == null ? findUnspentCoins(p.Key, p.Value.Value) :
-                            findUnspentCoins(p.Key, p.Value.Value, from)
-        }).ToDictionary(p = > p.AssetId);
-        if (pay_coins.Any(p = > p.Value.Unspents == null))return null;
-        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum = pay_coins.values
-        .ToDictionary(p-> p.assetId, p->
-        new
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Coin[]>> pay_coins =
+                pay_total.entrySet().stream().map(p ->
+                        new AbstractMap.SimpleEntry<UInt256, Coin[]>(p
+                                .getKey(), from == null ? findUnspentCoins(p.getKey(), p.getValue().getValue()) :
+                                findUnspentCoins(p.getKey(), p.getValue().getValue(), from)))
+                        .collect(Collectors.toMap((e) -> {
+                            return e.getKey();
+                        }, (e) -> {
+                            return e;
+                        }));
+        //LINQ START
+        //if (pay_coins.Any(p => p.Value.Unspents == null)) return null;
+        if (pay_coins.entrySet().stream().anyMatch(p -> p.getValue() == null)) {
+            return null;
+        }
+        //LINQ END
+        //LINQ START
+/*        var input_sum = pay_coins.Values.ToDictionary(p => p.AssetId, p => new
         {
             p.AssetId,
-                    Value = p.Unspents.Sum(q = > q.Output.Value)
+                    Value = p.Unspents.Sum(q => q.Output.Value)
+        });*/
+
+
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum=null;
+        /*
+        Map<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> input_sum = pay_coins.values()
+                .stream().flatMap(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(
+                        p.getKey(), Arrays.asList(p.getValue()).stream().map(q -> q.output.value))
+                ).collect(Collectors.toMap((e) -> {
+                    return e.getKey();
+                }, (e) -> {
+                    return e;
+                }));
+
+
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum = pay_coins.values()
+                .stream().flatMap(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(p.getKey(),
+                        Arrays.asList(p.getValue()).stream()
+                                .map(q -> q.output.value).reduce(Fixed8.ZERO, (x, y) -> Fixed8.add(x,
+                                y))))
+                .collect(Collectors.toMap((e) -> {
+                    return e.getKey();
+                }, (e) -> {
+                    return e;
+                }))
+                .ToDictionary(p -> p.assetId, p ->
+                        new
+        {
+            p.AssetId,
+                    Value = p.Unspents.Sum(q -> q.Output.Value)
         });
+
+
+        */
+        //LINQ END
         if (change_address == null) change_address = getChangeAddress();
-        List<TransactionOutput> outputs_new = new ArrayList<TransactionOutput>(tx.outputs);
+        List<TransactionOutput> outputs_new = new ArrayList<TransactionOutput>();
+        outputs_new.addAll(Arrays.asList(tx.outputs));
+
         for (UInt256 asset_id : input_sum.keySet()) {
-            if (input_sum[asset_id].Value > pay_total[asset_id].Value) {
-                outputs_new.add(new TransactionOutput(
-                        asset_id, input_sum[asset_id].Value - pay_total[asset_id].Value,
-                        change_address
-            });
+            if (input_sum.get(asset_id).getValue().compareTo(pay_total.get(asset_id).getValue()) > 0) {
+                TransactionOutput temp = new TransactionOutput();
+                temp.assetId = asset_id;
+                temp.value = Fixed8.subtract(input_sum.get(asset_id).getValue(), pay_total.get
+                        (asset_id).getValue());
+                temp.scriptHash = change_address;
+                outputs_new.add(temp);
+            }
+//LINQ START
+/*
+            tx.Inputs = pay_coins.Values.SelectMany(p => p.Unspents).Select(p => p.Reference).ToArray();
+*/
+            tx.inputs = pay_coins.values().stream().flatMap(p -> Stream.of(p.getValue())).map(p -> p
+                    .reference).toArray(CoinReference[]::new);
+
+//LINQ END
+            tx.outputs = outputs_new.toArray(new TransactionOutput[0]);
+            return tx;
         }
-
-        tx.inputs = pay_coins.values.SelectMany(p-> p.Unspents).
-
-        Select(p-> p.Reference).
-
-        ToArray();
-
-        tx.outputs = outputs_new.ToArray();
-        return tx;
     }
 
-    public <T extends Transaction> T makeTransaction(T tx, UInt160 from,UInt160
-            change_address ,Fixed8 fee)
 
-    {
-        if (tx.outputs == null) tx.outputs = new TransactionOutput[0];
-        if (tx.attributes == null) tx.attributes = new TransactionAttribute[0];
-        fee += tx.SystemFee;
-        var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : tx.Outputs).GroupBy(p = > p.AssetId,
-        (k, g)=>new
+    public <T extends Transaction> T makeTransaction(T tx, UInt160 from, UInt160
+            change_address, Fixed8 fee) {
+        if (tx.outputs == null) {
+            tx.outputs = new TransactionOutput[0];
+        }
+        if (tx.attributes == null) {
+            tx.attributes = new TransactionAttribute[0];
+        }
+        fee = neo.Fixed8.add(fee, tx.getSystemFee());
+
+        //LINQ START
+/*        var pay_total = (typeof(T) == typeof(IssueTransaction) ? new TransactionOutput[0] : tx.Outputs).GroupBy(p => p.AssetId, (k, g) => new
         {
             AssetId = k,
-                    Value = g.Sum(p = > p.Value)
-        }).ToDictionary(p = > p.AssetId);
-        if (fee > Fixed8.Zero) {
-            if (pay_total.ContainsKey(Blockchain.UtilityToken.Hash)) {
-                pay_total[Blockchain.UtilityToken.Hash] = new
-                {
-                    AssetId = Blockchain.UtilityToken.Hash,
-                            Value = pay_total[Blockchain.UtilityToken.Hash].Value + fee
-                } ;
-            } else {
-                pay_total.Add(Blockchain.UtilityToken.Hash, new
-                {
-                    AssetId = Blockchain.UtilityToken.Hash,
-                            Value = fee
-                });
+                    Value = g.Sum(p => p.Value)
+        }).ToDictionary(p => p.AssetId);*/
+
+        Map<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> temp_pay_total = Arrays.asList(
+                (tx instanceof IssueTransaction) ? new TransactionOutput[0] : tx.outputs)
+                .stream()
+                .map(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(p.assetId, p.value))
+                .collect(Collectors.groupingBy(AbstractMap.SimpleEntry<UInt256, Fixed8>::getKey));
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> pay_total = new HashMap<>();
+        for (Map.Entry<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> e : temp_pay_total
+                .entrySet()) {
+            Fixed8 temp = Fixed8.ZERO;
+            for (AbstractMap.SimpleEntry<UInt256, Fixed8> f : e.getValue()) {
+                Fixed8.add(temp, f.getValue());
             }
         }
-        var pay_coins = pay_total.Select(p = > new
-        {
-            AssetId = p.Key,
-                    Unspents = from == null ? FindUnspentCoins(p.Key, p.Value.Value) : FindUnspentCoins(p.Key, p.Value.Value, from)
-        }).ToDictionary(p = > p.AssetId);
-        if (pay_coins.Any(p = > p.Value.Unspents == null))return null;
-        var input_sum = pay_coins.Values.ToDictionary(p = > p.AssetId, p =>new
+
+        //LINQ END
+        if (fee.compareTo(neo.Fixed8.ZERO) > 0) {
+            if (pay_total.containsKey(Blockchain.UtilityToken.hash())) {
+                pay_total.put(Blockchain.UtilityToken.hash(), new AbstractMap.SimpleEntry<UInt256, Fixed8>(
+                        Blockchain.UtilityToken.hash(),
+                        neo.Fixed8.add(pay_total.get(Blockchain.UtilityToken.hash()).getValue(), fee)));
+            } else {
+                pay_total.put(Blockchain.UtilityToken.hash(), new AbstractMap
+                        .SimpleEntry<UInt256, Fixed8>(
+                        Blockchain.UtilityToken.hash(), fee
+                ));
+            }
+        }
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Coin[]>> pay_coins =
+                pay_total.entrySet().stream().map(p ->
+                        new AbstractMap.SimpleEntry<UInt256, Coin[]>(p
+                                .getKey(), from == null ? findUnspentCoins(p.getKey(), p.getValue().getValue()) :
+                                findUnspentCoins(p.getKey(), p.getValue().getValue(), from)))
+                        .collect(Collectors.toMap((e) -> {
+                            return e.getKey();
+                        }, (e) -> {
+                            return e;
+                        }));
+        //LINQ START
+        //if (pay_coins.Any(p => p.Value.Unspents == null)) return null;
+        if (pay_coins.entrySet().stream().anyMatch(p -> p.getValue() == null)) {
+            return null;
+        }
+        //LINQ END
+        //LINQ START
+/*        var input_sum = pay_coins.Values.ToDictionary(p => p.AssetId, p => new
         {
             p.AssetId,
-                    Value = p.Unspents.Sum(q = > q.Output.Value)
+                    Value = p.Unspents.Sum(q => q.Output.Value)
+        });*/
+
+
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum=null;
+
+
+        /*
+        Map<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> input_sum = pay_coins.values()
+                .stream().flatMap(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(
+                        p.getKey(), Arrays.asList(p.getValue()).stream().map(q -> q.output.value))
+                ).collect(Collectors.toMap((e) -> {
+                    return e.getKey();
+                }, (e) -> {
+                    return e;
+                }));
+
+
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum = pay_coins.values()
+                .stream().flatMap(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(p.getKey(),
+                        Arrays.asList(p.getValue()).stream()
+                                .map(q -> q.output.value).reduce(Fixed8.ZERO, (x, y) -> Fixed8.add(x,
+                                y))))
+                .collect(Collectors.toMap((e) -> {
+                    return e.getKey();
+                }, (e) -> {
+                    return e;
+                }))
+                .ToDictionary(p -> p.assetId, p ->
+                        new
+        {
+            p.AssetId,
+                    Value = p.Unspents.Sum(q -> q.Output.Value)
         });
-        if (change_address == null) {
-            change_address = getChangeAddress();
-        }
-        List<TransactionOutput> outputs_new = new List<TransactionOutput>(tx.Outputs);
-        for (UInt256 asset_id : input_sum.Keys) {
-            if (input_sum[asset_id].Value > pay_total[asset_id].Value) {
-                outputs_new.Add(new TransactionOutput
-                {
-                    AssetId = asset_id,
-                            Value = input_sum[asset_id].Value - pay_total[asset_id].Value,
-                            ScriptHash = change_address
-                });
+
+        */
+
+
+        //LINQ END
+        if (change_address == null) change_address = getChangeAddress();
+        List<TransactionOutput> outputs_new = new ArrayList<TransactionOutput>();
+        outputs_new.addAll(Arrays.asList(tx.outputs));
+
+        for (UInt256 asset_id : input_sum.keySet()) {
+            if (input_sum.get(asset_id).getValue().compareTo(pay_total.get(asset_id).getValue()) > 0) {
+                TransactionOutput temp = new TransactionOutput();
+                temp.assetId = asset_id;
+                temp.value = Fixed8.subtract(input_sum.get(asset_id).getValue(), pay_total.get
+                        (asset_id).getValue());
+                temp.scriptHash = change_address;
+                outputs_new.add(temp);
             }
+//LINQ START
+/*
+            tx.Inputs = pay_coins.Values.SelectMany(p => p.Unspents).Select(p => p.Reference).ToArray();
+*/
+            tx.inputs = pay_coins.values().stream().flatMap(p -> Stream.of(p.getValue())).map(p -> p
+                    .reference).toArray(CoinReference[]::new);
+
+//LINQ END
+            tx.outputs = outputs_new.toArray(new TransactionOutput[0]);
+            return tx;
         }
-        tx.inputs = pay_coins.values.SelectMany(p -> p.Unspents).Select(p = > p.Reference).
-        ToArray();
-        tx.outputs = outputs_new.toArray();
-        return tx;
     }
 
 
@@ -661,7 +792,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                 }
                 //LINQ START
                 //sAttributes.UnionWith(balances.Select(p => p.Account));
-                HashSet<UInt160> tempSet = balances.stream().map(p -> p.getKey()).collect(Collectors
+                sAttributes = balances.stream().map(p -> p.getKey()).collect(Collectors
                         .toCollection(HashSet::new));
                 //LINQ END
                 for (int i = 0; i < balances.size(); i++) {
@@ -670,8 +801,11 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                         BigInteger change = sum.subtract(output.value.toBigInteger());
                         if (change.intValue() > 0) value = value.subtract(change);
                     }
-                    neo.VM.Helper.emitAppCall(sb, output.assetId, "transfer", balances.get(i).getKey
-                            (), output.account, value);
+                    neo.VM.Helper.emitAppCall(sb, (UInt160)output.assetId, "transfer", balances
+                            .get(i)
+                            .getKey
+                            //// TODO: 2019/3/20 验证account是否是scriptHash
+                            (), output.scriptHash, value);
                     sb.emit(OpCode.THROWIFNOT);
                 }
                 //LINQ END
@@ -696,7 +830,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         tx.witnesses = new Witness[0];
         if (tx instanceof InvocationTransaction) {
             Transaction itx = tx;
-            ApplicationEngine engine = ApplicationEngine.run(((InvocationTransaction) itx).script, itx);
+            ApplicationEngine engine = ApplicationEngine.run(((InvocationTransaction) itx)
+                    .script, itx,null,false,null);
             if (engine.state.hasFlag(VMState.FAULT)) return null;
 
             tx = new InvocationTransaction();
@@ -831,8 +966,10 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                         BigInteger change = sum.subtract(output.value.toBigInteger());
                         if (change.intValue() > 0) value = value.subtract(change);
                     }
-                    neo.VM.Helper.emitAppCall(sb, output.assetId, "transfer", balances.get(i).getKey
-                            (), output.account, value);
+                    neo.VM.Helper.emitAppCall(sb, (UInt160) output.assetId, "transfer", balances.get(i)
+                            .getKey
+                           //// TODO: 2019/3/20
+                            (), output.scriptHash, value);
                     sb.emit(OpCode.THROWIFNOT);
                 }
                 //LINQ END
@@ -857,7 +994,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         tx.witnesses = new Witness[0];
         if (tx instanceof InvocationTransaction) {
             Transaction itx = tx;
-            ApplicationEngine engine = ApplicationEngine.run(((InvocationTransaction) itx).script, itx);
+            ApplicationEngine engine = ApplicationEngine.run(((InvocationTransaction) itx)
+                    .script, itx,null,false,null);
             if (engine.state.hasFlag(VMState.FAULT)) return null;
 
             tx = new InvocationTransaction();
@@ -872,6 +1010,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         return tx;
     }
 
+/*
     public boolean sign(ContractParametersContext context) {
         boolean fSuccess = false;
         for (UInt160 scriptHash : context.scriptHashes) {
@@ -885,6 +1024,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         }
         return fSuccess;
     }
+*/
 
     public abstract boolean verifyPassword(String password);
 
