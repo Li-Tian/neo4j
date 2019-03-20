@@ -20,7 +20,7 @@ public class TaskSession {
     public final ActorRef remoteNode;
 
     /**
-     * The version of the related remote node
+     * The VERSION of the related remote node
      */
     public final VersionPayload version;
 
@@ -39,7 +39,7 @@ public class TaskSession {
      * create a TaskSession
      *
      * @param node    the related remote node
-     * @param version the version of the remote node
+     * @param version the VERSION of the remote node
      */
     public TaskSession(ActorRef node, VersionPayload version) {
         this.remoteNode = node;

@@ -33,7 +33,7 @@ public class CryptoTest {
         boolean result = Crypto.Default.verifySignature(message.getBytes(), BitConverter.hexToBytes(cshop_signature), BitConverter.hexToBytes(publicKey));
         Assert.assertTrue(result);
 
-        byte[] output = Crypto.Default.sign(message.getBytes(), BitConverter.hexToBytes(privateKey));
+        byte[] output = Crypto.Default.sign(message.getBytes(), BitConverter.hexToBytes(privateKey), null);
         result = Crypto.Default.verifySignature(message.getBytes(), output, BitConverter.hexToBytes(publicKey));
         Assert.assertTrue(result);
     }
