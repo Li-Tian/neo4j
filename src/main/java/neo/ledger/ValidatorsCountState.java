@@ -78,7 +78,7 @@ public class ValidatorsCountState extends StateBase implements ICloneable<Valida
      * Serialization
      * <p>fields</p>
      * <ul>
-     * <li>stateVersion: The version of the state</li>
+     * <li>stateVersion: The VERSION of the state</li>
      * <li>votes: The status of votings</li>
      * </ul>
      *

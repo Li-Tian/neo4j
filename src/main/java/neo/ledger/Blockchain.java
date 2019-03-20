@@ -994,21 +994,23 @@ public class Blockchain extends AbstractActor {
         }
         TR.exit();
     }
-}
 
-class BlockchainMailbox extends PriorityMailbox {
+    public static class BlockchainMailbox extends PriorityMailbox {
 
-    public BlockchainMailbox(ActorSystem.Settings setting, Config config) {
-        super();
-    }
+        public BlockchainMailbox(ActorSystem.Settings setting, Config config) {
+            super();
+        }
 
-    @Override
-    protected boolean isHighPriority(Object message) {
-        TR.enter();
-        if (message instanceof Header[] || message instanceof Block || message instanceof ConsensusPayload || message instanceof Terminated) {
-            return TR.exit(true);
-        } else {
-            return TR.exit(false);
+        @Override
+        protected boolean isHighPriority(Object message) {
+            TR.enter();
+            if (message instanceof Header[] || message instanceof Block || message instanceof ConsensusPayload || message instanceof Terminated) {
+                return TR.exit(true);
+            } else {
+                return TR.exit(false);
+            }
         }
     }
 }
+
+
