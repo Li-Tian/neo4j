@@ -293,9 +293,8 @@ public class Blockchain extends AbstractActor {
             }
             singleton = this;
         } catch (Exception e) {
-            e.printStackTrace();
-//            TR.error(e);
-//            throw new RuntimeException(e);
+            TR.error(e);
+            throw new RuntimeException(e);
         } finally {
             lockObj.unlock();
         }
