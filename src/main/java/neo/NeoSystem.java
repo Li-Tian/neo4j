@@ -1,10 +1,9 @@
 package neo;
 
-import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import akka.actor.UntypedActor;
 import neo.Wallets.Wallet;
+import neo.consensus.ConsensusService;
 import neo.ledger.Blockchain;
 import neo.log.tr.TR;
 import neo.network.p2p.LocalNode;
@@ -35,8 +34,8 @@ public class NeoSystem {
     public NeoSystem(Store store) {
         TR.enter();
         blockchain = actorSystem.actorOf(Blockchain.props(this, store));
-        //localNode = ActorSystem.actorOf(LocalNode.props(this));
-        //taskManager = ActorSystem.actorOf(TaskManager.props(this));
+        localNode = actorSystem.actorOf(LocalNode.props(this));
+        taskManager = actorSystem.actorOf(TaskManager.props(this));
         Plugin.loadPlugins(this);
         TR.exit();
     }
@@ -63,8 +62,8 @@ public class NeoSystem {
 
     public void startConsensus(Wallet wallet) {
         TR.enter();
-        //consensus = ActorSystem.actorOf(ConsensusService.Props(this.localNode, this.taskManager, wallet));
-        //consensus.tell(new ConsensusService.start());
+        consensus = actorSystem.actorOf(ConsensusService.props(this.localNode, this.taskManager, wallet));
+        consensus.tell(new ConsensusService.Start(), ActorRef.noSender());
         TR.exit();
     }
 
