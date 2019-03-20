@@ -84,7 +84,7 @@ public class NeoSystem {
         TR.exit();
     }
 
-    private void suspendNodeStartup() {
+    public void suspendNodeStartup() {
         TR.enter();
         suspend = true;
         TR.exit();
