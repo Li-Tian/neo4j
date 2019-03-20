@@ -24,7 +24,7 @@ public class ProtocolSettings {
     public final Uint magic;
 
     /**
-     * address version
+     * address VERSION
      */
     public final byte addressVersion;
 
