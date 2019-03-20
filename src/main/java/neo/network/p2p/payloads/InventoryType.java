@@ -4,14 +4,14 @@ package neo.network.p2p.payloads;
 import neo.csharp.common.ByteEnum;
 
 /**
- * The type of Inventory
+ * The type of inventory
  */
 public enum InventoryType implements ByteEnum {
 
     /**
      * Transaction
      */
-    Tr((byte) 0x01),
+    Tx((byte) 0x01),
 
     /**
      * Transaction

@@ -7,7 +7,7 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
 import neo.cryptography.ecc.ECPoint;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * The state of validator

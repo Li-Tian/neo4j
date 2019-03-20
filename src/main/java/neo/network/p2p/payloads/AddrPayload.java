@@ -4,7 +4,8 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
-import neo.log.tr.TR;
+
+import neo.log.notr.TR;
 
 /**
  * This class describing a transport packet when replying to the addr message after the node
@@ -16,7 +17,7 @@ public class AddrPayload implements ISerializable {
     /**
      * The max number of records sent at a time. The fixed value is 200.
      */
-    public static int MaxCountToSend = 200;
+    public static final int MAX_COUNT_TO_SEND = 200;
 
     /**
      * other known node address information. Includes the IP address of these nodes, the listening

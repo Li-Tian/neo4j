@@ -10,7 +10,7 @@ import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.io.ICloneable;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * 批量存放区块头信息

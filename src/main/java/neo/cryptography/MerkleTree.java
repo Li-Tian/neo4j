@@ -6,7 +6,7 @@ import java.util.BitSet;
 
 import neo.UInt160;
 import neo.UInt256;
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public class MerkleTree {
     private MerkleTreeNode root;

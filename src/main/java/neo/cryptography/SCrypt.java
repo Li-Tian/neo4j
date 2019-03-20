@@ -1,6 +1,6 @@
 package neo.cryptography;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 public class SCrypt {
     public static byte[] deriveKey(byte[] password, byte[] salt, int N, int r, int p, int derivedKeyLength) {

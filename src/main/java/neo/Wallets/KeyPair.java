@@ -141,7 +141,7 @@ public class KeyPair {
         //return x.zip(y, (a, b) =>(byte) (a ^ b)).ToArray();
         byte[] tempArray=new byte[x.length];
         for (int i=0;i<x.length;i++){
-           tempArray[i]= (byte) (x[i]^y[i]);
+            tempArray[i]= (byte) (x[i]^y[i]);
         }
         return tempArray;
         //LINQ END

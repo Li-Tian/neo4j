@@ -5,7 +5,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.Arrays;
-import java.util.stream.Collectors;
 
 import neo.UInt256;
 import neo.csharp.BitConverter;

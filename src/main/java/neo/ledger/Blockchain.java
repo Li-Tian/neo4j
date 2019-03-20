@@ -1,15 +1,12 @@
 package neo.ledger;
 
-
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -17,14 +14,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 
+import akka.actor.AbstractActor;
 import akka.actor.Props;
 import akka.actor.Terminated;
-import akka.actor.UntypedActor;
 import akka.actor.ActorRef;
 import neo.Fixed8;
-import neo.Helper;
 import neo.NeoSystem;
 import neo.ProtocolSettings;
 import neo.UInt160;
@@ -32,10 +27,8 @@ import neo.UInt256;
 import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
-import neo.csharp.Out;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
-import neo.csharp.Ushort;
 import neo.exception.InvalidOperationException;
 import neo.io.SerializeHelper;
 import neo.io.actors.Idle;
@@ -48,37 +41,28 @@ import neo.network.p2p.LocalNode;
 import neo.network.p2p.TaskManager;
 import neo.network.p2p.payloads.AssetType;
 import neo.network.p2p.payloads.Block;
-import neo.network.p2p.payloads.ClaimTransaction;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.ConsensusPayload;
-import neo.network.p2p.payloads.EnrollmentTransaction;
 import neo.network.p2p.payloads.Header;
-import neo.network.p2p.payloads.InvocationTransaction;
 import neo.network.p2p.payloads.IssueTransaction;
 import neo.network.p2p.payloads.MinerTransaction;
-import neo.network.p2p.payloads.PublishTransaction;
 import neo.network.p2p.payloads.RegisterTransaction;
 import neo.network.p2p.payloads.StateDescriptor;
-import neo.network.p2p.payloads.StateTransaction;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionOutput;
-import neo.network.p2p.payloads.TransactionResult;
 import neo.network.p2p.payloads.TransactionType;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.Snapshot;
 import neo.persistence.Store;
-import neo.plugins.IPersistencePlugin;
 import neo.plugins.Plugin;
 import neo.smartcontract.Contract;
-import neo.smartcontract.ApplicationEngine;
-import neo.smartcontract.TriggerType;
 import neo.vm.OpCode;
 
 /**
  * The core Actor of blockChain
  */
-public class Blockchain extends UntypedActor {
+public class Blockchain extends AbstractActor {
 
     public class Register {
     }
@@ -330,14 +314,6 @@ public class Blockchain extends UntypedActor {
         return memPool;
     }
 
-    public boolean containsBlock(UInt256 hash) {
-        TR.enter();
-        if (block_cache.containsKey(hash)) {
-            return TR.exit(true);
-        }
-        return TR.exit(getStore().containsBlock(hash));
-    }
-
     public boolean containsTransaction(UInt256 hash) {
         TR.enter();
         if (memPool.containsKey(hash)) {
@@ -354,29 +330,6 @@ public class Blockchain extends UntypedActor {
         TR.exit();
     }
 
-    public Block getBlock(UInt256 hash) {
-        TR.enter();
-        Block block = block_cache.get(hash);
-        if (block != null) {
-            return TR.exit(block);
-        }
-        return TR.exit(getStore().getBlock(hash));
-    }
-
-    /**
-     * Query block hash by block index
-     *
-     * @param index block index
-     * @return block hash
-     */
-    public UInt256 getBlockHash(Uint index) {
-        TR.enter();
-        if (header_index.size() <= index.intValue()) {
-            return TR.exit(null);
-        }
-        return TR.exit(header_index.get(index.intValue()));
-    }
-
     public static UInt160 getConsensusAddress(ECPoint[] validators) {
         TR.enter();
         return TR.exit(UInt160.parseToScriptHash(Contract.createMultiSigRedeemScript(validators.length - (validators.length - 1) / 3, validators)));
@@ -385,15 +338,6 @@ public class Blockchain extends UntypedActor {
     public Snapshot getSnapshot() {
         TR.enter();
         return TR.exit(getStore().getSnapshot());
-    }
-
-    public Transaction getTransaction(UInt256 hash) {
-        TR.enter();
-        Out<Transaction> transaction = new Out<>();
-        if (memPool.tryGetValue(hash, transaction)) {
-            return TR.exit(transaction.get());
-        }
-        return TR.exit(getStore().getTransaction(hash));
     }
 
     private void onImport(Block[] blocks) {
@@ -407,7 +351,7 @@ public class Blockchain extends UntypedActor {
                 throw new InvalidOperationException();
             }
             persist(block);
-            saveHeaderHashList();
+            saveHeaderHashList(null);
         }
         sender().tell(new ImportCompleted(), self());
         TR.exit();
@@ -469,14 +413,14 @@ public class Blockchain extends UntypedActor {
                 // Relay most recent 2 blocks persisted
 
                 if (blockToPersist.index.add(new Uint(100)).intValue() >= header_index.size()) {
-                    system.localNode.tell(new LocalNode.relayDirectly() {
+                    system.localNode.tell(new LocalNode.RelayDirectly() {
                         {
                             inventory = blockToPersist;
                         }
                     }, self());
                 }
             }
-            saveHeaderHashList();
+            saveHeaderHashList(null);
 
             LinkedList<Block> unverifiedBlocks = block_cache_unverified.get(height().add(Uint.ONE));
             if (unverifiedBlocks == null) {
@@ -556,7 +500,7 @@ public class Blockchain extends UntypedActor {
         saveHeaderHashList(snapshot);
         snapshot.commit();
         updateCurrentSnapshot();
-        system.taskManager.tell(new TaskManager.headerTaskCompleted(), sender());
+        system.taskManager.tell(new TaskManager.HeaderTaskCompleted(), sender());
         TR.exit();
     }
 
@@ -586,14 +530,14 @@ public class Blockchain extends UntypedActor {
             {
                 inventory = transaction;
             }
-        });
+        }, self());
         return TR.exit(RelayResultReason.Succeed);
     }
 
     private void onPersistCompleted(Block inputBlock) {
         TR.enter();
-        block_cache.remove(block.hash());
-        memPool.updatePoolForBlockPersisted(block, currentSnapshot.get());
+        block_cache.remove(inputBlock.hash());
+        memPool.updatePoolForBlockPersisted(inputBlock, currentSnapshot.get());
         PersistCompleted completed = new PersistCompleted() {
             {
                 block = inputBlock;
@@ -607,28 +551,27 @@ public class Blockchain extends UntypedActor {
     }
 
     @Override
-    public void onReceive(Object message) {
+    public Receive createReceive() {
         TR.enter();
-        if (message instanceof Register) {
+        return TR.exit(receiveBuilder().match(Register.class, message -> {
             onRegister();
-        } else if (message instanceof Import) {
-            onImport(((Import) message).blocks);
-        } else if (message instanceof Header[]) {
-            onNewHeaders((Header[]) message);
-        } else if (message instanceof Block) {
-            sender().tell(onNewBlock((Block) message), self());
-        } else if (message instanceof Transaction) {
-            sender().tell(onNewTransaction((Transaction) message), self());
-        } else if (message instanceof ConsensusPayload) {
-            sender().tell(onNewConsensus((ConsensusPayload) message), self());
-        } else if (message instanceof Idle) {
+        }).match(Import.class, message -> {
+            onImport(message.blocks);
+        }).match(Header[].class, message -> {
+            onNewHeaders(message);
+        }).match(Block.class, message -> {
+            sender().tell(onNewBlock(message), self());
+        }).match(Transaction.class, message -> {
+            sender().tell(onNewTransaction(message), self());
+        }).match(ConsensusPayload.class, message -> {
+            sender().tell(onNewConsensus(message), self());
+        }).match(Idle.class, message -> {
             if (memPool.reVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot.get())) {
                 self().tell(Idle.instance(), ActorRef.noSender());
             }
-        } else if (message instanceof Terminated) {
-            subscribers.remove(((Terminated) message).getActor());
-        }
-        TR.exit();
+        }).match(Terminated.class, message -> {
+            subscribers.remove(message.getActor());
+        }).build());
     }
 
     private void onRegister() {
@@ -639,7 +582,7 @@ public class Blockchain extends UntypedActor {
     }
 
     private void persist(Block block) {
-        TR.enter();
+        /*TR.enter();
         Snapshot snapshot = getSnapshot();
         ArrayList<ApplicationExecuted> all_application_executed = new ArrayList<ApplicationExecuted>();
         snapshot.setPersistingBlock(block);
@@ -764,7 +707,7 @@ public class Blockchain extends UntypedActor {
                         script = tx_publish.script;
                         parameterList = tx_publish.parameterList;
                         returnType = tx_publish.returnType;
-                        contractProperties = (ContractPropertyState) Convert.toByte(tx_publish.needStorage);
+                        contractProperties = new ContractPropertyState ((byte)(tx_publish.needStorage ? 0x01 : 0x00));
                         name = tx_publish.name;
                         codeVersion = tx_publish.codeVersion;
                         author = tx_publish.author;
@@ -776,17 +719,21 @@ public class Blockchain extends UntypedActor {
                 InvocationTransaction tx_invocation = (InvocationTransaction) tx;
                 ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, snapshot.clone(), tx_invocation.gas);
                 engine.loadScript(tx_invocation.script);
-                if (engine.execute()) {
-                    engine.service.commit();
+                if (engine.execute2()) {
+                    engine.getService().commit();
+                }
+                ArrayList<StackItem> items = new ArrayList<StackItem>();
+                for (int i=0, n=engine.resultStack.getCount(); i < n; i++) {
+                    items.add(engine.resultStack.peek(i));
                 }
                 execution_results.add(new ApplicationExecutionResult() {
                     {
                         trigger = TriggerType.Application;
                         scriptHash = UInt160.parseToScriptHash(tx_invocation.script);
                         vmState = engine.state;
-                        gasConsumed = engine.gasConsumed;
-                        stack = engine.resultStack.toArray();
-                        notifications = engine.service.notifications.toArray();
+                        gasConsumed = engine.getGasConsumed();
+                        stack = items.toArray(new StackItem[items.size()]);
+                        notifications = engine.getService().notifications.toArray();
                     }
                 });
             }
@@ -832,7 +779,7 @@ public class Blockchain extends UntypedActor {
         }
         updateCurrentSnapshot();
         onPersistCompleted(block);
-        TR.exit();
+        TR.exit();*/
     }
 
     @Override
@@ -918,6 +865,78 @@ public class Blockchain extends UntypedActor {
 
 
     private ArrayList<UInt256> headerIndex = new ArrayList<>();
+    private final ConcurrentHashMap<UInt256, Block> blockCache = new ConcurrentHashMap<>();
+
+    /**
+     * Query block hash by block index
+     *
+     * @param index block index
+     * @return block hash
+     */
+    public UInt256 getBlockHash(Uint index) {
+        if (headerIndex.size() <= index.intValue()) {
+            return null;
+        }
+        return headerIndex.get(index.intValue());
+    }
+
+    public Uint getHeight() {
+        return currentSnapshot.get().getHeight();
+    }
+
+    public Transaction getTransaction(UInt256 hash) {
+        // TODO waiting for mempool
+//        if (MemPool.TryGetValue(hash, out Transaction transaction))
+//            return trans action;
+        return store.getTransaction(hash);
+    }
+
+    public Block getBlock(UInt256 hash) {
+//        if (block_cache.TryGetValue(hash, out Block block))
+//            return block;
+        return store.getBlock(hash);
+    }
+
+    /**
+     * get current header height
+     *
+     * @return header height
+     */
+    public Uint getHeaderHeight() {
+        return new Uint(headerIndex.size() - 1);
+    }
+
+
+    /**
+     * Check if the blockchain contain the block with the specific block hash
+     *
+     * @param hash block hash
+     * @return true if contains, else false
+     */
+    public boolean containsBlock(UInt256 hash) {
+        if (blockCache.containsKey(hash)) {
+            return true;
+        }
+        return store.containsBlock(hash);
+    }
+
+    /**
+     * get the hash of current block
+     *
+     * @return hash of current block
+     */
+    public UInt256 getCurrentBlockHash() {
+        return currentSnapshot.get().getCurrentBlockHash();
+    }
+
+    /**
+     * get the hash of current header
+     *
+     * @return hash of current header
+     */
+    public UInt256 getCurrentHeaderHash() {
+        return headerIndex.get(headerIndex.size() - 1);
+    }
 
     public static void processAccountStateDescriptor(StateDescriptor descriptor, Snapshot snapshot) {
         TR.enter();

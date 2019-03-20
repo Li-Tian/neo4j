@@ -1,20 +1,25 @@
 package neo.network.p2p.payloads;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.exception.DeserializeFailedException;
 import neo.exception.FormatException;
 import neo.log.notr.TR;
+import neo.network.p2p.IpHelper;
 
 /**
  * The node address and the recent active time
  */
 public class NetworkAddressWithTime implements ISerializable {
 
-//    TODO waiting for network
 
     /**
      * The node type constant: the normal network node. There are many types of nodes in the Bitcoin
@@ -36,8 +41,7 @@ public class NetworkAddressWithTime implements ISerializable {
     /**
      * The address info of node, including the IP address and port
      */
-    // TODO java
-//    public IPEndPoint EndPoint;
+    public InetSocketAddress endPoint;
 
     /**
      * Get the length of data when transfer
@@ -59,9 +63,10 @@ public class NetworkAddressWithTime implements ISerializable {
         TR.enter();
         writer.writeUint(timestamp);
         writer.writeUlong(services);
+        // C# code:  writer.Write(EndPoint.Address.MapToIPv6().GetAddressBytes());
+        writer.write(IpHelper.toIPv6Bytes(endPoint.getAddress()));
+        writer.writeUshort(new Ushort(endPoint.getPort()));
         TR.exit();
-//        writer.Write(EndPoint.Address.MapToIPv6().GetAddressBytes());
-//        writer.write(BitConverter.getBytes((ushort) EndPoint.Port).Reverse().ToArray());
     }
 
 
@@ -77,29 +82,35 @@ public class NetworkAddressWithTime implements ISerializable {
         services = reader.readUlong();
         byte[] data = reader.readFully(16);
         if (data.length != 16) throw new FormatException();
-        TR.exit();
         // C# code
-        //        IPAddress address = new IPAddress(data).Unmap();
-        //        data = reader.ReadBytes(2);
-        //        if (data.Length != 2) throw new FormatException();
-        //        ushort port = data.Reverse().ToArray().ToUInt16(0);
-        //        EndPoint = new IPEndPoint(address, port);
+        try {
+            // ipv6 -> ipv4
+            // C# code: IPAddress address = new IPAddress(data).Unmap();
+            InetAddress address = InetAddress.getByAddress(data);
+            address = IpHelper.toIPv4(address);
+            Ushort port = reader.readUshort();
+            endPoint = new InetSocketAddress(address, port.intValue());
+        } catch (UnknownHostException e) {
+            TR.error(e);
+            throw new DeserializeFailedException("parse IPAddress failed");
+        }
+        TR.exit();
     }
 
     /**
-     * Create a networkandaddressTime object
+     * Create a NetworkAddressWithTime object
      *
-//     * @param endpoint  address information
+     * @param endPoint  address information
      * @param services  service type
      * @param timestamp The recent activity time
      * @return an addressWithTime object
      */
-    public static NetworkAddressWithTime create(Ulong services, Uint timestamp) {
+    public static NetworkAddressWithTime create(InetSocketAddress endPoint, Ulong services, Uint timestamp) {
         TR.enter();
         NetworkAddressWithTime time = new NetworkAddressWithTime();
         time.timestamp = timestamp;
         time.services = services;
-        //        time.endpoint = endpoint;
+        time.endPoint = endPoint;
         return TR.exit(time);
     }
 }

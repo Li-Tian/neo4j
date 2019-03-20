@@ -20,7 +20,9 @@ public class TransactionBuilder {
      * @param <T>       specific transaction
      */
     protected static <T extends Transaction> void register(TransactionType type, Supplier<T> generator) {
-        map.put(type, generator);
+        if (!map.containsKey(type)) {
+            map.put(type, generator);
+        }
     }
 
     /**
