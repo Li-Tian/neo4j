@@ -1,6 +1,5 @@
 package neo.Wallets.NEP6;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import neo.UInt160;

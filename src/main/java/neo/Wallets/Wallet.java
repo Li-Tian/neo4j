@@ -6,11 +6,8 @@ import java.math.BigInteger;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -18,15 +15,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.swing.*;
-
 import neo.Fixed8;
-import neo.UInt256;
 import neo.UInt160;
+import neo.UInt256;
 import neo.UIntBase;
 import neo.Wallets.SQLite.Version;
-import neo.cryptography.*;
 import neo.cryptography.Helper;
+import neo.cryptography.SCrypt;
 import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
@@ -46,12 +41,11 @@ import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
 import neo.smartcontract.ApplicationEngine;
 import neo.smartcontract.Contract;
+import neo.smartcontract.ContractParametersContext;
 import neo.smartcontract.EventHandler;
 import neo.vm.OpCode;
 import neo.vm.ScriptBuilder;
 import neo.vm.VMState;
-
-import static neo.network.p2p.payloads.StateType.Account;
 
 /**
  * @author doubi.liu
@@ -88,7 +82,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
 
     public abstract WalletAccount getAccount(UInt160 scriptHash);
 
-    public abstract Iterable<WalletAccount> getAccounts();
+    public abstract Iterable<? extends WalletAccount> getAccounts();
 
     public abstract Iterable<Coin> getCoins(Iterable<UInt160> accounts);
 
@@ -489,8 +483,11 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                     Value = p.Unspents.Sum(q => q.Output.Value)
         });*/
 
-
-        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum=null;
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum=pay_coins.values()
+                .stream().map(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(p
+                .getKey(), Arrays.asList(p.getValue()).stream().map(q -> q.output.value).reduce
+                ((x, y) -> Fixed8.add(x, y)).get()))
+                .collect(Collectors.toMap((e) -> {return e.getKey();}, (e) -> {return e;}));
         /*
         Map<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> input_sum = pay_coins.values()
                 .stream().flatMap(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(
@@ -546,6 +543,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
             tx.outputs = outputs_new.toArray(new TransactionOutput[0]);
             return tx;
         }
+        return tx;
     }
 
 
@@ -616,39 +614,11 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                     Value = p.Unspents.Sum(q => q.Output.Value)
         });*/
 
-
-        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum=null;
-
-
-        /*
-        Map<UInt256, List<AbstractMap.SimpleEntry<UInt256, Fixed8>>> input_sum = pay_coins.values()
-                .stream().flatMap(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(
-                        p.getKey(), Arrays.asList(p.getValue()).stream().map(q -> q.output.value))
-                ).collect(Collectors.toMap((e) -> {
-                    return e.getKey();
-                }, (e) -> {
-                    return e;
-                }));
-
-
-        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum = pay_coins.values()
-                .stream().flatMap(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(p.getKey(),
-                        Arrays.asList(p.getValue()).stream()
-                                .map(q -> q.output.value).reduce(Fixed8.ZERO, (x, y) -> Fixed8.add(x,
-                                y))))
-                .collect(Collectors.toMap((e) -> {
-                    return e.getKey();
-                }, (e) -> {
-                    return e;
-                }))
-                .ToDictionary(p -> p.assetId, p ->
-                        new
-        {
-            p.AssetId,
-                    Value = p.Unspents.Sum(q -> q.Output.Value)
-        });
-
-        */
+        Map<UInt256, AbstractMap.SimpleEntry<UInt256, Fixed8>> input_sum=pay_coins.values()
+                .stream().map(p -> new AbstractMap.SimpleEntry<UInt256, Fixed8>(p
+                        .getKey(), Arrays.asList(p.getValue()).stream().map(q -> q.output.value).reduce
+                        ((x, y) -> Fixed8.add(x, y)).get()))
+                .collect(Collectors.toMap((e) -> {return e.getKey();}, (e) -> {return e;}));
 
 
         //LINQ END
@@ -676,6 +646,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
             tx.outputs = outputs_new.toArray(new TransactionOutput[0]);
             return tx;
         }
+        return tx;
     }
 
 
@@ -801,11 +772,11 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                         BigInteger change = sum.subtract(output.value.toBigInteger());
                         if (change.intValue() > 0) value = value.subtract(change);
                     }
-                    neo.VM.Helper.emitAppCall(sb, (UInt160)output.assetId, "transfer", balances
+                    neo.VM.Helper.emitAppCall(sb, (UInt160) output.assetId, "transfer", balances
                             .get(i)
                             .getKey
                             //// TODO: 2019/3/20 验证account是否是scriptHash
-                            (), output.scriptHash, value);
+                                    (), output.scriptHash, value);
                     sb.emit(OpCode.THROWIFNOT);
                 }
                 //LINQ END
@@ -831,7 +802,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         if (tx instanceof InvocationTransaction) {
             Transaction itx = tx;
             ApplicationEngine engine = ApplicationEngine.run(((InvocationTransaction) itx)
-                    .script, itx,null,false,null);
+                    .script, itx, null, false, null);
             if (engine.state.hasFlag(VMState.FAULT)) return null;
 
             tx = new InvocationTransaction();
@@ -886,7 +857,6 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         } else {
             //LINQ START
             //UInt160[] accounts = from == null ? GetAccounts().Where(p => !p.Lock && !p.WatchOnly).Select(p => p.ScriptHash).ToArray() : new[] { from };
-
             UInt160[] accounts = (from == null) ? StreamSupport.stream(getAccounts().spliterator
                     (), false).filter(p -> !p.lock && !p.watchOnly()).map(p -> p.scriptHash).toArray(UInt160[]::new)
                     : new UInt160[]{from};
@@ -968,8 +938,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                     }
                     neo.VM.Helper.emitAppCall(sb, (UInt160) output.assetId, "transfer", balances.get(i)
                             .getKey
-                           //// TODO: 2019/3/20
-                            (), output.scriptHash, value);
+                            //// TODO: 2019/3/20
+                                    (), output.scriptHash, value);
                     sb.emit(OpCode.THROWIFNOT);
                 }
                 //LINQ END
@@ -995,7 +965,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         if (tx instanceof InvocationTransaction) {
             Transaction itx = tx;
             ApplicationEngine engine = ApplicationEngine.run(((InvocationTransaction) itx)
-                    .script, itx,null,false,null);
+                    .script, itx, null, false, null);
             if (engine.state.hasFlag(VMState.FAULT)) return null;
 
             tx = new InvocationTransaction();
@@ -1010,21 +980,24 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         return tx;
     }
 
-/*
     public boolean sign(ContractParametersContext context) {
         boolean fSuccess = false;
-        for (UInt160 scriptHash : context.scriptHashes) {
+        for (UInt160 scriptHash : context.scriptHashes()) {
             WalletAccount account = getAccount(scriptHash);
-            if (account ?.hasKey() != true){
+            if (account==null){
                 continue;
+            }else{
+                if (account.hasKey()!=true){
+                    continue;
+                }
             }
             KeyPair key = account.getKey();
-            byte[] signature = context.verifiable.Sign(key);
+            byte[] signature = neo.Wallets.Helper.sign(context.verifiable,key);
             fSuccess |= context.addSignature(account.contract, key.publicKey, signature);
         }
         return fSuccess;
     }
-*/
+
 
     public abstract boolean verifyPassword(String password);
 

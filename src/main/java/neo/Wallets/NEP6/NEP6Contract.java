@@ -3,17 +3,12 @@ package neo.Wallets.NEP6;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParameterList;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import neo.csharp.BitConverter;
 import neo.smartcontract.Contract;
 import neo.smartcontract.ContractParameterType;
-import neo.smartcontract.Helper;
-
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.name;
 
 /**
  * @author doubi.liu

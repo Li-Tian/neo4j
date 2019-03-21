@@ -1,14 +1,12 @@
 package neo.Wallets;
 
-import org.bouncycastle.math.ec.ECCurve;
-
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.Arrays;
 
 import neo.UInt160;
-import neo.cryptography.*;
 import neo.cryptography.Helper;
+import neo.cryptography.SCrypt;
 import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.smartcontract.Contract;

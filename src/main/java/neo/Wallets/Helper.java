@@ -1,7 +1,5 @@
 package neo.Wallets;
 
-import java.util.Arrays;
-
 import neo.ProtocolSettings;
 import neo.UInt160;
 import neo.cryptography.Crypto;

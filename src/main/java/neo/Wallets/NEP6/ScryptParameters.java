@@ -2,8 +2,6 @@ package neo.Wallets.NEP6;
 
 import com.google.gson.JsonObject;
 
-import com.sun.xml.internal.ws.api.streaming.XMLStreamReaderFactory;
-
 /**
  * @author doubi.liu
  * @version V1.0
