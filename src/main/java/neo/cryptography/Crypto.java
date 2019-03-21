@@ -71,7 +71,7 @@ public class Crypto implements ICrypto {
      * @param privateKey private key
      * @return signature data
      */
-    public byte[] sign(byte[] message, byte[] privateKey) {
+    public byte[] sign(byte[] message, byte[] privateKey, byte[] publicKey) {
         TR.enter();
         ECDSASigner signer = new ECDSASigner();
         BigInteger d = new BigInteger(1, privateKey);
