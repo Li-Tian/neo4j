@@ -5,8 +5,8 @@ import org.iq80.leveldb.ReadOptions;
 import org.iq80.leveldb.WriteBatch;
 import org.iq80.leveldb.WriteOptions;
 
+import java.io.File;
 import java.nio.file.Path;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -15,8 +15,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
-import java.util.TreeSet;
 
 import neo.UInt160;
 import neo.UInt256;
@@ -62,9 +60,11 @@ public class WalletIndexer implements IDisposable {
     }
 
     public WalletIndexer(String path) {
-        path = Path.getFullPath(path);
-        Directory.CreateDirectory(path);
-        db = DB.Open(path, new Options {
+        File tempFile=new File(path);
+        path = tempFile.getAbsolutePath();
+        tempFile.mkdir();
+
+        db = DB.open(path, new Options {
             CreateIfMissing = true
         });
         if (db.TryGet(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix.SYS_Version), out Slice value) && Version.TryParse(value.ToString(), out Version version) && version >= Version.Parse("2.5.4")) {
@@ -311,7 +311,39 @@ public class WalletIndexer implements IDisposable {
         }
     }
 
-    public void registerAccounts(Iterable<UInt160> accounts, Uint height =0) {
+    public void registerAccounts(Iterable<UInt160> accounts, Uint height) {
+        synchronized (SyncRoot) {
+            boolean index_exists = true;
+            HashSet<UInt160> index = indexes.getOrDefault(height, null);
+            if (index == null) {
+                index_exists=false;
+                index = new HashSet<UInt160>();
+            }
+            for (UInt160 account : accounts)
+                if (!accounts_tracked.containsKey(account)) {
+                    index.add(account);
+                    accounts_tracked.put(account, new HashSet<CoinReference>());
+                }
+            if (index.size() > 0) {
+                WriteBatch batch = new WriteBatch();
+                byte[] groupId;
+                if (!index_exists) {
+                    indexes.put(height, index);
+                    groupId = getGroupId();
+                    batch.put(SliceBuilder.Begin(DataEntryPrefix.IX_Group).Add(height), groupId);
+                } else {
+                    groupId = db.get(ReadOptions.Default, SliceBuilder.Begin(DataEntryPrefix
+                            .IX_Group).Add(height)).ToArray();
+                }
+                batch.put(SliceBuilder.Begin(DataEntryPrefix.IX_Accounts).Add(groupId), index
+                        .ToArray().ToByteArray());
+                db.write(WriteOptions.Default, batch);
+            }
+        }
+    }
+
+    public void registerAccounts(Iterable<UInt160> accounts) {
+        Uint height =Uint.ZERO;
         synchronized (SyncRoot) {
             boolean index_exists = true;
             HashSet<UInt160> index = indexes.getOrDefault(height, null);
