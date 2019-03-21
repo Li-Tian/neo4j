@@ -4,11 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import com.sun.jna.Library;
-import com.sun.jna.Native;
-import com.sun.jna.Platform;
-
-import java.awt.datatransfer.Clipboard;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
@@ -29,8 +24,6 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.security.auth.login.Configuration;
 
 import neo.NeoSystem;
 import neo.log.notr.TR;
@@ -57,7 +50,9 @@ public abstract class Plugin {
     private static NeoSystem system;
 
     protected void setSystem(NeoSystem inputSystem) {
+        TR.enter();
         system = inputSystem;
+        TR.exit();
     }
 
     public static ArrayList<IPolicyPlugin> getPolicies() {
@@ -133,9 +128,9 @@ public abstract class Plugin {
     }
 
     public Plugin() {
+        TR.enter();
         if (!hasBeenInitialized) {
             try {
-                TR.enter();
                 Path toWatch = Paths.get(pluginsPath);
                 if (toWatch == null) {
                     TR.exit();
@@ -225,7 +220,7 @@ public abstract class Plugin {
         TR.exit();
     }
 
-    protected JsonArray GetConfiguration() {
+    protected JsonArray getConfiguration() {
         try {
             TR.enter();
             JsonParser parser = new JsonParser();
@@ -238,9 +233,13 @@ public abstract class Plugin {
     }
 
     public static void loadPlugins(NeoSystem system) {
+        TR.enter();
         Plugin.system = system;
         File pluginFolder = new File(pluginsPath);
-        if (!pluginFolder.exists()) return;
+        if (!pluginFolder.exists()) {
+            TR.exit();
+            return;
+        }
         for (File file : pluginFolder.listFiles(new FileFilter() {
             @Override
             public boolean accept(File pathname) {
@@ -258,6 +257,7 @@ public abstract class Plugin {
                 throw new RuntimeException(e);
             }
         }
+        TR.exit();
     }
 
     protected void log(String message, LogLevel level) {
@@ -301,7 +301,7 @@ public abstract class Plugin {
         return TR.exit(false);
     }
 
-    protected static void SuspendNodeStartup() {
+    protected static void suspendNodeStartup() {
         suspend.incrementAndGet();
         system.suspendNodeStartup();
     }
