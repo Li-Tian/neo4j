@@ -2,15 +2,32 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-import neo.AbstractBlockchainTest;
+import java.io.IOException;
+
+import neo.log.tr.TR;
+import neo.persistence.AbstractBlockchainTest;
 import neo.UInt160;
 import neo.Utils;
 import neo.cryptography.ecc.ECC;
 
 public class EnrollmentTransactionTest  extends AbstractBlockchainTest {
+
+    @BeforeClass
+    public static void setUp() throws IOException {
+        TR.debug("----  EnrollmentTransactionTest setup......");
+        AbstractBlockchainTest.setUp();
+    }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        TR.debug("----  EnrollmentTransactionTest tearDown......");
+        AbstractBlockchainTest.tearDown();
+    }
 
     @Test
     public void getScriptHash() {

@@ -76,7 +76,7 @@ public class LocalNode extends Peer {
     public static final String USER_AGENT = String.format("/neo-java:/2.9.1");
 
 
-    private static LocalNode singleton;
+    protected static LocalNode singleton;
 
     /**
      * Get single LocalNode
@@ -103,12 +103,15 @@ public class LocalNode extends Peer {
      *                                   throwing an exception when creating the second instance
      */
     public LocalNode(NeoSystem system) {
+        this.system = system;
+        init();
+    }
+
+    protected void init() {
         synchronized (lockObj) {
             if (singleton != null)
                 throw new InvalidOperationException();
-            this.system = system;
             singleton = this;
-
             //TODO 处理版本问题
             // C# code: UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetVersion()}/";
             // USER_AGENT = String.format("/neo-java:%s/2.9.1");
@@ -281,8 +284,7 @@ public class LocalNode extends Peer {
     private void onRelay(IInventory inventory) {
         if (inventory instanceof Transaction) {
             Transaction transaction = (Transaction) inventory;
-            // TODO waiting for consensus
-            // system.Consensus ?.Tell(transaction);
+            system.consensus.tell(transaction, self());
         }
         system.blockchain.tell(inventory, self());
     }
@@ -349,7 +351,7 @@ public class LocalNode extends Peer {
                 .match(Relay.class, relay -> onRelay(relay.inventory))
                 .match(RelayDirectly.class, relayDirectly -> onRelayDirectly(relayDirectly.inventory))
                 .match(SendDirectly.class, sendDirectly -> onSendDirectly(sendDirectly.inventory))
-                .match(RelayResultReason.class, msg -> { })
+                .match(RelayResultReason.class, null)
                 .build();
     }
 

@@ -60,7 +60,7 @@ public class ClaimTransaction extends Transaction {
      * Deserialize method. Read the claims data in binary reader, other data is not extracted
      *
      * @param reader BinaryReader
-     * @throws FormatException Throws an exception when the transaction version number is not 0, or
+     * @throws FormatException Throws an exception when the transaction VERSION number is not 0, or
      *                         the length of claim data is 0.
      */
     @Override

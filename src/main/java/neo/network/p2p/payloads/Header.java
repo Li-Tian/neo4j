@@ -44,7 +44,7 @@ public class Header extends BlockBase {
      * Serialization, with a fixed 0 at trim
      * <p>fields:</p>
      * <ul>
-     * <li>Version: The version of the state</li>
+     * <li>Version: The VERSION of the state</li>
      * <li>PrevHash: The hash of previous block</li>
      * <li>MerkleRoot: The root of Merkle tree</li>
      * <li>Timestamp: The timestamp</li>

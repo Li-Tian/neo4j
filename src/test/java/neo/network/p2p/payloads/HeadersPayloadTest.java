@@ -1,7 +1,5 @@
 package neo.network.p2p.payloads;
 
-import com.sun.net.httpserver.Headers;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -12,8 +10,6 @@ import neo.UInt256;
 import neo.Utils;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
-
-import static org.junit.Assert.*;
 
 public class HeadersPayloadTest {
 

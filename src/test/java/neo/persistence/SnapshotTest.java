@@ -11,9 +11,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 
-import akka.actor.ActorSystem;
+import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.testkit.TestActorRef;
+import akka.testkit.TestKit;
 import neo.Fixed8;
+import neo.MyNeoSystem;
+import neo.NeoSystem;
 import neo.UInt160;
 import neo.UInt256;
 import neo.cryptography.ecc.ECC;
@@ -30,6 +34,8 @@ import neo.ledger.CoinState;
 import neo.ledger.ContractPropertyState;
 import neo.ledger.ContractState;
 import neo.ledger.HashIndexState;
+import neo.ledger.MemoryPool;
+import neo.ledger.MyBlockchain;
 import neo.ledger.SpentCoin;
 import neo.ledger.SpentCoinState;
 import neo.ledger.TransactionState;
@@ -37,6 +43,7 @@ import neo.ledger.TrimmedBlock;
 import neo.ledger.UnspentCoinState;
 import neo.ledger.ValidatorState;
 import neo.ledger.ValidatorsCountState;
+import neo.log.tr.TR;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.ContractTransaction;
@@ -45,23 +52,56 @@ import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
-import neo.persistence.leveldb.BlockchainDemo;
 import neo.smartcontract.ContractParameterType;
 
 
 public abstract class SnapshotTest {
 
     private Snapshot snapshot;
-    private BlockchainDemo blockchainDemo;
+    private static MyBlockchain blockchain;
+    private static TestKit testKit;
+    private static MyNeoSystem neoSystem;
 
     protected abstract Snapshot init();
+
+    public static class MyBlockchain2 extends MyBlockchain {
+        public MyBlockchain2(NeoSystem system, Store store, ActorRef actorRef) {
+            super(system, store, actorRef);
+        }
+
+        @Override
+        protected void init(NeoSystem system, Store store) {
+            this.system = system;
+            this.store = store;
+            this.memPool = new MemoryPool(system, MemoryPoolMaxTransactions);
+            // 测试环境下，由于akka的创建，可以同时存在多个
+            singleton = this;
+        }
+
+        public static Props props(NeoSystem system, Store store, ActorRef actorRef) {
+            TR.enter();
+            return TR.exit(Props.create(MyBlockchain2.class, system, store, actorRef).withMailbox("blockchain-mailbox"));
+        }
+    }
+
+
+    public static void setUp() {
+        neoSystem = new MyNeoSystem(null, self -> {
+            testKit = new TestKit(self.actorSystem);
+
+            // Synchronous Unit Testing with TestActorRef
+            TestActorRef<MyBlockchain2> blockchainRef = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, null, testKit.testActor()));
+            self.blockchain = blockchainRef;
+            self.localNode = null;
+            self.taskManager = null;
+            self.consensus = null;
+            blockchain = blockchainRef.underlyingActor();
+        });
+    }
 
     @Before
     public void before() throws IOException {
         snapshot = init();
-        ActorSystem system = ActorSystem.create("neosystem");
-        system.actorOf(Props.create(BlockchainDemo.class));
-        blockchainDemo = (BlockchainDemo) BlockchainDemo.singleton();
     }
 
 
@@ -236,19 +276,19 @@ public abstract class SnapshotTest {
         for (int i = 0; i < 20; i++) {
             switch (i) {
                 case 0:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
                     break;
                 case 9:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
                     break;
                 case 19:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff03"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff03"));
                     break;
                 default:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
             }
         }
-        Blockchain.singleton().getBlockHash(new Uint(9));
+        blockchain.getBlockHash(new Uint(9));
 
         // construct tx
         MinerTransaction minerTransaction = new MinerTransaction();
@@ -329,20 +369,20 @@ public abstract class SnapshotTest {
         // cross decrementInterval and systemfee
         spent.delete(minerTransaction.hash());
         snapshot.commit();
-        blockchainDemo.myheaderIndex.clear();
+        blockchain.myheaderIndex.clear();
         for (int i = 0; i < Blockchain.DecrementInterval * 1.5; i++) {
             switch (i) {
                 case 0:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
                     break;
                 case 9:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
                     break;
                 case Blockchain.DecrementInterval + 9:
-                    blockchainDemo.myheaderIndex.add(BlockHsah);
+                    blockchain.myheaderIndex.add(BlockHsah);
                     break;
                 default:
-                    blockchainDemo.myheaderIndex.add(UInt256.Zero);
+                    blockchain.myheaderIndex.add(UInt256.Zero);
             }
         }
         // set spent coin
@@ -375,7 +415,7 @@ public abstract class SnapshotTest {
         Assert.assertEquals(new Fixed8(480302100000l), bonus);
 
         // clear data
-        blockchainDemo.myheaderIndex.clear();
+        blockchain.myheaderIndex.clear();
         tx.delete(minerTransaction.hash());
         spent.delete(minerTransaction.hash());
         blocks.delete(blockState.trimmedBlock.hash());
@@ -602,10 +642,10 @@ public abstract class SnapshotTest {
         for (int i = 0; i < 11; i++) {
             switch (i) {
                 case 10:
-                    blockchainDemo.myheaderIndex.add(blockState.trimmedBlock.hash());
+                    blockchain.myheaderIndex.add(blockState.trimmedBlock.hash());
                     break;
                 default:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
                     break;
             }
         }
@@ -623,7 +663,7 @@ public abstract class SnapshotTest {
 
         // clear block data
         txs.delete(minerTransaction.hash());
-        blockchainDemo.myheaderIndex.clear();
+        blockchain.myheaderIndex.clear();
         blocks.delete(blockState.trimmedBlock.hash());
         snapshot.commit();
     }
@@ -705,10 +745,10 @@ public abstract class SnapshotTest {
         for (int i = 0; i < 20; i++) {
             switch (i) {
                 case 10:
-                    blockchainDemo.myheaderIndex.add(blockState.trimmedBlock.hash());
+                    blockchain.myheaderIndex.add(blockState.trimmedBlock.hash());
                     break;
                 default:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
             }
         }
 
@@ -723,7 +763,7 @@ public abstract class SnapshotTest {
         Assert.assertEquals(blockState.trimmedBlock.hash(), header.hash());
 
         // clear data
-        blockchainDemo.myheaderIndex.clear();
+        blockchain.myheaderIndex.clear();
         blocks.delete(blockState.trimmedBlock.hash());
         snapshot.commit();
     }
@@ -751,13 +791,13 @@ public abstract class SnapshotTest {
         for (int i = 0; i < 20; i++) {
             switch (i) {
                 case 10:
-                    blockchainDemo.myheaderIndex.add(blockState.trimmedBlock.hash());
+                    blockchain.myheaderIndex.add(blockState.trimmedBlock.hash());
                     break;
                 case 11:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
                     break;
                 default:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
                     break;
             }
         }
@@ -769,7 +809,7 @@ public abstract class SnapshotTest {
         Assert.assertEquals(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"), hash);
 
         // clear data
-        blockchainDemo.myheaderIndex.clear();
+        blockchain.myheaderIndex.clear();
         blocks.delete(blockState.trimmedBlock.hash());
         snapshot.commit();
     }
@@ -797,10 +837,10 @@ public abstract class SnapshotTest {
         for (int i = 0; i < 20; i++) {
             switch (i) {
                 case 10:
-                    blockchainDemo.myheaderIndex.add(blockState.trimmedBlock.hash());
+                    blockchain.myheaderIndex.add(blockState.trimmedBlock.hash());
                     break;
                 default:
-                    blockchainDemo.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
+                    blockchain.myheaderIndex.add(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00"));
                     break;
             }
         }
@@ -818,7 +858,7 @@ public abstract class SnapshotTest {
 
 
         // clear data
-        blockchainDemo.myheaderIndex.clear();
+        blockchain.myheaderIndex.clear();
         blocks.delete(blockState.trimmedBlock.hash());
         snapshot.commit();
     }

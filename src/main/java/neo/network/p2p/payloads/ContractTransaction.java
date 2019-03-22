@@ -17,10 +17,10 @@ public class ContractTransaction extends Transaction {
     }
 
     /**
-     * Deserialize method.No data was read.Only verify whether the transaction version number is 0
+     * Deserialize method.No data was read.Only verify whether the transaction VERSION number is 0
      *
      * @param reader BinaryReader
-     * @throws FormatException the transaction version number is not 0
+     * @throws FormatException the transaction VERSION number is not 0
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {

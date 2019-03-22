@@ -38,12 +38,17 @@ public class NeoSystem {
 
     public NeoSystem(Store store) {
         TR.enter();
+        init(store);
+        TR.exit();
+    }
+
+    public void init(Store store) {
         blockchain = actorSystem.actorOf(Blockchain.props(this, store));
         localNode = actorSystem.actorOf(LocalNode.props(this));
         taskManager = actorSystem.actorOf(TaskManager.props(this));
         Plugin.loadPlugins(this);
-        TR.exit();
     }
+
 
     public void dispose() {
         TR.enter();

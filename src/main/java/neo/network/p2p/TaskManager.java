@@ -91,7 +91,7 @@ public class TaskManager extends AbstractActor {
     /**
      * Timer, the interval is 30 seconds to check the task list to executed.
      */
-    private static class Timer {
+    public static class Timer {
     }
 
 

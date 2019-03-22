@@ -29,7 +29,7 @@ public class IssueTransaction extends Transaction {
     /**
      * get system fee
      *
-     * @return 1) if the transaction version equal or more than 1, then the system fee is 0<br/> 2)
+     * @return 1) if the transaction VERSION equal or more than 1, then the system fee is 0<br/> 2)
      * If the issued asset is NEO or Gas, then the system fee is 0 <br/> 3) Otherwise, use the basic
      * transaction fee calculation.
      */
@@ -55,7 +55,7 @@ public class IssueTransaction extends Transaction {
      * Deserilization exclusive data
      *
      * @param reader The binary input reader
-     * @throws FormatException If the version of transactions is larger than 1, then throw
+     * @throws FormatException If the VERSION of transactions is larger than 1, then throw
      *                         exceptions.
      */
     @Override

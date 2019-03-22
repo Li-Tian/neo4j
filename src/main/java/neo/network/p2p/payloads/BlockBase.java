@@ -22,9 +22,9 @@ import neo.log.notr.TR;
 public abstract class BlockBase implements IVerifiable {
 
     /**
-     * Block version
+     * Block VERSION
      */
-    public Uint version;
+    public Uint version = Uint.ZERO;
 
     /**
      * Previous block hash

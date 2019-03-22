@@ -77,7 +77,7 @@ public class ConsensusService extends AbstractActor {
      * @param localNode   local node
      * @param taskManager task manager
      * @param wallet      wallet
-     * @return Akka.Actor.Props
+     * @return Akka.Actor.props
      */
     public static Props props(ActorRef localNode, ActorRef taskManager, Wallet wallet) {
         return Props.create(ConsensusService.class, localNode, taskManager, wallet)

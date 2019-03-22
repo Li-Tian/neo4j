@@ -22,7 +22,7 @@ import neo.smartcontract.Contract;
 public class ConsensusPayload implements IInventory {
 
     /**
-     * Consensus message version
+     * Consensus message VERSION
      */
     public Uint version;
 
@@ -164,7 +164,7 @@ public class ConsensusPayload implements IInventory {
     /**
      * Serialize the unsigned message. It includes the fields as follows:
      * <ul>
-     * <li>Version: consensus message version, current is zero</li>
+     * <li>Version: consensus message VERSION, current is zero</li>
      * <li>PrevHash: the previous block hash</li>
      * <li>BlockIndex: the proposal block index</li>
      * <li>ValidatorIndex: the sender(the Speaker or Delegates) index in the validators array</li>
@@ -202,7 +202,7 @@ public class ConsensusPayload implements IInventory {
     /**
      * Serialize the message. It includes the fields as follows:
      * <ul>
-     * <li>Version: consensus message version, current is zero</li>
+     * <li>Version: consensus message VERSION, current is zero</li>
      * <li>PrevHash: the previous block hash</li>
      * <li>BlockIndex: the proposal block index</li>
      * <li>ValidatorIndex: the sender(the Speaker or Delegates) index in the validators array</li>

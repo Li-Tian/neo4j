@@ -57,7 +57,7 @@ public abstract class Transaction implements IInventory {
     public final TransactionType type;
 
     /**
-     * The version of transaction, which defined in the subclass
+     * The VERSION of transaction, which defined in the subclass
      */
     public byte version;
 

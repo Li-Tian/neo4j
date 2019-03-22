@@ -50,7 +50,7 @@ public class InvocationTransaction extends Transaction {
      * <p>fields:</p>
      * <ul>
      * <li>Script: The script waiting to be executed</li>
-     * <li>Gas: If the version of transaction is larger than 1, then serialize this data</li>
+     * <li>Gas: If the VERSION of transaction is larger than 1, then serialize this data</li>
      * </ul>
      *
      * @param writer The binary output writer
@@ -69,11 +69,11 @@ public class InvocationTransaction extends Transaction {
      * Deserialization function which exclude the data
      *
      * @param reader The binary input reader
-     * @throws FormatException 1. If the transaction version is larger than 1 then throw this
+     * @throws FormatException 1. If the transaction VERSION is larger than 1 then throw this
      *                         exception<br/> 2. The transction script's length is equal to 0<br/>
      *                         3. The gas consumption of smart contract invocation is smaller than
      *                         0.
-     * @note When the version is 0， do not need gas. The default value is 0<br/> When the version is
+     * @note When the VERSION is 0， do not need gas. The default value is 0<br/> When the VERSION is
      * 1, need set the gas <br/>
      */
     @Override

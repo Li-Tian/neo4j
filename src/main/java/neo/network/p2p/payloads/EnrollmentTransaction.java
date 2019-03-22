@@ -62,7 +62,7 @@ public class EnrollmentTransaction extends Transaction {
      * Deserialize method，read publickey from binary reader
      *
      * @param reader BinaryReader
-     * @throws FormatException the transaction version number is not 0
+     * @throws FormatException the transaction VERSION number is not 0
      */
     @Override
     protected void deserializeExclusiveData(BinaryReader reader) {

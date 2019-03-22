@@ -337,7 +337,8 @@ public class ProtocolHandler extends AbstractActor {
 
     private void onMemPoolMessageReceived() {
         // TODO waiting for mempool
-//        foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX, Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
+//        foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX,
+// Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
 //        Context.Parent.Tell(Message.Create("inv", payload));
     }
 
@@ -368,7 +369,7 @@ public class ProtocolHandler extends AbstractActor {
 
     /**
      * ProtocolHandler priority mailbox, high priority commands are: consensus, filteradd,
-     * filterclear, filterload, verack, VERSION, alert(unimplemented). the others are low priority.
+     * filterclear, filterload, verack, version, alert(unimplemented). the others are low priority.
      */
     public static class ProtocolHandlerMailbox extends PriorityMailbox {
 
@@ -431,10 +432,11 @@ public class ProtocolHandler extends AbstractActor {
 
     private void handleMsg(Message msg) {
         if (version == null) {
-            if (!"VERSION".equals(msg.command)) {
+            if (!"version".equals(msg.command)) {
                 throw new ProtocolViolationException();
             }
-            onVersionMessageReceived(SerializeHelper.parse(VersionPayload::new, msg.payload));
+            VersionPayload versionPayload = SerializeHelper.parse(VersionPayload::new, msg.payload);
+            onVersionMessageReceived(versionPayload);
             return;
         }
 

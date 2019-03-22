@@ -1,12 +1,15 @@
 package neo.network.p2p.payloads;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
-import neo.AbstractBlockchainTest;
+import neo.persistence.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.ProtocolSettings;
 import neo.UInt160;
@@ -24,6 +27,16 @@ import neo.ledger.UnspentCoinState;
 import neo.persistence.Snapshot;
 
 public class IssueTransactionTest  extends AbstractBlockchainTest {
+
+    @BeforeClass
+    public static void setUp() throws IOException {
+        AbstractBlockchainTest.setUp();
+    }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        AbstractBlockchainTest.tearDown();
+    }
 
     @Test
     public void getSystemFee() {
