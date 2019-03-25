@@ -137,7 +137,10 @@ public class TaskManager extends AbstractActor {
     }
 
     private void onHeaderTaskCompleted() {
-        if (!sessions.containsKey(sender())) {
+        TR.enter();
+
+        if (!sessions.containsKey(sender())){
+            TR.exit();
             return;
         }
         TaskSession session = sessions.get(sender());
@@ -145,10 +148,13 @@ public class TaskManager extends AbstractActor {
 
         decrementGlobalTask(HeaderTaskHash);
         requestTasks(session);
+        TR.exit();
     }
 
     private void onNewTasks(InvPayload payload) {
+        TR.enter();
         if (!sessions.containsKey(sender())) {
+            TR.exit();
             return;
         }
         TaskSession session = sessions.get(sender());
@@ -158,6 +164,7 @@ public class TaskManager extends AbstractActor {
         if (payload.type == InventoryType.Tx && blockHeight.compareTo(headerHeight) < 0) {
             // sync block first, when the inv is tx
             requestTasks(session);
+            TR.exit();
             return;
         }
         HashSet<UInt256> hashes = new HashSet<>(Arrays.asList(payload.hashes));
@@ -175,6 +182,7 @@ public class TaskManager extends AbstractActor {
         hashes.remove(globalTasks.keySet());
         if (hashes.isEmpty()) {
             requestTasks(session);
+            TR.exit();
             return;
         }
 
@@ -186,9 +194,12 @@ public class TaskManager extends AbstractActor {
         for (InvPayload invPayload : InvPayload.createGroup(payload.type, hashes)) {
             sender().tell(Message.create("getdata", invPayload), self());
         }
+        TR.exit();
     }
 
     private void onRegister(VersionPayload version) {
+        TR.enter();
+
         ActorRef sender = sender();
         context().watch(sender);
 
@@ -196,9 +207,13 @@ public class TaskManager extends AbstractActor {
         sessions.put(sender, session);
 
         requestTasks(session);
+
+        TR.exit();
     }
 
     private void onRestartTasks(InvPayload payload) {
+        TR.enter();
+
         // restart to request those inventory data
         knownHashes.removeAll(Arrays.asList(payload.hashes));
         for (UInt256 hash : payload.hashes) {
@@ -207,9 +222,13 @@ public class TaskManager extends AbstractActor {
         for (InvPayload group : InvPayload.createGroup(payload.type, payload.hashes)) {
             system.localNode.tell(Message.create("getdata", group), self());
         }
+
+        TR.exit();
     }
 
     private void onTaskCompleted(UInt256 hash) {
+        TR.enter();
+
         knownHashes.add(hash);
         globalTasks.remove(hash);
         for (TaskSession ms : sessions.values()) {
@@ -220,11 +239,15 @@ public class TaskManager extends AbstractActor {
             session.tasks.remove(hash);
             requestTasks(session);
         }
+
+        TR.exit();
     }
 
 
     //    MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void decrementGlobalTask(UInt256 hash) {
+        TR.enter();
+
         if (globalTasks.containsKey(hash)) {
             int count = globalTasks.get(hash);
 
@@ -234,25 +257,31 @@ public class TaskManager extends AbstractActor {
                 globalTasks.put(hash, count - 1);
             }
         }
+        TR.exit();
     }
 
     //    MethodImpl(MethodImplOptions.AggressiveInlining)]
     private boolean incrementGlobalTask(UInt256 hash) {
+        TR.enter();
+
         if (!globalTasks.containsKey(hash)) {
             globalTasks.put(hash, 1);
-            return true;
+            return TR.exit(true);
         }
         int count = globalTasks.get(hash);
         if (count >= MaxConcurrentTasks) {
-            return false;
+            return TR.exit(false);
         }
 
         globalTasks.put(hash, count + 1);
-        return true;
+        return TR.exit(true);
     }
 
     private void onTerminated(ActorRef actor) {
+        TR.enter();
+
         if (!sessions.containsKey(actor)) {
+            TR.exit();
             return;
         }
         TaskSession session = sessions.get(actor);
@@ -260,9 +289,11 @@ public class TaskManager extends AbstractActor {
         for (UInt256 hash : session.tasks.keySet()) {
             decrementGlobalTask(hash);
         }
+        TR.exit();
     }
 
     private void onTimer() {
+        TR.enter();
         for (TaskSession session : sessions.values()) {
             for (Map.Entry<UInt256, Date> entry : session.tasks.entrySet()) {
                 // C# code: if (DateTime.UtcNow - task.Value > TaskTimeout
@@ -275,6 +306,7 @@ public class TaskManager extends AbstractActor {
         for (TaskSession session : sessions.values()) {
             requestTasks(session);
         }
+        TR.exit();
     }
 
     /**
@@ -283,7 +315,10 @@ public class TaskManager extends AbstractActor {
      * @param session task session
      */
     private void requestTasks(TaskSession session) {
+        TR.enter();
+
         if (session.hasTask()) {
+            TR.exit();
             return;
         }
 
@@ -308,6 +343,7 @@ public class TaskManager extends AbstractActor {
                 for (InvPayload group : InvPayload.createGroup(InventoryType.Block, hashes)) {
                     session.remoteNode.tell(Message.create("getdata", group), self());
                 }
+                TR.exit();
                 return;
             }
         }
@@ -336,6 +372,7 @@ public class TaskManager extends AbstractActor {
             }
             session.remoteNode.tell(Message.create("getblocks", GetBlocksPayload.create(hash)), self());
         }
+        TR.exit();
     }
 
     /**
@@ -350,20 +387,22 @@ public class TaskManager extends AbstractActor {
 
         @Override
         protected boolean isHighPriority(Object message) {
+            TR.enter();
+
             if (message instanceof TaskManager.Register) {
-                return true;
+                return TR.exit(true);
             }
 
             if (message instanceof TaskManager.NewTasks) {
                 NewTasks tasks = (NewTasks) message;
                 InventoryType type = tasks.payload.type;
                 if (type == InventoryType.Block || type == InventoryType.Consensus) {
-                    return true;
+                    return TR.exit(true);
                 } else {
-                    return false;
+                    return TR.exit(false);
                 }
             }
-            return false;
+            return TR.exit(false);
         }
     }
 
@@ -375,7 +414,8 @@ public class TaskManager extends AbstractActor {
      * @return RemoteNode object
      */
     public static Props props(NeoSystem system) {
-        return Props.create(TaskManager.class, system).withMailbox("task-manager-mailbox");
+        TR.enter();
+        return TR.exit(Props.create(TaskManager.class, system).withMailbox("task-manager-mailbox"));
     }
 
 
@@ -386,10 +426,14 @@ public class TaskManager extends AbstractActor {
      */
     @Override
     public void postStop() throws Exception {
+        TR.enter();
+
         if (timer != null && !timer.isCancelled()) {
             timer.cancel();
         }
         super.postStop();
+
+        TR.exit();
     }
 
     /**
@@ -408,7 +452,9 @@ public class TaskManager extends AbstractActor {
      */
     @Override
     public Receive createReceive() {
-        return receiveBuilder()
+        TR.enter();
+
+        return TR.exit(receiveBuilder()
                 .match(Register.class, register -> onRegister(register.version))
                 .match(NewTasks.class, tasks -> onNewTasks(tasks.payload))
                 .match(TaskCompleted.class, completed -> onTaskCompleted(completed.hash))
@@ -416,7 +462,7 @@ public class TaskManager extends AbstractActor {
                 .match(RestartTasks.class, restartTasks -> onRestartTasks(restartTasks.payload))
                 .match(Timer.class, timer -> onTimer())
                 .match(Terminated.class, terminated -> onTerminated(terminated.actor()))
-                .build();
+                .build());
     }
 
 }

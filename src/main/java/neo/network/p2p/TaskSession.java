@@ -6,6 +6,7 @@ import java.util.HashSet;
 
 import akka.actor.ActorRef;
 import neo.UInt256;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.VersionPayload;
 
 /**
@@ -50,13 +51,15 @@ public class TaskSession {
      * has task of synchronized blocks
      */
     public boolean hasTask() {
-        return !tasks.isEmpty();
+        TR.enter();
+        return TR.exit(!tasks.isEmpty());
     }
 
     /**
      * has task of synchronized headers
      */
     public boolean headerTask() {
-        return tasks.containsKey(UInt256.Zero);
+        TR.enter();
+        return TR.exit(tasks.containsKey(UInt256.Zero));
     }
 }

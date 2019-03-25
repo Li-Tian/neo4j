@@ -100,20 +100,26 @@ public class ProtocolHandler extends AbstractActor {
 
 
     private void onAddrMessageReceived(AddrPayload payload) {
+        TR.enter();
         Peer.Peers peers = new Peer.Peers() {{
             endPoints = Arrays.stream(payload.addressList)
                     .map(p -> p.endPoint)
                     .collect(Collectors.toList());
         }};
         system.localNode.tell(peers, self());
+        TR.exit();
     }
 
     private void onFilterAddMessageReceived(FilterAddPayload payload) {
-        if (bloomFilter != null)
+        TR.enter();
+        if (bloomFilter != null) {
             bloomFilter.add(payload.data);
+        }
+        TR.exit();
     }
 
     private void onFilterClearMessageReceived() {
+        TR.enter();
         bloomFilter = null;
         SetFilter setFilter = new SetFilter() {
             {
@@ -121,17 +127,23 @@ public class ProtocolHandler extends AbstractActor {
             }
         };
         context().parent().tell(setFilter, self());
+
+        TR.exit();
     }
 
     private void onFilterLoadMessageReceived(FilterLoadPayload payload) {
+        TR.enter();
         bloomFilter = new BloomFilter(payload.filter.length * 8, payload.k, payload.tweak, payload.filter);
         SetFilter filter = new SetFilter() {{
             filter = bloomFilter;
         }};
         context().parent().tell(filter, self());
+
+        TR.exit();
     }
 
     private void onGetAddrMessageReceived() {
+        TR.enter();
         Collection<RemoteNode> peers = LocalNode.singleton().getRemoteNodes().stream()
                 .filter(p -> p.getListenerPort() > 0)
                 .collect(Collectors.groupingBy(p -> p.remote.getAddress()))
@@ -153,14 +165,20 @@ public class ProtocolHandler extends AbstractActor {
                 .map(p -> NetworkAddressWithTime.create(p.getListener(), p.version.services, p.version.timestamp))
                 .toArray(NetworkAddressWithTime[]::new);
         if (networkAddresses.length == 0) {
+            TR.exit();
             return;
         }
         context().parent().tell(Message.create("addr", AddrPayload.create(networkAddresses)), self());
+
+        TR.exit();
     }
 
     private void onGetBlocksMessageReceived(GetBlocksPayload payload) {
+        TR.enter();
+
         UInt256 hash = payload.hashStart[0];
         if (hash.equals(payload.hashStop)) {
+            TR.exit();
             return;
         }
 
@@ -168,6 +186,7 @@ public class ProtocolHandler extends AbstractActor {
 
         BlockState state = blockchain.getStore().getBlocks().tryGet(hash);
         if (state == null) {
+            TR.exit();
             return;
         }
 
@@ -186,16 +205,21 @@ public class ProtocolHandler extends AbstractActor {
             hashes.add(hash);
         }
         if (hashes.isEmpty()) {
+            TR.exit();
             return;
         }
 
         InvPayload invPayload = InvPayload.create(Block, hashes.toArray(new UInt256[hashes.size()]));
         Message message = Message.create("inv", invPayload);
         context().parent().tell(message, self());
+
+        TR.exit();
     }
 
 
     private void onGetDataMessageReceived(InvPayload payload) {
+        TR.enter();
+
         for (UInt256 hash : payload.hashes) {
             if (!sentHashes.add(hash)) {
                 continue;
@@ -243,12 +267,16 @@ public class ProtocolHandler extends AbstractActor {
                     break;
             }
         }
+        TR.exit();
     }
 
 
     private void onGetHeadersMessageReceived(GetBlocksPayload payload) {
+        TR.enter();
+
         UInt256 hash = payload.hashStart[0];
         if (hash.equals(payload.hashStop)) {
+            TR.exit();
             return;
         }
 
@@ -256,6 +284,7 @@ public class ProtocolHandler extends AbstractActor {
         DataCache<UInt256, BlockState> cache = blockchain.getStore().getBlocks();
         BlockState state = cache.tryGet(hash);
         if (state == null) {
+            TR.exit();
             return;
         }
 
@@ -279,41 +308,56 @@ public class ProtocolHandler extends AbstractActor {
             headers.add(header);
         }
         if (headers.isEmpty()) {
+            TR.exit();
             return;
         }
         Message message = Message.create("headers", HeadersPayload.create(headers));
         context().parent().tell(message, self());
+
+        TR.exit();
     }
 
     private void onHeadersMessageReceived(HeadersPayload payload) {
+        TR.enter();
+
         if (payload.headers.length == 0) {
+            TR.exit();
             return;
         }
         system.blockchain.tell(payload.headers, context().parent());
+        TR.exit();
     }
 
 
     private void onInventoryReceived(IInventory inventory) {
+        TR.enter();
+
         TaskManager.TaskCompleted cmd = new TaskManager.TaskCompleted();
         cmd.hash = inventory.hash();
         system.taskManager.tell(cmd, context().parent());
 
         if (inventory instanceof MinerTransaction) {
+            TR.exit();
             return;
         }
         LocalNode.Relay relay = new LocalNode.Relay();
         relay.inventory = inventory;
         system.localNode.tell(relay, self());
+
+        TR.exit();
     }
 
 
     private void onInvMessageReceived(InvPayload payload) {
+        TR.enter();
+
         // C# code UInt256[] hashes = payload.hashes.Where(p = > knownHashes.Add(p)).ToArray();
         UInt256[] hashes = Arrays.stream(payload.hashes)
                 .filter(p -> knownHashes.add(p))
                 .toArray(UInt256[]::new);
 
         if (hashes.length == 0) {
+            TR.exit();
             return;
         }
 
@@ -330,14 +374,19 @@ public class ProtocolHandler extends AbstractActor {
         }
 
         if (hashes.length == 0) {
+            TR.exit();
             return;
         }
         TaskManager.NewTasks newTasks = new TaskManager.NewTasks();
         newTasks.payload = InvPayload.create(payload.type, hashes);
         system.taskManager.tell(newTasks, context().parent());
+
+        TR.exit();
     }
 
     private void onMemPoolMessageReceived() {
+        TR.enter();
+
         // C# code
         //   foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX,
         // Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
@@ -351,21 +400,29 @@ public class ProtocolHandler extends AbstractActor {
         for (InvPayload invPayload : InvPayload.createGroup(InventoryType.Tx, txhashes)) {
             context().parent().tell(Message.create("inv", invPayload), self());
         }
+
+        TR.exit();
     }
 
     private void onVerackMessageReceived() {
+        TR.enter();
+
         verack = true;
         context().parent().tell(new SetVerack(), self());
+
+        TR.exit();
     }
 
     private void onVersionMessageReceived(VersionPayload payload) {
-        TR.debug("------ Protocol received versionpayload: " + payload);
+        TR.enter();
+
         version = payload;
         SetVersion setVersion = new SetVersion() {{
             version = payload;
         }};
-        TR.debug("start to send remotenode this setVersion message");
         context().parent().tell(setVersion, self());
+
+        TR.exit();
     }
 
 
@@ -376,7 +433,9 @@ public class ProtocolHandler extends AbstractActor {
      * @return a AKKA reference to ProtocolHandler objects
      */
     public static Props props(NeoSystem system) {
-        return Props.create(ProtocolHandler.class, system).withMailbox("protocol-handler-mailbox");
+        TR.enter();
+
+        return TR.exit(Props.create(ProtocolHandler.class, system).withMailbox("protocol-handler-mailbox"));
     }
 
 
@@ -392,8 +451,10 @@ public class ProtocolHandler extends AbstractActor {
 
         @Override
         protected boolean isHighPriority(Object object) {
+            TR.enter();
+
             if (!(object instanceof Message)) {
-                return true;
+                return TR.exit(true);
             }
 
             Message message = (Message) object;
@@ -405,16 +466,18 @@ public class ProtocolHandler extends AbstractActor {
                 case "verack":
                 case "version":
                 case "alert":
-                    return true;
+                    return TR.exit(true);
                 default:
-                    return false;
+                    return TR.exit(false);
             }
         }
 
         @Override
         protected boolean shallDrop(Object object, Collection<Object> queue) {
+            TR.enter();
+
             if (!(object instanceof Message)) {
-                return false;
+                return TR.exit(false);
             }
 
             Message message = (Message) object;
@@ -425,9 +488,10 @@ public class ProtocolHandler extends AbstractActor {
                 case "getheaders":
                 case "mempool":
                     // C# code: return queue.OfType < Message > ().Any(p = > p.Command == msg.Command);
-                    return queue.stream().anyMatch(p -> (p instanceof Message) && (((Message) p).command.equals(message.command)));
+                    return TR.exit(queue.stream().anyMatch(p -> (p instanceof Message)
+                            && (((Message) p).command.equals(message.command))));
                 default:
-                    return false;
+                    return TR.exit(false);
             }
         }
     }
@@ -440,16 +504,21 @@ public class ProtocolHandler extends AbstractActor {
      */
     @Override
     public AbstractActor.Receive createReceive() {
+        TR.enter();
+
         return receiveBuilder().match(Message.class, msg -> handleMsg(msg)).build();
     }
 
     private void handleMsg(Message msg) {
+        TR.enter();
+
         if (version == null) {
             if (!"version".equals(msg.command)) {
                 throw new ProtocolViolationException();
             }
             VersionPayload versionPayload = SerializeHelper.parse(VersionPayload::new, msg.payload);
             onVersionMessageReceived(versionPayload);
+            TR.exit();
             return;
         }
 
@@ -458,6 +527,7 @@ public class ProtocolHandler extends AbstractActor {
                 throw new ProtocolViolationException();
             }
             onVerackMessageReceived();
+            TR.exit();
             return;
         }
 
@@ -552,5 +622,6 @@ public class ProtocolHandler extends AbstractActor {
                 //暂时忽略
                 break;
         }
+        TR.exit();
     }
 }

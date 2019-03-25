@@ -5,10 +5,10 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
@@ -19,9 +19,10 @@ import neo.csharp.Uint;
 import neo.csharp.io.ISerializable;
 import neo.exception.InvalidOperationException;
 import neo.ledger.RelayResultReason;
-import neo.log.notr.TR;
 import neo.network.p2p.payloads.IInventory;
 import neo.network.p2p.payloads.Transaction;
+
+import neo.log.notr.TR;
 
 /**
  * A class describing the local node.It is a subclass of the Peer class
@@ -84,6 +85,7 @@ public class LocalNode extends Peer {
      * @return single localnode, it may be blocked when the LocalNode is not created.
      */
     public static LocalNode singleton() {
+        TR.enter();
         while (singleton == null) {
             try {
                 Thread.sleep(10);
@@ -92,7 +94,7 @@ public class LocalNode extends Peer {
                 TR.error(e);
             }
         }
-        return singleton;
+        return TR.exit(singleton);
     }
 
     /**
@@ -103,11 +105,14 @@ public class LocalNode extends Peer {
      *                                   throwing an exception when creating the second instance
      */
     public LocalNode(NeoSystem system) {
+        TR.enter();
         this.system = system;
         init();
+        TR.exit();
     }
 
     protected void init() {
+        TR.enter();
         synchronized (lockObj) {
             if (singleton != null)
                 throw new InvalidOperationException();
@@ -116,6 +121,7 @@ public class LocalNode extends Peer {
             // C# code: UserAgent = $"/{Assembly.GetExecutingAssembly().GetName().Name}:{Assembly.GetExecutingAssembly().GetVersion()}/";
             // USER_AGENT = String.format("/neo-java:%s/2.9.1");
         }
+        TR.exit();
     }
 
     /**
@@ -124,7 +130,8 @@ public class LocalNode extends Peer {
      * @return the count of current connected peers
      */
     public int getConnectedCount() {
-        return remoteNodes.size();
+        TR.enter();
+        return TR.exit(remoteNodes.size());
     }
 
     /**
@@ -133,16 +140,22 @@ public class LocalNode extends Peer {
      * @return the count of current unconnected peers.
      */
     public int getUnconnectedCount() {
-        return unconnectedPeers.size();
+        TR.enter();
+        return TR.exit(unconnectedPeers.size());
     }
 
     private void broadcastMessage(String command, ISerializable payload) {
+        TR.enter();
         broadcastMessage(Message.create(command, payload));
+        TR.exit();
     }
 
     private void broadcastMessage(Message message) {
+        TR.enter();
         // C# code Connections.Tell(message);
         getConnections().tell(message, self());
+
+        TR.exit();
     }
 
     /**
@@ -153,17 +166,18 @@ public class LocalNode extends Peer {
      * @return InetSocketAddress
      */
     private static InetSocketAddress getIPEndpointFromHostPort(String hostNameOrAddress, int port) {
+        TR.enter();
         try {
             InetAddress[] inetAddresses = InetAddress.getAllByName(hostNameOrAddress);
             if (inetAddresses != null && inetAddresses.length > 0) {
                 return new InetSocketAddress(inetAddresses[0], port);
             }
             InetAddress inetAddress = InetAddress.getByAddress(hostNameOrAddress.trim().getBytes());
-            return new InetSocketAddress(inetAddress, port);
+            return TR.exit(new InetSocketAddress(inetAddress, port));
         } catch (UnknownHostException e) {
             // just log the error, and return null
             TR.error(e);
-            return null;
+            return TR.exit(null);
         }
         // C# code:
         //        InetAddress.pa()
@@ -188,17 +202,15 @@ public class LocalNode extends Peer {
      * @return spare nodes set
      */
     private static Collection<InetSocketAddress> getIPEndPointsFromSeedList(int seedsToTake) {
+        TR.enter();
         ArrayList<InetSocketAddress> list = new ArrayList<>(20);
 
         if (seedsToTake <= 0) {
-            return list;
+            return TR.exit(list);
         }
 
-        List<String> seedList = ProtocolSettings.Default.seedList;
-        Random rand = new Random();
-        List<String> randomSeeds = rand.ints(seedList.size(), 0, seedList.size())
-                .mapToObj(i -> seedList.get(i))
-                .collect(Collectors.toList());
+        List<String> randomSeeds = ProtocolSettings.Default.seedList;
+        Collections.shuffle(randomSeeds);
         // C# code: ProtocolSettings.Default.SeedList.OrderBy(p => rand.Next())
 
         for (String hostAndPort : randomSeeds) {
@@ -218,7 +230,7 @@ public class LocalNode extends Peer {
             list.add(seed);
             seedsToTake--;
         }
-        return list;
+        return TR.exit(list);
     }
 
     /**
@@ -227,7 +239,8 @@ public class LocalNode extends Peer {
      * @return remote node collection
      */
     public Collection<RemoteNode> getRemoteNodes() {
-        return remoteNodes.values();
+        TR.enter();
+        return TR.exit(remoteNodes.values());
     }
 
     /**
@@ -236,7 +249,9 @@ public class LocalNode extends Peer {
      * @param remoteNode remote node
      */
     public void registerRemoteNode(RemoteNode remoteNode) {
+        TR.enter();
         remoteNodes.put(remoteNode.self(), remoteNode);
+        TR.exit();
     }
 
 
@@ -246,7 +261,9 @@ public class LocalNode extends Peer {
      * @param remoteNode remote node
      */
     public void unregisterRemoteNode(RemoteNode remoteNode) {
+        TR.enter();
         remoteNodes.remove(remoteNode.self());
+        TR.exit();
     }
 
 
@@ -256,7 +273,8 @@ public class LocalNode extends Peer {
      * @return unconnected node collection
      */
     public Collection<InetSocketAddress> getUnconnectedPeers() {
-        return unconnectedPeers;
+        TR.enter();
+        return TR.exit(unconnectedPeers);
     }
 
 
@@ -273,31 +291,45 @@ public class LocalNode extends Peer {
      */
     @Override
     protected void needMorePeers(int count) {
+        TR.enter();
+
         count = Math.max(count, 5);
         if (connectedPeers.size() > 0) {
             broadcastMessage("getaddr", null);
         } else {
             addPeers(getIPEndPointsFromSeedList(count));
         }
+
+        TR.exit();
     }
 
     private void onRelay(IInventory inventory) {
+        TR.enter();
+
         if (inventory instanceof Transaction) {
             Transaction transaction = (Transaction) inventory;
             system.consensus.tell(transaction, self());
         }
         system.blockchain.tell(inventory, self());
+
+        TR.exit();
     }
 
 
     private void onRelayDirectly(IInventory inventory) {
+        TR.enter();
+
         RemoteNode.Relay relay = new RemoteNode.Relay();
         relay.inventory = inventory;
         getConnections().tell(relay, self());
+
+        TR.exit();
     }
 
     private void onSendDirectly(IInventory inventory) {
+        TR.enter();
         getConnections().tell(inventory, self());
+        TR.exit();
     }
 
     /**
@@ -307,7 +339,8 @@ public class LocalNode extends Peer {
      * @return LocalNode object
      */
     public static Props props(NeoSystem system) {
-        return Props.create(LocalNode.class, system);
+        TR.enter();
+        return TR.exit(Props.create(LocalNode.class, system));
     }
 
 
@@ -321,7 +354,8 @@ public class LocalNode extends Peer {
      */
     @Override
     protected Props protocolProps(ActorRef connection, InetSocketAddress remote, InetSocketAddress local) {
-        return RemoteNode.props(system, connection, remote, local);
+        TR.enter();
+        return TR.exit(RemoteNode.props(system, connection, remote, local));
     }
 
     /**
@@ -346,13 +380,15 @@ public class LocalNode extends Peer {
      */
     @Override
     public AbstractActor.Receive createReceive() {
-        return super.getReceiveBuilder()
+        TR.enter();
+        return TR.exit(super.getReceiveBuilder()
                 .match(Message.class, msg -> broadcastMessage(msg))
                 .match(Relay.class, relay -> onRelay(relay.inventory))
                 .match(RelayDirectly.class, relayDirectly -> onRelayDirectly(relayDirectly.inventory))
                 .match(SendDirectly.class, sendDirectly -> onSendDirectly(sendDirectly.inventory))
-                .match(RelayResultReason.class, null)
-                .build();
+                .match(RelayResultReason.class, reason -> {
+                })
+                .build());
     }
 
 
