@@ -17,6 +17,7 @@ import neo.NeoSystem;
 import neo.UInt256;
 import neo.cryptography.BloomFilter;
 import neo.cryptography.Helper;
+import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.exception.ProtocolViolationException;
 import neo.io.SerializeHelper;
@@ -24,6 +25,7 @@ import neo.io.actors.PriorityMailbox;
 import neo.io.caching.DataCache;
 import neo.ledger.BlockState;
 import neo.ledger.Blockchain;
+import neo.log.tr.TR;
 import neo.network.p2p.payloads.AddrPayload;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.ConsensusPayload;
@@ -34,6 +36,7 @@ import neo.network.p2p.payloads.Header;
 import neo.network.p2p.payloads.HeadersPayload;
 import neo.network.p2p.payloads.IInventory;
 import neo.network.p2p.payloads.InvPayload;
+import neo.network.p2p.payloads.InventoryType;
 import neo.network.p2p.payloads.MerkleBlockPayload;
 import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.NetworkAddressWithTime;
@@ -194,13 +197,12 @@ public class ProtocolHandler extends AbstractActor {
 
     private void onGetDataMessageReceived(InvPayload payload) {
         for (UInt256 hash : payload.hashes) {
-            if (!sentHashes.contains(hash)) {
+            if (!sentHashes.add(hash)) {
                 continue;
             }
 
             Blockchain blockchain = Blockchain.singleton();
             IInventory inventory = blockchain.relayCache.tryGet(hash);
-
             switch (payload.type) {
                 case Tx:
                     if (inventory == null) {
@@ -249,6 +251,7 @@ public class ProtocolHandler extends AbstractActor {
         if (hash.equals(payload.hashStop)) {
             return;
         }
+
         Blockchain blockchain = Blockchain.singleton();
         DataCache<UInt256, BlockState> cache = blockchain.getStore().getBlocks();
         BlockState state = cache.tryGet(hash);
@@ -266,7 +269,7 @@ public class ProtocolHandler extends AbstractActor {
             }
 
             BlockState blockState = cache.tryGet(hash);
-            if (blockState != null) {
+            if (blockState == null) {
                 break;
             }
             Header header = blockState.trimmedBlock.getHeader();
@@ -278,7 +281,6 @@ public class ProtocolHandler extends AbstractActor {
         if (headers.isEmpty()) {
             return;
         }
-
         Message message = Message.create("headers", HeadersPayload.create(headers));
         context().parent().tell(message, self());
     }
@@ -336,10 +338,19 @@ public class ProtocolHandler extends AbstractActor {
     }
 
     private void onMemPoolMessageReceived() {
-        // TODO waiting for mempool
-//        foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX,
-// Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
-//        Context.Parent.Tell(Message.Create("inv", payload));
+        // C# code
+        //   foreach (InvPayload payload in InvPayload.CreateGroup(InventoryType.TX,
+        // Blockchain.Singleton.MemPool.GetVerifiedTransactions().Select(p => p.Hash).ToArray()))
+        //        Context.Parent.Tell(Message.Create("inv", payload));
+
+        UInt256[] txhashes = Blockchain.singleton()
+                .getMemPool()
+                .getVerifiedTransactions()
+                .stream().map(tx -> tx.hash()).toArray(UInt256[]::new);
+
+        for (InvPayload invPayload : InvPayload.createGroup(InventoryType.Tx, txhashes)) {
+            context().parent().tell(Message.create("inv", invPayload), self());
+        }
     }
 
     private void onVerackMessageReceived() {
@@ -348,10 +359,12 @@ public class ProtocolHandler extends AbstractActor {
     }
 
     private void onVersionMessageReceived(VersionPayload payload) {
+        TR.debug("------ Protocol received versionpayload: " + payload);
         version = payload;
         SetVersion setVersion = new SetVersion() {{
             version = payload;
         }};
+        TR.debug("start to send remotenode this setVersion message");
         context().parent().tell(setVersion, self());
     }
 
@@ -521,8 +534,9 @@ public class ProtocolHandler extends AbstractActor {
 
             case "tx":
                 // Answering getdata message for a transaction with specified hash.
-                if (msg.payload.length <= Transaction.MaxTransactionSize)
+                if (msg.payload.length <= Transaction.MaxTransactionSize) {
                     onInventoryReceived(Transaction.deserializeFrom(msg.payload));
+                }
                 break;
 
             case "verack":

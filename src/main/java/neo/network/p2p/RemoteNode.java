@@ -27,6 +27,7 @@ import neo.exception.FormatException;
 import neo.io.SerializeHelper;
 import neo.io.actors.PriorityMailbox;
 import neo.ledger.Blockchain;
+import neo.log.tr.TR;
 import neo.network.p2p.payloads.IInventory;
 import neo.network.p2p.payloads.InvPayload;
 import neo.network.p2p.payloads.InventoryType;
@@ -70,13 +71,13 @@ public class RemoteNode extends Connection {
      * constructor，create a RemoteNode object and sending the VERSION data of the local node to the
      * connected remote node.
      *
-     * @param system     Neo core system
-     * @param connection a TCP/IP or WebSocket connection
-     * @param remote     IP and port of remote node
-     * @param local      IP and port of local node
+     * @param system Neo core system
+     * @param tcp    a TCP/IP or WebSocket connection
+     * @param remote IP and port of remote node
+     * @param local  IP and port of local node
      */
-    public RemoteNode(NeoSystem system, ActorRef connection, InetSocketAddress remote, InetSocketAddress local) {
-        super(connection, remote, local);
+    public RemoteNode(NeoSystem system, ActorRef tcp, InetSocketAddress remote, InetSocketAddress local) {
+        super(tcp, remote, local);
 
         this.system = system;
         this.protocol = context().actorOf(ProtocolHandler.props(system));
@@ -129,8 +130,9 @@ public class RemoteNode extends Connection {
     @Override
     protected void onData(ByteString data) {
         msgBuffer = msgBuffer.concat(data);
-        for (Message message = tryParseMessage(); message != null; message = tryParseMessage())
+        for (Message message = tryParseMessage(); message != null; message = tryParseMessage()) {
             protocol.tell(message, self());
+        }
     }
 
     private void enqueueMessage(String command, ISerializable payload) {
@@ -190,7 +192,7 @@ public class RemoteNode extends Connection {
         }
 
         // get the payload size
-        int length = BitConverter.toInt(msgBuffer.slice(16, Uint.BYTES).toArray());
+        int length = BitConverter.toInt(msgBuffer.slice(16, 16 + Uint.BYTES).toArray());
         if (length > Message.PayloadMaxSize) {
             throw new FormatException();
         }
@@ -236,6 +238,18 @@ public class RemoteNode extends Connection {
 
     private void onSetFilter(BloomFilter filter) {
         bloomFilter = filter;
+    }
+
+
+    /**
+     * A callback function to handle ack type message.   Set the ack flag to true, then check the
+     * message in the message queue. and pop up and send the oldest message that first entered the
+     * message queue.
+     */
+    @Override
+    protected void onAck() {
+        ack = true;
+        checkMessageQueue();
     }
 
     private void onSetVerack() {

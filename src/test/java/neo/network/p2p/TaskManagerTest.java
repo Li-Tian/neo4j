@@ -21,7 +21,7 @@ import neo.csharp.Ulong;
 import neo.csharp.Ushort;
 import neo.io.SerializeHelper;
 import neo.ledger.Blockchain;
-import neo.ledger.MemoryPool;
+import neo.ledger.MyBlockchain2;
 import neo.ledger.RelayResultReason;
 import neo.log.tr.TR;
 import neo.network.p2p.payloads.Block;
@@ -37,7 +37,6 @@ import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.VersionPayload;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractLeveldbTest;
-import neo.persistence.Store;
 import neo.vm.OpCode;
 
 
@@ -45,29 +44,6 @@ public class TaskManagerTest extends AbstractLeveldbTest {
 
     private static NeoSystem neoSystem;
     private static TestKit testKit;
-
-    static class MyBlockchain2 extends Blockchain {
-
-        public MyBlockchain2(NeoSystem system, Store store) {
-            super(system, store);
-        }
-
-        @Override
-        protected void init(NeoSystem system, Store store) {
-            this.system = system;
-            this.store = store;
-            this.memPool = new MemoryPool(system, MemoryPoolMaxTransactions);
-            // 测试环境下，由于akka的创建，可以同时存在多个
-            singleton = this;
-
-            initData();
-        }
-
-        public static Props props(NeoSystem system, Store store, ActorRef actorRef) {
-            TR.enter();
-            return TR.exit(Props.create(MyBlockchain2.class, system, store).withMailbox("blockchain-mailbox"));
-        }
-    }
 
 
     @BeforeClass
@@ -148,8 +124,8 @@ public class TaskManagerTest extends AbstractLeveldbTest {
                 };
             }
         };
-
         block2.rebuildMerkleRoot();
+
         Block block3 = new Block() {
             {
                 prevHash = block2.hash();

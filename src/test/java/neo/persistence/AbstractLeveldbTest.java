@@ -13,8 +13,6 @@ public class AbstractLeveldbTest {
     protected static LevelDBStore store;
 
     public static void setUp() throws IOException {
-        TR.debug("----  AbstractLeveldbTest setup......");
-
         File file = new File(LEVELDB_TEST_PATH);
         if (file.exists()) {
             for (File subFile : file.listFiles()) {
@@ -27,8 +25,6 @@ public class AbstractLeveldbTest {
     }
 
     public static void tearDown() throws IOException {
-        TR.debug("----  AbstractLeveldbTest tearDown......");
-
         store.close();
         // free leveldb file
         File file = new File(LEVELDB_TEST_PATH);

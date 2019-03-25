@@ -803,6 +803,16 @@ public class Blockchain extends AbstractActor {
                 trimmedBlock = block.trim();
             }
         });
+
+        for (Transaction tx : block.transactions) {
+            snapshot.getTransactions().add(tx.hash(), new TransactionState() {
+                {
+                    blockIndex = block.index;
+                    transaction = tx;
+                }
+            });
+        }
+
         snapshot.getBlockHashIndex().getAndChange().hash = block.hash();
         snapshot.getBlockHashIndex().getAndChange().index = block.index;
 
