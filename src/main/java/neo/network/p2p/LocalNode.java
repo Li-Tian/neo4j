@@ -50,7 +50,7 @@ public class LocalNode extends Peer {
      * Relay the inventory to all the connected peer. Firstly, it will send inv message, then the
      * inventory message.
      */
-    static public class RelayDirectly {
+    public static class RelayDirectly {
         public IInventory inventory;
     }
 
@@ -58,7 +58,7 @@ public class LocalNode extends Peer {
      * Send inventory to all the connected peers, be careful with the difference between
      * RelayDirectly and SendDirectly.
      */
-    static class SendDirectly {
+    public static class SendDirectly {
         public IInventory inventory;
     }
 
