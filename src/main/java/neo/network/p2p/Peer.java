@@ -176,6 +176,14 @@ public abstract class Peer extends AbstractActor {
 
 
     /**
+     * get listener port
+     */
+    public int getListenerPort() {
+        return listenerPort;
+    }
+
+
+    /**
      * max connecting amount
      */
     protected int getConnectingMax() {
