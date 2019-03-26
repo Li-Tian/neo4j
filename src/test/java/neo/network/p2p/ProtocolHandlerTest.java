@@ -152,7 +152,8 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
         Assert.assertEquals(1, peers.endPoints.size());
         for (InetSocketAddress socketAddress : peers.endPoints) {
             Assert.assertEquals(8080, socketAddress.getPort());
-            Assert.assertEquals("0:0:0:0:0:0:7f00:1", socketAddress.getHostName());// 127.0.0.1
+            Assert.assertEquals(true, socketAddress.getAddress().isLoopbackAddress());
+//            Assert.assertEquals("0:0:0:0:0:0:7f00:1", socketAddress.getHostName());// 127.0.0.1
         }
 
 
