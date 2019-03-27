@@ -64,7 +64,8 @@ public class Message implements ISerializable {
      * @return hash256 checksum
      */
     private static Uint getChecksum(byte[] value) {
-        return BitConverter.toUint(Crypto.Default.hash256(value));
+        TR.enter();
+        return TR.exit(BitConverter.toUint(Crypto.Default.hash256(value)));
     }
 
     /**
@@ -119,7 +120,8 @@ public class Message implements ISerializable {
      * @return message object
      */
     public static Message create(String command) {
-        return create(command, new byte[0]);
+        TR.enter();
+        return TR.exit(create(command, new byte[0]));
     }
 
     /**
@@ -130,7 +132,11 @@ public class Message implements ISerializable {
      * @return message object
      */
     public static Message create(String command, ISerializable payload) {
-        return create(command, SerializeHelper.toBytes(payload));
+        TR.enter();
+        if (payload == null) {
+            return create(command, new byte[0]);
+        }
+        return TR.exit(create(command, SerializeHelper.toBytes(payload)));
     }
 
     /**
@@ -142,6 +148,10 @@ public class Message implements ISerializable {
      */
     public static Message create(String command, byte[] payload) {
         TR.enter();
+        if (payload == null) {
+            payload = new byte[0];
+        }
+
         Message message = new Message();
         message.command = command;
         message.checksum = getChecksum(payload);

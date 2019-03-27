@@ -1,10 +1,14 @@
 package neo.consensus;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import neo.Fixed8;
+import neo.TimeProvider;
 import neo.UInt160;
 import neo.UInt256;
 import neo.Wallets.KeyPair;
@@ -17,18 +21,26 @@ import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
 import neo.csharp.common.IDisposable;
-import neo.csharp.io.ISerializable;
+import neo.exception.InvalidOperationException;
 import neo.io.SerializeHelper;
 import neo.ledger.Blockchain;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.Block;
+import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.ConsensusPayload;
 import neo.network.p2p.payloads.Header;
+import neo.network.p2p.payloads.IVerifiable;
 import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.Transaction;
+import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.TransactionType;
+import neo.network.p2p.payloads.Witness;
 import neo.persistence.Snapshot;
+import neo.plugins.IPolicyPlugin;
+import neo.plugins.Plugin;
 import neo.smartcontract.Contract;
+import neo.smartcontract.ContractParametersContext;
 
 /**
  * Consensus context, it records the data in current consensus activity.
@@ -36,7 +48,7 @@ import neo.smartcontract.Contract;
 public class ConsensusContext implements IDisposable {
 
     /**
-     * Consensus message VERSION, it's fixed to 0 currently
+     * Consensus message version, it's fixed to 0 currently
      */
     public static final Uint VERSION = Uint.ZERO;
 
@@ -98,7 +110,7 @@ public class ConsensusContext implements IDisposable {
     /**
      * The proposal block's txs
      */
-    public HashMap<UInt256, Transaction> transactions;
+    public Map<UInt256, Transaction> transactions;
 
     /**
      * Store the proposal block's signatures recevied
@@ -143,14 +155,16 @@ public class ConsensusContext implements IDisposable {
      * get the minimum threshold of the normal nodes.
      */
     public int getM() {
-        return validators.length - (validators.length - 1) / 3;
+        TR.enter();
+        return TR.exit(validators.length - (validators.length - 1) / 3);
     }
 
     /**
      * get the previous block header
      */
     public Header getPrevHeader() {
-        return snapshot.getHeader(prevHash);
+        TR.enter();
+        return TR.exit(snapshot.getHeader(prevHash));
     }
 
     /**
@@ -159,7 +173,8 @@ public class ConsensusContext implements IDisposable {
      * @param hash tx hash
      */
     public boolean transactionExists(UInt256 hash) {
-        return snapshot.containsTransaction(hash);
+        TR.enter();
+        return TR.exit(snapshot.containsTransaction(hash));
     }
 
     /**
@@ -168,7 +183,8 @@ public class ConsensusContext implements IDisposable {
      * @param tx transaction
      */
     public boolean verifyTransaction(Transaction tx) {
-        return tx.verify(snapshot, transactions.values());
+        TR.enter();
+        return TR.exit(tx.verify(snapshot, transactions.values()));
     }
 
 
@@ -178,11 +194,12 @@ public class ConsensusContext implements IDisposable {
      * @param view_number new view number
      * @docs 1. Update the context ViewNumber, PrimaryIndex and ExpectedView[Myindex] <br/> 2. If
      * the node has the SignatureSent flag, reserve the signatures array (Mybe some signatures are
-     * arrived before the PrepareRequset received), else reset it
+     * arrived before the PrepareRequest received), else reset it
      */
     public void changeView(byte view_number) {
-//        state &= ConsensusState.SignatureSent;
-        state = new ConsensusState((byte) (state.value() & ConsensusState.SignatureSent.value()));
+        TR.enter();
+        // C# code: state &= ConsensusState.SignatureSent;
+        state = state.and(ConsensusState.SignatureSent);
         viewNumber = view_number;
         primaryIndex = getPrimaryIndex(view_number);
         if (state == ConsensusState.Initial) {
@@ -192,6 +209,7 @@ public class ConsensusContext implements IDisposable {
         if (myIndex >= 0)
             expectedView[myIndex] = view_number;
         header = null;
+        TR.exit();
     }
 
     /**
@@ -200,19 +218,21 @@ public class ConsensusContext implements IDisposable {
      * @return block
      */
     public Block createBlock() {
+        TR.enter();
         Block block = makeHeader();
-//        if (block == null) return null;
-//        Contract contract = Contract.CreateMultiSigContract(M, Validators);
-//        ContractParametersContext sc = new ContractParametersContext(block);
-//        for (int i = 0, j = 0; i < Validators.Length && j < M; i++)
-//            if (Signatures[i] != null)
-//            {
-//                sc.AddSignature(contract, Validators[i], Signatures[i]);
-//                j++;
-//            }
-//        sc.Verifiable.Witnesses = sc.GetWitnesses();
-//        block.Transactions = TransactionHashes.Select(p => Transactions[p]).ToArray();
-        return block;
+        if (block == null) {
+            return TR.exit(null);
+        }
+        Contract contract = Contract.createMultiSigContract(getM(), validators);
+        ContractParametersContext sc = new ContractParametersContext(block);
+        for (int i = 0, j = 0; i < validators.length && j < getM(); i++)
+            if (signatures[i] != null) {
+                sc.addSignature(contract, validators[i], signatures[i]);
+                j++;
+            }
+        sc.verifiable.setWitnesses(sc.getWitnesses());
+        block.transactions = Arrays.stream(transactionHashes).map(hash -> transactions.get(hash)).toArray(Transaction[]::new);
+        return TR.exit(block);
     }
 
 
@@ -222,7 +242,9 @@ public class ConsensusContext implements IDisposable {
      * @return block header
      */
     public Block makeHeader() {
+        TR.enter();
         if (transactionHashes == null) {
+            TR.exit();
             return null;
         }
 
@@ -237,7 +259,7 @@ public class ConsensusContext implements IDisposable {
             header.nextConsensus = nextConsensus;
             header.transactions = new Transaction[0];
         }
-        return header;
+        return TR.exit(header);
     }
 
     /**
@@ -247,6 +269,7 @@ public class ConsensusContext implements IDisposable {
      * @return ConsensusPayload
      */
     private ConsensusPayload makeSignedPayload(ConsensusMessage message) {
+        TR.enter();
         message.viewNumber = viewNumber;
         ConsensusPayload payload = new ConsensusPayload();
 
@@ -258,30 +281,32 @@ public class ConsensusContext implements IDisposable {
         payload.data = SerializeHelper.toBytes(message);
 
         signPayload(payload);
-        return payload;
+        return TR.exit(payload);
     }
 
     /**
      * Sign the block header
      */
     public void signHeader() {
-        // TODO sign
+        TR.enter();
         Block header = makeHeader();
-//        signatures[myIndex] = header == null? null : makeHeader()?.sign(keyPair);
-
+        signatures[myIndex] = header == null ? null : IVerifiable.sign(header, keyPair);
+        TR.exit();
     }
 
 
     private void signPayload(ConsensusPayload payload) {
-        // TODO waiting for context
-//        ContractParametersContext sc;
-//        try {
-//            sc = new ContractParametersContext(payload);
-//            wallet.Sign(sc);
-//        } catch (InvalidOperationException) {
-//            return;
-//        }
-//        sc.Verifiable.Witnesses = sc.GetWitnesses();
+        TR.enter();
+        ContractParametersContext sc;
+        try {
+            sc = new ContractParametersContext(payload);
+            wallet.sign(sc);
+        } catch (InvalidOperationException ex) {
+            TR.exit();
+            return;
+        }
+        sc.verifiable.setWitnesses(sc.getWitnesses());
+        TR.exit();
     }
 
     /**
@@ -290,13 +315,28 @@ public class ConsensusContext implements IDisposable {
      * @return ConsensusPayload
      */
     public ConsensusPayload makePrepareRequest() {
+        TR.enter();
         PrepareRequest prepareRequest = new PrepareRequest();
         prepareRequest.nonce = nonce;
         prepareRequest.nextConsensus = nextConsensus;
         prepareRequest.transactionHashes = transactionHashes;
         prepareRequest.minerTransaction = (MinerTransaction) transactions.get(transactionHashes[0]);
         prepareRequest.signature = signatures[myIndex];
-        return makeSignedPayload(prepareRequest);
+        return TR.exit(makeSignedPayload(prepareRequest));
+    }
+
+
+    /**
+     * Create ChangeView message payload
+     *
+     * @return ConsensusPayload
+     */
+    public ConsensusPayload makeChangeView() {
+        TR.enter();
+        ConsensusPayload payload = makeSignedPayload(new ChangeView() {{
+            newViewNumber = expectedView[myIndex];
+        }});
+        return TR.exit(payload);
     }
 
 
@@ -307,9 +347,10 @@ public class ConsensusContext implements IDisposable {
      * @return ConsensusPayload with PrepareResponse
      */
     public ConsensusPayload makePrepareResponse(byte[] signature) {
+        TR.enter();
         PrepareResponse response = new PrepareResponse();
         response.signature = signature;
-        return makeSignedPayload(response);
+        return TR.exit(makeSignedPayload(response));
     }
 
 
@@ -320,8 +361,10 @@ public class ConsensusContext implements IDisposable {
      * @return primary index
      */
     public Uint getPrimaryIndex(byte view_number) {
+        TR.enter();
         int p = (blockIndex.intValue() - view_number) % validators.length;
-        return p >= 0 ? new Uint(p) : new Uint(p + validators.length);
+        Uint primaryIndex = p >= 0 ? new Uint(p) : new Uint(p + validators.length);
+        return TR.exit(primaryIndex);
     }
 
 
@@ -339,6 +382,7 @@ public class ConsensusContext implements IDisposable {
      * </ul>
      */
     public void reset() {
+        TR.enter();
         snapshot.dispose();
         snapshot = Blockchain.singleton().getStore().getSnapshot();
         state = ConsensusState.Initial;
@@ -361,6 +405,8 @@ public class ConsensusContext implements IDisposable {
             }
         }
         header = null;
+
+        TR.exit();
     }
 
 
@@ -374,41 +420,44 @@ public class ConsensusContext implements IDisposable {
      * of the validotars</li>
      * </ul>
      */
-    public void Fill() {
-        // TODO waiting for Blockchain
-//        Collection<Transaction> mem_pool = Blockchain.singleton().getMemoryPool();
-//        foreach (IPolicyPlugin plugin in Plugin.Policies)
-//        mem_pool = plugin.FilterForBlock(mem_pool);
-//        List<Transaction> transactions = mem_pool.ToList();
-//        Fixed8 amount_netfee = Block.CalculateNetFee(transactions);
-//        TransactionOutput[] outputs = amount_netfee == Fixed8.Zero ? new TransactionOutput[0] : new[] { new TransactionOutput
-//        {
-//            AssetId = Blockchain.UtilityToken.Hash,
-//                    Value = amount_netfee,
-//                    ScriptHash = wallet.GetChangeAddress()
-//        } };
-//        while (true)
-//        {
-//            ulong nonce = GetNonce();
-//            MinerTransaction tx = new MinerTransaction
-//            {
-//                Nonce = (uint)(nonce % (uint.MaxValue + 1ul)),
-//                Attributes = new TransactionAttribute[0],
-//                        Inputs = new CoinReference[0],
-//                        Outputs = outputs,
-//                        Witnesses = new Witness[0]
-//            };
-//            if (!snapshot.ContainsTransaction(tx.Hash))
-//            {
-//                Nonce = nonce;
-//                transactions.Insert(0, tx);
-//                break;
-//            }
-//        }
-//        TransactionHashes = transactions.Select(p => p.Hash).ToArray();
-//        Transactions = transactions.ToDictionary(p => p.Hash);
-//        NextConsensus = Blockchain.GetConsensusAddress(snapshot.GetValidators(transactions).ToArray());
-//        Timestamp = Math.Max(TimeProvider.Current.UtcNow.ToTimestamp(), PrevHeader.Timestamp + 1);
+    public void fill() {
+        TR.enter();
+        Collection<Transaction> mem_pool = Blockchain.singleton().getMemPool().getEnumerator();
+        for (IPolicyPlugin plugin : Plugin.getPolicies()) {
+            mem_pool = plugin.filterForBlock(mem_pool);
+        }
+        ArrayList<Transaction> txWithMx = new ArrayList<>(mem_pool);
+        Fixed8 amount_netfee = Block.calculateNetFee(txWithMx);
+        TransactionOutput[] outputs = amount_netfee == Fixed8.ZERO ? new TransactionOutput[0] : new TransactionOutput[]
+                {
+                        new TransactionOutput() {{
+                            assetId = Blockchain.UtilityToken.hash();
+                            value = amount_netfee;
+                            scriptHash = wallet.getChangeAddress();
+                        }}
+                };
+        while (true) {
+            Ulong nonce = getNonce();
+            MinerTransaction tx = new MinerTransaction();
+            tx.nonce = new Uint((int) (nonce.longValue() % Uint.MAX_VALUE + 1));
+            // C# code: tx.nonce = (uint) (nonce % (uint.MaxValue + 1 ul));
+            tx.attributes = new TransactionAttribute[0];
+            tx.inputs = new CoinReference[0];
+            tx.outputs = outputs;
+            tx.witnesses = new Witness[0];
+
+            if (!snapshot.containsTransaction(tx.hash())) {
+                tx.nonce = nonce.uintValue();
+                txWithMx.add(0, tx);
+                break;
+            }
+        }
+        transactionHashes = txWithMx.stream().map(p -> p.hash()).toArray(UInt256[]::new);
+        transactions = txWithMx.stream().collect(Collectors.toMap(tx -> tx.hash(), tx -> tx));
+        nextConsensus = Blockchain.getConsensusAddress(snapshot.getValidators(txWithMx));
+        timestamp = new Uint((int) Math.max(TimeProvider.current().utcNow().getTime(), getPrevHeader().timestamp.longValue() + 1));
+
+        TR.exit();
     }
 
 
@@ -416,10 +465,11 @@ public class ConsensusContext implements IDisposable {
      * Get a new nonce
      */
     private static Ulong getNonce() {
+        TR.enter();
         byte[] nonce = new byte[Ulong.BYTES];
         SecureRandom rand = new SecureRandom();
         rand.nextBytes(nonce);
-        return BitConverter.toUlong(nonce);
+        return TR.exit(BitConverter.toUlong(nonce));
     }
 
 
@@ -433,11 +483,14 @@ public class ConsensusContext implements IDisposable {
      * equal to the proposal block's txs network fee
      */
     public boolean verifyRequest() {
-        if (!state.hasFlag(ConsensusState.RequestReceived))
-            return false;
-        // TODO waiting for blockchain
-//        if (!Blockchain.getConsensusAddress(snapshot.getValidators(transactions.values()).ToArray()).Equals(nextConsensus))
-//            return false;
+        TR.enter();
+        if (!state.hasFlag(ConsensusState.RequestReceived)) {
+            return TR.exit(false);
+        }
+        Collection<ECPoint> validatorPublicKeys = snapshot.getValidators(transactions.values());
+        if (!Blockchain.getConsensusAddress(validatorPublicKeys).equals(nextConsensus)) {
+            return TR.exit(false);
+        }
         Transaction tx_gen = transactions.values().stream()
                 .filter(p -> p.type == TransactionType.MinerTransaction)
                 .findFirst().get();
@@ -450,13 +503,17 @@ public class ConsensusContext implements IDisposable {
         }
 
         if (sumOut.compareTo(amountNetfee) != 0) {
-            return false;
+            return TR.exit(false);
         }
-        return true;
+        return TR.exit(true);
     }
 
     @Override
     public void dispose() {
-
+        TR.enter();
+        if (snapshot != null) {
+            snapshot.dispose();
+        }
+        TR.exit();
     }
 }

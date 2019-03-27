@@ -207,20 +207,20 @@ public class Blockchain extends AbstractActor {
         }
     };
 
-    private final int MemoryPoolMaxTransactions = 50_000;
+    protected final int MemoryPoolMaxTransactions = 50_000;
     private final int MaxTxToReverifyPerIdle = 10;
     private static final Lock lockObj = new ReentrantLock();
-    private NeoSystem system;
-    private final ArrayList<UInt256> header_index = new ArrayList<UInt256>();
+    protected NeoSystem system;
+    protected final ArrayList<UInt256> headerIndex = new ArrayList<UInt256>();
     private Uint stored_header_count = Uint.ZERO;
-    private final ConcurrentHashMap<UInt256, Block> block_cache = new ConcurrentHashMap<UInt256, Block>();
+    private final ConcurrentHashMap<UInt256, Block> blockCache = new ConcurrentHashMap<UInt256, Block>();
     private final ConcurrentHashMap<Uint, LinkedList<Block>> block_cache_unverified = new ConcurrentHashMap<Uint, LinkedList<Block>>();
     public final RelayCache relayCache = new RelayCache(100);
-    private final HashSet<ActorRef> subscribers = new HashSet<ActorRef>();
+    private final HashSet<ActorRef> subscribers = new HashSet<>();
     private AtomicReference<Snapshot> currentSnapshot = new AtomicReference<>();
 
-    private Store store;
-    private MemoryPool memPool;
+    protected Store store;
+    protected MemoryPool memPool;
 
     public Uint height() {
         TR.enter();
@@ -229,7 +229,7 @@ public class Blockchain extends AbstractActor {
 
     public Uint headerHeight() {
         TR.enter();
-        return TR.exit(new Uint(header_index.size() - 1));
+        return TR.exit(new Uint(headerIndex.size() - 1));
     }
 
     public UInt256 currentBlockHash() {
@@ -239,7 +239,7 @@ public class Blockchain extends AbstractActor {
 
     public UInt256 CurrentHeaderHash() {
         TR.enter();
-        return TR.exit(header_index.get(header_index.size() - 1));
+        return TR.exit(headerIndex.get(headerIndex.size() - 1));
     }
 
     /**
@@ -250,6 +250,11 @@ public class Blockchain extends AbstractActor {
      */
     public Blockchain(NeoSystem system, Store store) {
         TR.enter();
+        init(system, store);
+        TR.exit();
+    }
+
+    protected void init(NeoSystem system, Store store) {
         this.system = system;
         this.memPool = new MemoryPool(system, MemoryPoolMaxTransactions);
         this.store = store;
@@ -259,38 +264,7 @@ public class Blockchain extends AbstractActor {
                 TR.exit();
                 throw new InvalidOperationException();
             }
-            // rebuild merkleroot
-            GenesisBlock.rebuildMerkleRoot();
-
-            //header_index.AddRange(store.GetHeaderHashList().Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
-            ArrayList<Map.Entry<UInt32Wrapper, HeaderHashList>> rankedHeaderHashList = new ArrayList<>(store.getHeaderHashList().find());
-            Collections.sort(rankedHeaderHashList, Comparator.comparing(a -> a.getKey().toUint32()));
-            for (Map.Entry<UInt32Wrapper, HeaderHashList> entry : rankedHeaderHashList) {
-                for (UInt256 value : entry.getValue().hashes) {
-                    header_index.add(value);
-                }
-            }
-            stored_header_count = stored_header_count.add(new Uint(header_index.size()));
-            if (stored_header_count.equals(Uint.ZERO)) {
-                //header_index.AddRange(store.GetBlocks().Find().OrderBy(p = > p.Value.TrimmedBlock.Index).Select(p = > p.Key));
-                ArrayList<Map.Entry<UInt256, BlockState>> rankedBlockList = new ArrayList<>(store.getBlocks().find());
-                Collections.sort(rankedBlockList, Comparator.comparing(a -> a.getValue().trimmedBlock.index));
-                rankedBlockList.forEach(p -> header_index.add(p.getKey()));
-            } else {
-                HashIndexState hashIndex = store.getHeaderHashIndex().get();
-                if (hashIndex.index.compareTo(stored_header_count) > 0) {
-                    DataCache<UInt256, BlockState> cache = store.getBlocks();
-                    for (UInt256 hash = hashIndex.hash; hash != header_index.get(stored_header_count.intValue() - 1); ) {
-                        header_index.add(stored_header_count.intValue(), hash);
-                        hash = cache.get(hash).trimmedBlock.prevHash;
-                    }
-                }
-            }
-            if (header_index.size() == 0) {
-                persist(GenesisBlock);
-            } else {
-                updateCurrentSnapshot();
-            }
+            initData();
             singleton = this;
         } catch (Exception e) {
             TR.error(e);
@@ -298,8 +272,43 @@ public class Blockchain extends AbstractActor {
         } finally {
             lockObj.unlock();
         }
-        TR.exit();
     }
+
+    protected void initData() {
+        // rebuild merkleroot
+        GenesisBlock.rebuildMerkleRoot();
+
+        //headerIndex.AddRange(store.GetHeaderHashList().Find().OrderBy(p => (uint)p.Key).SelectMany(p => p.Value.Hashes));
+        ArrayList<Map.Entry<UInt32Wrapper, HeaderHashList>> rankedHeaderHashList = new ArrayList<>(store.getHeaderHashList().find());
+        Collections.sort(rankedHeaderHashList, Comparator.comparing(a -> a.getKey().toUint32()));
+        for (Map.Entry<UInt32Wrapper, HeaderHashList> entry : rankedHeaderHashList) {
+            for (UInt256 value : entry.getValue().hashes) {
+                headerIndex.add(value);
+            }
+        }
+        stored_header_count = stored_header_count.add(new Uint(headerIndex.size()));
+        if (stored_header_count.equals(Uint.ZERO)) {
+            //headerIndex.AddRange(store.GetBlocks().Find().OrderBy(p = > p.Value.TrimmedBlock.Index).Select(p = > p.Key));
+            ArrayList<Map.Entry<UInt256, BlockState>> rankedBlockList = new ArrayList<>(store.getBlocks().find());
+            Collections.sort(rankedBlockList, Comparator.comparing(a -> a.getValue().trimmedBlock.index));
+            rankedBlockList.forEach(p -> headerIndex.add(p.getKey()));
+        } else {
+            HashIndexState hashIndex = store.getHeaderHashIndex().get();
+            if (hashIndex.index.compareTo(stored_header_count) > 0) {
+                DataCache<UInt256, BlockState> cache = store.getBlocks();
+                for (UInt256 hash = hashIndex.hash; hash != headerIndex.get(stored_header_count.intValue() - 1); ) {
+                    headerIndex.add(stored_header_count.intValue(), hash);
+                    hash = cache.get(hash).trimmedBlock.prevHash;
+                }
+            }
+        }
+        if (headerIndex.size() == 0) {
+            persist(GenesisBlock);
+        } else {
+            updateCurrentSnapshot();
+        }
+    }
+
 
     /**
      * Get store
@@ -374,19 +383,19 @@ public class Blockchain extends AbstractActor {
         if (block.index.compareTo(height()) <= 0) {
             return TR.exit(RelayResultReason.AlreadyExists);
         }
-        if (block_cache.containsKey(block.hash())) {
+        if (blockCache.containsKey(block.hash())) {
             return TR.exit(RelayResultReason.AlreadyExists);
         }
-        if (block.index.subtract(Uint.ONE).intValue() >= header_index.size()) {
+        if (block.index.subtract(Uint.ONE).intValue() >= headerIndex.size()) {
             addUnverifiedBlockToCache(block);
             return TR.exit(RelayResultReason.UnableToVerify);
         }
-        if (block.index.intValue() == header_index.size()) {
+        if (block.index.intValue() == headerIndex.size()) {
             if (!block.verify(currentSnapshot.get())) {
                 return TR.exit(RelayResultReason.Invalid);
             }
         } else {
-            if (!block.hash().equals(header_index.get(block.index.intValue()))) {
+            if (!block.hash().equals(headerIndex.get(block.index.intValue()))) {
                 return TR.exit(RelayResultReason.Invalid);
             }
         }
@@ -395,11 +404,11 @@ public class Blockchain extends AbstractActor {
             ArrayList<Block> blocksToPersistList = new ArrayList<Block>();
             while (true) {
                 blocksToPersistList.add(block_persist);
-                if (block_persist.index.intValue() + 1 >= header_index.size()) {
+                if (block_persist.index.intValue() + 1 >= headerIndex.size()) {
                     break;
                 }
-                UInt256 hash = header_index.get(block_persist.index.intValue() + 1);
-                block_persist = block_cache.get(hash);
+                UInt256 hash = headerIndex.get(block_persist.index.intValue() + 1);
+                block_persist = blockCache.get(hash);
                 if (block_persist == null) {
                     break;
                 }
@@ -413,7 +422,7 @@ public class Blockchain extends AbstractActor {
                 if (blocksPersisted++ < blocksToPersistList.size() - 2) continue;
                 // Relay most recent 2 blocks persisted
 
-                if (blockToPersist.index.add(new Uint(100)).intValue() >= header_index.size()) {
+                if (blockToPersist.index.add(new Uint(100)).intValue() >= headerIndex.size()) {
                     system.localNode.tell(new LocalNode.RelayDirectly() {
                         {
                             inventory = blockToPersist;
@@ -424,23 +433,23 @@ public class Blockchain extends AbstractActor {
             saveHeaderHashList(null);
 
             LinkedList<Block> unverifiedBlocks = block_cache_unverified.get(height().add(Uint.ONE));
-            if (unverifiedBlocks == null) {
+            if (unverifiedBlocks != null) {
                 for (Block unverifiedBlock : unverifiedBlocks) {
                     self().tell(unverifiedBlock, ActorRef.noSender());
                 }
                 block_cache_unverified.remove(height().add(Uint.ONE));
             }
         } else {
-            block_cache.put(block.hash(), block);
-            if (block.index.add(new Uint(100)).intValue() >= header_index.size()) {
+            blockCache.put(block.hash(), block);
+            if (block.index.add(new Uint(100)).intValue() >= headerIndex.size()) {
                 system.localNode.tell(new LocalNode.RelayDirectly() {
                     {
                         inventory = block;
                     }
                 }, self());
             }
-            if (block.index.intValue() == header_index.size()) {
-                header_index.add(block.hash());
+            if (block.index.intValue() == headerIndex.size()) {
+                headerIndex.add(block.hash());
                 Snapshot snapshot = getSnapshot();
                 snapshot.getBlocks().add(block.hash(), new BlockState() {
                     {
@@ -479,16 +488,16 @@ public class Blockchain extends AbstractActor {
         TR.enter();
         Snapshot snapshot = getSnapshot();
         for (Header header : headers) {
-            if (header.index.intValue() - 1 >= header_index.size()) {
+            if (header.index.intValue() - 1 >= headerIndex.size()) {
                 break;
             }
-            if (header.index.intValue() < header_index.size()) {
+            if (header.index.intValue() < headerIndex.size()) {
                 continue;
             }
             if (!header.verify(snapshot)) {
                 break;
             }
-            header_index.add(header.hash());
+            headerIndex.add(header.hash());
             snapshot.getBlocks().add(header.hash(), new BlockState() {
                 {
                     systemFeeAmount = 0;
@@ -537,7 +546,7 @@ public class Blockchain extends AbstractActor {
 
     private void onPersistCompleted(Block inputBlock) {
         TR.enter();
-        block_cache.remove(inputBlock.hash());
+        blockCache.remove(inputBlock.hash());
         memPool.updatePoolForBlockPersisted(inputBlock, currentSnapshot.get());
         PersistCompleted completed = new PersistCompleted() {
             {
@@ -556,18 +565,18 @@ public class Blockchain extends AbstractActor {
         TR.enter();
         return TR.exit(
                 receiveBuilder()
-                        .match(Register.class, message -> onRegister())
-                        .match(Import.class, message -> onImport(message.blocks))
-                        .match(Header[].class, message -> onNewHeaders(message))
-                        .match(Block.class, message -> sender().tell(onNewBlock(message), self()))
-                        .match(Transaction.class, message -> sender().tell(onNewTransaction(message), self()))
-                        .match(ConsensusPayload.class, message -> sender().tell(onNewConsensus(message), self()))
-                        .match(Idle.class, message -> {
+                        .match(Register.class, register -> onRegister())
+                        .match(Import.class, importBlocks -> onImport(importBlocks.blocks))
+                        .match(Header[].class, headers -> onNewHeaders(headers))
+                        .match(Block.class, block -> sender().tell(onNewBlock(block), self()))
+                        .match(Transaction.class, transaction -> sender().tell(onNewTransaction(transaction), self()))
+                        .match(ConsensusPayload.class, consensusPayload -> sender().tell(onNewConsensus(consensusPayload), self()))
+                        .match(Idle.class, idle -> {
                             if (memPool.reVerifyTopUnverifiedTransactionsIfNeeded(MaxTxToReverifyPerIdle, currentSnapshot.get())) {
                                 self().tell(Idle.instance(), ActorRef.noSender());
                             }
                         })
-                        .match(Terminated.class, message -> subscribers.remove(message.getActor()))
+                        .match(Terminated.class, terminated -> subscribers.remove(terminated.getActor()))
                         .build()
         );
     }
@@ -748,8 +757,8 @@ public class Blockchain extends AbstractActor {
         }
         snapshot.getBlockHashIndex().getAndChange().hash = block.hash();
         snapshot.getBlockHashIndex().getAndChange().index = block.index;
-        if (block.index.intValue() == header_index.size()) {
-            header_index.add(block.hash());
+        if (block.index.intValue() == headerIndex.size()) {
+            headerIndex.add(block.hash());
             snapshot.getHeaderHashIndex().getAndChange().hash = block.hash();
             snapshot.getHeaderHashIndex().getAndChange().index = block.index;
         }
@@ -782,8 +791,8 @@ public class Blockchain extends AbstractActor {
 
         // TODO 待移除，等上面代码完成ok，移除下面代码，目前是方便测试
         Snapshot snapshot = getSnapshot();
-        if (block.index.intValue() == header_index.size()) {
-            header_index.add(block.hash());
+        if (block.index.intValue() == headerIndex.size()) {
+            headerIndex.add(block.hash());
             snapshot.getHeaderHashIndex().getAndChange().hash = block.hash();
             snapshot.getHeaderHashIndex().getAndChange().index = block.index;
         }
@@ -794,8 +803,22 @@ public class Blockchain extends AbstractActor {
                 trimmedBlock = block.trim();
             }
         });
+
+        for (Transaction tx : block.transactions) {
+            snapshot.getTransactions().add(tx.hash(), new TransactionState() {
+                {
+                    blockIndex = block.index;
+                    transaction = tx;
+                }
+            });
+        }
+
+        snapshot.getBlockHashIndex().getAndChange().hash = block.hash();
+        snapshot.getBlockHashIndex().getAndChange().index = block.index;
+
         snapshot.commit();
         updateCurrentSnapshot();
+        onPersistCompleted(block);
     }
 
     @Override
@@ -815,7 +838,7 @@ public class Blockchain extends AbstractActor {
 
     private void saveHeaderHashList(Snapshot snapshot) {
         TR.enter();
-        if ((header_index.size() - stored_header_count.intValue() < 2000)) {
+        if ((headerIndex.size() - stored_header_count.intValue() < 2000)) {
             TR.exit();
             return;
         }
@@ -824,10 +847,10 @@ public class Blockchain extends AbstractActor {
             snapshot = getSnapshot();
         }
         try {
-            while (header_index.size() - stored_header_count.intValue() >= 2000) {
+            while (headerIndex.size() - stored_header_count.intValue() >= 2000) {
                 snapshot.getHeaderHashList().add(new UInt32Wrapper(stored_header_count), new HeaderHashList() {
                     {
-                        hashes = (UInt256[]) Arrays.copyOfRange(header_index.toArray(), stored_header_count.intValue(), stored_header_count.intValue() + 2000);
+                        hashes = (UInt256[]) Arrays.copyOfRange(headerIndex.toArray(), stored_header_count.intValue(), stored_header_count.intValue() + 2000);
                     }
                 });
                 stored_header_count = Uint.add(stored_header_count, new Uint(2000));
@@ -864,7 +887,7 @@ public class Blockchain extends AbstractActor {
         return TR.exit(Props.create(Blockchain.class, system, store).withMailbox("blockchain-mailbox"));
     }
 
-    private static Blockchain singleton;
+    protected static Blockchain singleton;
 
     public static Blockchain singleton() {
         // TODO 有待改进
@@ -878,10 +901,6 @@ public class Blockchain extends AbstractActor {
         }
         return TR.exit(singleton);
     }
-
-
-    private ArrayList<UInt256> headerIndex = new ArrayList<>();
-    private final ConcurrentHashMap<UInt256, Block> blockCache = new ConcurrentHashMap<>();
 
     /**
      * Query block hash by block index
@@ -908,7 +927,7 @@ public class Blockchain extends AbstractActor {
     }
 
     public Block getBlock(UInt256 hash) {
-//        if (block_cache.TryGetValue(hash, out Block block))
+//        if (blockCache.TryGetValue(hash, out Block block))
 //            return block;
         return store.getBlock(hash);
     }

@@ -2,12 +2,16 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 
-import neo.AbstractBlockchainTest;
+import neo.log.tr.TR;
+import neo.persistence.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.Utils;
@@ -22,6 +26,18 @@ import neo.persistence.Snapshot;
 import neo.vm.OpCode;
 
 public class InvocationTransactionTest extends AbstractBlockchainTest {
+
+    @BeforeClass
+    public static void setUp() throws IOException {
+        TR.debug("----  InvocationTransactionTest setUp......");
+        AbstractBlockchainTest.setUp();
+    }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        TR.debug("----  InvocationTransactionTest tearDown......");
+        AbstractBlockchainTest.tearDown();
+    }
 
     @Test
     public void size() {

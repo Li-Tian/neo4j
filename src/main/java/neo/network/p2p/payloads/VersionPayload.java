@@ -12,12 +12,12 @@ import neo.log.notr.TR;
 import neo.network.p2p.LocalNode;
 
 /**
- * Record version data and block height
+ * Record VERSION data and block height
  */
 public class VersionPayload implements ISerializable {
 
     /**
-     * The version number
+     * The VERSION number
      */
     public Uint version;
 
@@ -42,7 +42,7 @@ public class VersionPayload implements ISerializable {
     public Uint nonce;
 
     /**
-     * The name of the node software and the description of version
+     * The name of the node software and the description of VERSION
      */
     public String userAgent;
 
@@ -108,11 +108,11 @@ public class VersionPayload implements ISerializable {
     }
 
     /**
-     * Build a version payload object
+     * Build a VERSION payload object
      *
      * @param port        The port of listener
      * @param nonce       The random number of local node
-     * @param userAgent   The name of node software and the description of the version
+     * @param userAgent   The name of node software and the description of the VERSION
      * @param startHeight The height of blocks
      * @return The VersionPayload build with these parameter
      */

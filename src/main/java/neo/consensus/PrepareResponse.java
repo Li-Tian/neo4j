@@ -4,6 +4,7 @@ package neo.consensus;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
+import neo.log.notr.TR;
 
 /**
  * PrepareResponse message, which only contains a signature
@@ -27,7 +28,8 @@ public class PrepareResponse extends ConsensusMessage {
      */
     @Override
     public int size() {
-        return super.size() + signature.length;
+        TR.enter();
+        return TR.exit(super.size() + signature.length);
     }
 
     /**
@@ -38,9 +40,11 @@ public class PrepareResponse extends ConsensusMessage {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         super.deserialize(reader);
         // TODO hard code 64
         signature = reader.readFully(64);
+        TR.exit();
     }
 
     /**
@@ -57,8 +61,10 @@ public class PrepareResponse extends ConsensusMessage {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         super.serialize(writer);
         writer.write(signature);
+        TR.exit();
     }
 
 

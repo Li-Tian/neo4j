@@ -1,8 +1,10 @@
 package neo.persistence.leveldb;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
@@ -53,15 +55,15 @@ public class LevelDBStoreTest {
 
     private final static String LEVELDB_TEST_PATH = "Chain_test";
 
-    private LevelDBStore store;
+    private static LevelDBStore store;
 
-    @Before
-    public void before() throws IOException {
+    @BeforeClass
+    public static void before() throws IOException {
         store = new LevelDBStore(LEVELDB_TEST_PATH);
     }
 
-    @After
-    public void after() throws IOException {
+    @AfterClass
+    public static void after() throws IOException {
         store.close();
         // free leveldb file
         File file = new File(LEVELDB_TEST_PATH);

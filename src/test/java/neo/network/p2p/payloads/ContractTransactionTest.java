@@ -1,12 +1,15 @@
 package neo.network.p2p.payloads;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 
-import neo.AbstractBlockchainTest;
+import neo.persistence.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.Utils;
@@ -19,6 +22,16 @@ import neo.ledger.TransactionState;
 import neo.persistence.Snapshot;
 
 public class ContractTransactionTest extends AbstractBlockchainTest {
+
+    @BeforeClass
+    public static void setUp() throws IOException {
+        AbstractBlockchainTest.setUp();
+    }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        AbstractBlockchainTest.tearDown();
+    }
 
     @Test(expected = FormatException.class)
     public void deserializeExclusiveData() {

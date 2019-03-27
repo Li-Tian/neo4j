@@ -51,4 +51,24 @@ public class ConsensusState extends ByteFlag {
     public ConsensusState(byte value) {
         super(value);
     }
+
+    /**
+     * state A's value and state B's value
+     *
+     * @param other the target state
+     * @return a new state with the value of A and B
+     */
+    public ConsensusState and(ConsensusState other) {
+        return new ConsensusState((byte) (this.value & other.value));
+    }
+
+    /**
+     * state A's value or state B's value
+     *
+     * @param other the target state
+     * @return a new state with the value of A or B
+     */
+    public ConsensusState or(ConsensusState other) {
+        return new ConsensusState((byte) (this.value | other.value));
+    }
 }

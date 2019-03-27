@@ -48,7 +48,7 @@ public class PublishTransaction extends Transaction {
     public String name;
 
     /**
-     * The version of code
+     * The VERSION of code
      */
     public String codeVersion;
 
@@ -141,9 +141,9 @@ public class PublishTransaction extends Transaction {
      * <li>Script: The smart contract script</li>
      * <li>parameterList: The list of parameters</li>
      * <li>returnType: THe return value type</li>
-     * <li>needStorage: If it need a storage（valid from 1.0 version）</li>
+     * <li>needStorage: If it need a storage（valid from 1.0 VERSION）</li>
      * <li>name: The name of contract</li>
-     * <li>codeVersion: The code of version</li>
+     * <li>codeVersion: The code of VERSION</li>
      * <li>author: author</li>
      * <li>email: Email</li>
      * <li>description: Description</li>

@@ -1,7 +1,8 @@
 package neo;
 
-import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+
+import java.net.InetSocketAddress;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
@@ -12,7 +13,7 @@ import neo.log.tr.TR;
 import neo.network.p2p.LocalNode;
 import neo.network.p2p.Peer;
 import neo.network.p2p.TaskManager;
-//import neo.network.rpc.RpcServer;
+import neo.network.rpc.RpcServer;
 import neo.persistence.Store;
 import neo.plugins.Plugin;
 
@@ -34,16 +35,21 @@ public class NeoSystem {
 
     public ActorRef consensus;
 
-    //public RpcServer rpcServer;
+    public RpcServer rpcServer;
 
     public NeoSystem(Store store) {
         TR.enter();
+        init(store);
+        TR.exit();
+    }
+
+    public void init(Store store) {
         blockchain = actorSystem.actorOf(Blockchain.props(this, store));
         localNode = actorSystem.actorOf(LocalNode.props(this));
         taskManager = actorSystem.actorOf(TaskManager.props(this));
         Plugin.loadPlugins(this);
-        TR.exit();
     }
+
 
     public void dispose() {
         TR.enter();
@@ -86,6 +92,13 @@ public class NeoSystem {
             start_message = null;
         }
         TR.exit();
+    }
+
+    public void startRpc(InetSocketAddress bindAddress, Wallet wallet, String sslCert, String password,
+                         String[] trustedAuthorities, Fixed8 maxGasInvoke)
+    {
+        rpcServer = new RpcServer(this, wallet, maxGasInvoke);
+        rpcServer.start(bindAddress, sslCert, password, trustedAuthorities);
     }
 
     public void suspendNodeStartup() {

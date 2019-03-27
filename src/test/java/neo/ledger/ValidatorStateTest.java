@@ -69,6 +69,6 @@ public class ValidatorStateTest {
         validatorState.registered = false;
         validatorState.votes = new Fixed8(2);
 
-        Assert.assertEquals("{\"VERSION\":0}", validatorState.toJson().toString());
+        Assert.assertEquals("{\"version\":0}", validatorState.toJson().toString());
     }
 }

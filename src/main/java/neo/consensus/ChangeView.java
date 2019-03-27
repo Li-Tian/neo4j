@@ -3,6 +3,7 @@ package neo.consensus;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
+import neo.log.notr.TR;
 
 /**
  * ChangeView message, used in view change processing, extends ConsensusMessage.
@@ -26,7 +27,8 @@ public class ChangeView extends ConsensusMessage {
      */
     @Override
     public int size() {
-        return super.size() + Byte.BYTES;
+        TR.enter();
+        return TR.exit(super.size() + Byte.BYTES);
     }
 
     /**
@@ -37,9 +39,11 @@ public class ChangeView extends ConsensusMessage {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         super.deserialize(reader);
         newViewNumber = (byte) reader.readByte();
         if (newViewNumber == 0) throw new FormatException();
+        TR.exit();
     }
 
     /**
@@ -56,8 +60,10 @@ public class ChangeView extends ConsensusMessage {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         super.serialize(writer);
         writer.writeByte(newViewNumber);
+        TR.exit();
     }
 
 

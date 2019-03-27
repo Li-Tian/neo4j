@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -82,7 +83,7 @@ public abstract class Peer extends AbstractActor {
         public boolean isTrusted = false;
     }
 
-    private static class Timer {
+    public static class Timer {
     }
 
 
@@ -98,14 +99,14 @@ public abstract class Peer extends AbstractActor {
 
     private static final int MaxConnectionsPerAddress = 3;
 
-    private static ActorRef tcpManager = null;
+    protected static ActorRef tcpManager = null;
 
     private ActorRef tcpListener;
 
-    private Cancellable timer;  // C# is ICancelable
+    public Cancellable timer;  // C# is ICancelable
 
     private static final HashSet<InetAddress> localAddresses = new HashSet<>();
-    private final HashMap<InetAddress, Integer> connectedAddresses = new HashMap<>();
+    protected final HashMap<InetAddress, Integer> connectedAddresses = new HashMap<>();
 
     /**
      * Dictionary of active connections.Key is the reference to the active connection, and value is
@@ -132,9 +133,9 @@ public abstract class Peer extends AbstractActor {
     protected final HashSet<InetAddress> trustedIpAddresses = new HashSet<>(); // net to add get method
 
 
-    private int listenerPort;
-    private int minDesiredConnections = DefaultMinDesiredConnections;
-    private int maxConnections = DefaultMaxConnections;
+    public int listenerPort;
+    public int minDesiredConnections = DefaultMinDesiredConnections;
+    public int maxConnections = DefaultMaxConnections;
 
     /**
      * The max number of peers in the unconnected peer list. Default 1000
@@ -147,10 +148,14 @@ public abstract class Peer extends AbstractActor {
      */
     public Peer() {
         //c# code: tcpManager = Context.System.Tcp();
-
         // only execute once
+        initOnlyOnce();
+    }
+
+    protected void initOnlyOnce() {
+        TR.enter();
         if (tcpManager == null) {
-            tcpManager = Tcp.get(getContext().system()).manager();
+            tcpManager = Tcp.get(context().system()).manager();
 
             try {
                 Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
@@ -166,6 +171,15 @@ public abstract class Peer extends AbstractActor {
                 TR.error(e1);
             }
         }
+        TR.exit();
+    }
+
+
+    /**
+     * get listener port
+     */
+    public int getListenerPort() {
+        return listenerPort;
     }
 
 
@@ -173,37 +187,12 @@ public abstract class Peer extends AbstractActor {
      * max connecting amount
      */
     protected int getConnectingMax() {
+        TR.enter();
         int allowedConnecting = minDesiredConnections * 4;
         if (maxConnections != -1 && allowedConnecting > maxConnections) {
             allowedConnecting = maxConnections;
         }
-        return allowedConnecting - connectedPeers.size();
-    }
-
-
-    /**
-     * Listening port
-     *
-     * @return Return this Peer object
-     */
-    public int getListenerPort() {
-        return listenerPort;
-    }
-
-    /**
-     * Min desired connection amount.Default value is 10.
-     *
-     * @return Min desired connection amount
-     */
-    public int getMinDesiredConnections() {
-        return minDesiredConnections;
-    }
-
-    /**
-     * Max connection amount
-     */
-    public int getMaxConnections() {
-        return maxConnections;
+        return TR.exit(allowedConnecting - connectedPeers.size());
     }
 
     /**
@@ -212,9 +201,11 @@ public abstract class Peer extends AbstractActor {
      * @return ActorSelection
      */
     protected ActorSelection getConnections() {
+        TR.enter();
         // C# code
         //   protected ActorSelection connections; // =>Context.ActorSelection("connection_*");
-        return context().actorSelection("connection_*");
+        ActorSelection actorSelection = context().actorSelection("connection_*");
+        return TR.exit(actorSelection);
     }
 
 
@@ -222,7 +213,9 @@ public abstract class Peer extends AbstractActor {
      * Add a peer collection to the list of local unconnected peers.
      */
     protected void addPeers(Collection<InetSocketAddress> peers) {
+        TR.enter();
         if (unconnectedPeers.size() >= unconnectedMax) {
+            TR.exit();
             return;
         }
 
@@ -234,6 +227,7 @@ public abstract class Peer extends AbstractActor {
             unconnectedPeers.addAll(peers);
             // C# code:  ImmutableInterlocked.Update(ref UnconnectedPeers, p => p.Union(peers));
         }
+        TR.exit();
     }
 
     /**
@@ -244,7 +238,9 @@ public abstract class Peer extends AbstractActor {
      * @param endPoint a specify Peer's IPEndPoint
      */
     protected void connectToPeer(InetSocketAddress endPoint) {
+        TR.enter();
         connectToPeer(endPoint, false);
+        TR.exit();
     }
 
 
@@ -257,6 +253,7 @@ public abstract class Peer extends AbstractActor {
      * @param isTrusted whether the Peer node is trusted（Reserved), default is false.
      */
     protected void connectToPeer(InetSocketAddress endPoint, boolean isTrusted) {
+        TR.enter();
         endPoint = IpHelper.toIPv4(endPoint);
         InetAddress address = endPoint.getAddress();
 
@@ -268,9 +265,11 @@ public abstract class Peer extends AbstractActor {
         }
         if (connectedAddresses.containsKey(address)
                 && connectedAddresses.get(address) >= MaxConnectionsPerAddress) {
+            TR.exit();
             return;
         }
         if (connectedPeers.values().contains(endPoint)) {
+            TR.exit();
             return;
         }
 
@@ -278,13 +277,15 @@ public abstract class Peer extends AbstractActor {
             if ((connectingPeers.size() >= getConnectingMax() && !isTrusted)
                     || connectingPeers.contains(endPoint)) {
                 // c# code return p
+                TR.exit();
                 return;
             }
             // C# code
             //  tcpManager.Tell(new Tcp.Connect(endPoint));
-            tcpManager.tell(TcpMessage.connect(endPoint), getSelf());
+            tcpManager.tell(TcpMessage.connect(endPoint), self());
             connectingPeers.add(endPoint);
         }
+        TR.exit();
     }
 
 
@@ -296,7 +297,8 @@ public abstract class Peer extends AbstractActor {
     abstract protected void needMorePeers(int count);
 
 
-    private void onStart(int port, int minDesiredConnections, int maxConnections) {
+    protected void onStart(int port, int minDesiredConnections, int maxConnections) {
+        TR.enter();
         this.listenerPort = port;
         this.minDesiredConnections = minDesiredConnections;
         this.maxConnections = maxConnections;
@@ -313,12 +315,14 @@ public abstract class Peer extends AbstractActor {
         if (port > 0) {
             Collection<SocketOption> options = Collections.singletonList(TcpSO.reuseAddress(true));
             InetSocketAddress address = new InetSocketAddress("localhost", port);
-            Tcp.Command command = TcpMessage.bind(getSelf(), address, 100, options, false);
-            tcpManager.tell(command, getSelf());
+            Tcp.Command command = TcpMessage.bind(self(), address, 100, options, false);
+            tcpManager.tell(command, self());
         }
+        TR.exit();
     }
 
     private void onTcpConnected(InetSocketAddress remote, InetSocketAddress local) {
+        TR.enter();
         synchronized (connectingPeers) {
             connectingPeers.remove(remote);
         }
@@ -333,18 +337,22 @@ public abstract class Peer extends AbstractActor {
         InetAddress address = remote.getAddress();
         int count = connectedAddresses.containsKey(address) ? connectedAddresses.get(address) : 0;
         if (count >= MaxConnectionsPerAddress) {
-            sender().tell(TcpMessage.abort(), getSelf());
+            sender().tell(TcpMessage.abort(), self());
         } else {
             connectedAddresses.put(address, count + 1);
             String actorName = String.format("connection_%s", GUID.newGuid());
-            ActorRef connection = context().actorOf(protocolProps(getSender(), remote, local), actorName);
+            Props protocolProps = protocolProps(self(), remote, local);
+            ActorRef connection = context().actorOf(protocolProps, actorName);
+
             context().watch(connection);
-            sender().tell(TcpMessage.register(connection), getSelf());
+            sender().tell(TcpMessage.register(connection), self());
             connectedPeers.put(connection, remote);
         }
+        TR.exit();
     }
 
     private void onTcpCommandFailed(Tcp.Command cmd) {
+        TR.enter();
         if (cmd instanceof Tcp.Connect) {
             Tcp.Connect connect = (Tcp.Connect) cmd;
             synchronized (connectingPeers) {
@@ -352,10 +360,12 @@ public abstract class Peer extends AbstractActor {
                 connectingPeers.remove(remoteAddr);
             }
         }
+        TR.exit();
     }
 
 
     private void onTerminated(ActorRef actorRef) {
+        TR.enter();
         InetSocketAddress endPoint = connectedPeers.remove(actorRef);
         if (endPoint != null) {
             int count = connectedAddresses.containsKey(endPoint) ? connectedAddresses.get(endPoint) : 0;
@@ -368,23 +378,29 @@ public abstract class Peer extends AbstractActor {
                 connectedAddresses.put(endPoint.getAddress(), count);
             }
         }
+        TR.exit();
     }
 
     private void onTimer() {
+        TR.enter();
         if (connectedPeers.size() >= minDesiredConnections) {
+            TR.exit();
             return;
         }
         if (unconnectedPeers.isEmpty()) {
             needMorePeers(minDesiredConnections - connectedPeers.size());
         }
+        ArrayList toRemoveList = new ArrayList();
         unconnectedPeers.stream()
                 .limit(minDesiredConnections - connectedPeers.size())
                 .forEach(inetSocketAddress -> {
-                    synchronized (unconnectedPeers) {
-                        unconnectedPeers.remove(inetSocketAddress);
-                    }
+                    toRemoveList.add(inetSocketAddress);
                     connectToPeer(inetSocketAddress);
                 });
+        synchronized (unconnectedPeers) {
+            unconnectedPeers.removeAll(toRemoveList);
+        }
+        TR.exit();
     }
 
 
@@ -395,6 +411,7 @@ public abstract class Peer extends AbstractActor {
      */
     @Override
     public void postStop() throws Exception {
+        TR.enter();
         if (timer != null && !timer.isCancelled()) {
             timer.cancel();
         }
@@ -402,6 +419,7 @@ public abstract class Peer extends AbstractActor {
             tcpListener.tell(TcpMessage.unbind(), getSelf());
         }
         super.postStop();
+        TR.exit();
     }
 
 
@@ -422,23 +440,25 @@ public abstract class Peer extends AbstractActor {
      */
     @Override
     public AbstractActor.Receive createReceive() {
-        return getReceiveBuilder().build();
+        TR.enter();
+        return TR.exit(getReceiveBuilder().build());
     }
 
     /**
      * get receiver builder
      */
     protected ReceiveBuilder getReceiveBuilder() {
-        return receiveBuilder()
+        TR.enter();
+        return TR.exit(receiveBuilder()
                 .match(Peer.Start.class, start -> onStart(start.port, start.minDesiredConnections, start.maxConnections))
                 .match(Peer.Timer.class, timer -> onTimer())
                 .match(Peer.Peers.class, peers -> addPeers(peers.endPoints))
                 .match(Peer.Connect.class, connect -> connectToPeer(connect.endPoint, connect.isTrusted))
                 .match(Terminated.class, terminated -> onTerminated(terminated.getActor()))
-                .match(Tcp.Bound.class, bound -> tcpListener = getSender())
+                .match(Tcp.Bound.class, bound -> tcpListener = sender())
                 .match(Tcp.CommandFailed.class, commandFailed -> onTcpCommandFailed(commandFailed.cmd()))
                 .match(Tcp.Connected.class, connected ->
-                        onTcpConnected(IpHelper.toIPv4(connected.remoteAddress()), IpHelper.toIPv4(connected.localAddress())));
+                        onTcpConnected(IpHelper.toIPv4(connected.remoteAddress()), IpHelper.toIPv4(connected.localAddress()))));
     }
 
     /**

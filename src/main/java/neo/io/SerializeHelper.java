@@ -82,8 +82,8 @@ public class SerializeHelper {
      * Parse value array from byte array
      *
      * @param bytes    byte array
-     * @param arrayGen array generator
-     * @param objGen   value generator
+     * @param arrayGen array generator, eg: Test[]::new
+     * @param objGen   value generator, eg: Test::new
      * @param <TValue> the object to be serialized
      * @return TValue[]
      */

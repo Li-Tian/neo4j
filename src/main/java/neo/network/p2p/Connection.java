@@ -10,6 +10,7 @@ import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.japi.pf.ReceiveBuilder;
 import akka.util.ByteString;
+import neo.csharp.BitConverter;
 import neo.log.notr.TR;
 
 /**
@@ -44,15 +45,15 @@ public abstract class Connection extends AbstractActor {
     /**
      * constructor
      *
-     * @param connection a TCP/IP connection object or a WebSocket connection object
-     * @param remote     IP and port of remote node
-     * @param local      IP and port of local node
+     * @param tcp    a TCP/IP connection object or a WebSocket connection object
+     * @param remote IP and port of remote node
+     * @param local  IP and port of local node
      */
-    protected Connection(ActorRef connection, InetSocketAddress remote, InetSocketAddress local) {
-        this.tcp = connection;
+    protected Connection(ActorRef tcp, InetSocketAddress remote, InetSocketAddress local) {
+        this.tcp = tcp;
         this.remote = remote;
         this.local = local;
-        this.timer = context().system().scheduler().schedule(Duration.ofSeconds(0),
+        this.timer = context().system().scheduler().scheduleOnce(
                 Duration.ofSeconds(10),
                 getSelf(),
                 Timer.Instance,
@@ -73,18 +74,22 @@ public abstract class Connection extends AbstractActor {
      * @param abort whether to stop directly
      */
     public void disconnect(boolean abort) {
+        TR.enter();
         disconnected = true;
         if (tcp != null) {
             Object msg = abort ? (Tcp.CloseCommand) TcpMessage.abort() : TcpMessage.close();
             tcp.tell(msg, ActorRef.noSender());
         }
-        context().stop(getSelf());
+        context().stop(self());
+        TR.exit();
     }
 
     /**
      * Processing method when receiving an ACK signal transmitted by a TCP connection
      */
     protected void onAck() {
+        TR.enter();
+        TR.exit();
     }
 
 
@@ -102,10 +107,11 @@ public abstract class Connection extends AbstractActor {
      * @param data network transport data
      */
     private void onReceived(ByteString data) {
+        TR.enter();
         if (!timer.isCancelled()) {
             timer.cancel();
         }
-        timer = context().system().scheduler().schedule(Duration.ofSeconds(0),
+        timer = context().system().scheduler().scheduleOnce(
                 Duration.ofMinutes(1),
                 getSelf(),
                 Timer.Instance,
@@ -119,6 +125,7 @@ public abstract class Connection extends AbstractActor {
             TR.error(e);
             disconnect(true);
         }
+        TR.exit();
     }
 
     /**
@@ -128,6 +135,7 @@ public abstract class Connection extends AbstractActor {
      */
     @Override
     public void postStop() throws Exception {
+        TR.enter();
         if (!disconnected && tcp != null) {
             tcp.tell(TcpMessage.close(), ActorRef.noSender());
         }
@@ -135,6 +143,7 @@ public abstract class Connection extends AbstractActor {
             timer.cancel();
         }
         super.postStop();
+        TR.exit();
     }
 
     /**
@@ -143,9 +152,12 @@ public abstract class Connection extends AbstractActor {
      * @param data the data needed to be send
      */
     protected void sendData(ByteString data) {
+        TR.enter();
         if (tcp != null) {
-            tcp.tell(TcpMessage.write(data, Ack.Instance), getSelf());
+            Tcp.Command command = TcpMessage.write(data, Ack.Instance);
+            tcp.tell(command, self());
         }
+        TR.exit();
     }
 
     /**
@@ -159,7 +171,8 @@ public abstract class Connection extends AbstractActor {
      */
     @Override
     public Receive createReceive() {
-        return getReceiveBuilder().build();
+        TR.enter();
+        return TR.exit(getReceiveBuilder().build());
     }
 
 
@@ -167,10 +180,11 @@ public abstract class Connection extends AbstractActor {
      * get a receiver builder
      */
     protected ReceiveBuilder getReceiveBuilder() {
-        return receiveBuilder()
-                .match(Connection.Timer.class, timer -> disconnect(true))
-                .match(Connection.Ack.class, ack -> onAck())
+        TR.enter();
+        return TR.exit(receiveBuilder()
+                .match(Timer.class, timer -> disconnect(true))
+                .match(Ack.class, ack -> onAck())
                 .match(Tcp.Received.class, received -> onReceived(received.data()))
-                .match(Tcp.ConnectionClosed.class, task -> context().stop(self()));
+                .match(Tcp.ConnectionClosed.class, task -> context().stop(self())));
     }
 }

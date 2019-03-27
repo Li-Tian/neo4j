@@ -27,6 +27,7 @@ import neo.exception.FormatException;
 import neo.io.SerializeHelper;
 import neo.io.actors.PriorityMailbox;
 import neo.ledger.Blockchain;
+import neo.log.tr.TR;
 import neo.network.p2p.payloads.IInventory;
 import neo.network.p2p.payloads.InvPayload;
 import neo.network.p2p.payloads.InventoryType;
@@ -70,20 +71,20 @@ public class RemoteNode extends Connection {
      * constructor，create a RemoteNode object and sending the VERSION data of the local node to the
      * connected remote node.
      *
-     * @param system     Neo core system
-     * @param connection a TCP/IP or WebSocket connection
-     * @param remote     IP and port of remote node
-     * @param local      IP and port of local node
+     * @param system Neo core system
+     * @param tcp    a TCP/IP or WebSocket connection
+     * @param remote IP and port of remote node
+     * @param local  IP and port of local node
      */
-    public RemoteNode(NeoSystem system, ActorRef connection, InetSocketAddress remote, InetSocketAddress local) {
-        super(connection, remote, local);
+    public RemoteNode(NeoSystem system, ActorRef tcp, InetSocketAddress remote, InetSocketAddress local) {
+        super(tcp, remote, local);
 
         this.system = system;
         this.protocol = context().actorOf(ProtocolHandler.props(system));
         // register the remote node in the Localnode
         LocalNode.singleton().registerRemoteNode(this);
 
-        VersionPayload versionPayload = VersionPayload.create(LocalNode.singleton().getListenerPort(),
+        VersionPayload versionPayload = VersionPayload.create(LocalNode.singleton().listenerPort,
                 LocalNode.NONCE,
                 LocalNode.USER_AGENT,
                 Blockchain.singleton().getHeight());
@@ -110,7 +111,8 @@ public class RemoteNode extends Connection {
      * @return InetSocketAddress
      */
     public InetSocketAddress getListener() {
-        return new InetSocketAddress(remote.getAddress(), getListenerPort());
+        TR.enter();
+        return TR.exit(new InetSocketAddress(remote.getAddress(), getListenerPort()));
     }
 
     /**
@@ -118,7 +120,8 @@ public class RemoteNode extends Connection {
      */
     @Override
     public int getListenerPort() {
-        return version != null ? version.port.intValue() : 0;
+        TR.enter();
+        return TR.exit(version != null ? version.port.intValue() : 0);
     }
 
     /**
@@ -128,16 +131,24 @@ public class RemoteNode extends Connection {
      */
     @Override
     protected void onData(ByteString data) {
+        TR.enter();
+
         msgBuffer = msgBuffer.concat(data);
-        for (Message message = tryParseMessage(); message != null; message = tryParseMessage())
+        for (Message message = tryParseMessage(); message != null; message = tryParseMessage()) {
             protocol.tell(message, self());
+        }
+        TR.exit();
     }
 
     private void enqueueMessage(String command, ISerializable payload) {
+        TR.enter();
         enqueueMessage(Message.create(command, payload));
+        TR.exit();
     }
 
     private void enqueueMessage(Message message) {
+        TR.enter();
+
         boolean is_single = false;
         switch (message.command) {
             case "addr":
@@ -167,90 +178,145 @@ public class RemoteNode extends Connection {
             messageQueue.add(message);
         }
         checkMessageQueue();
+
+        TR.exit();
     }
 
 
     private void checkMessageQueue() {
-        if (!verack || !ack) return;
+        TR.enter();
+
+        if (!verack || !ack) {
+            TR.exit();
+            return;
+        }
         Queue<Message> queue = messageQueueHigh;
         if (queue.isEmpty()) queue = messageQueueLow;
-        if (queue.isEmpty()) return;
+        if (queue.isEmpty()) {
+            TR.exit();
+            return;
+        }
         sendMessage(queue.poll());
+
+        TR.exit();
     }
 
     private Message tryParseMessage() {
-        if (msgBuffer.size() < Uint.BYTES) return null;
+        TR.enter();
+
+        if (msgBuffer.size() < Uint.BYTES) {
+            return TR.exit(null);
+        }
 
         Uint magic = BitConverter.toUint(msgBuffer.slice(0, Uint.BYTES).toArray());
         if (!magic.equals(Message.Magic)) {
             throw new FormatException();
         }
         if (msgBuffer.size() < Message.HeaderSize) {
-            return null;
+            return TR.exit(null);
         }
 
         // get the payload size
-        int length = BitConverter.toInt(msgBuffer.slice(16, Uint.BYTES).toArray());
+        int length = BitConverter.toInt(msgBuffer.slice(16, 16 + Uint.BYTES).toArray());
         if (length > Message.PayloadMaxSize) {
             throw new FormatException();
         }
 
         length += Message.HeaderSize;   // total size = header size + payload size
         if (msgBuffer.size() < length) {
-            return null;
+            return TR.exit(null);
         }
 
         Message message = SerializeHelper.parse(Message::new, msgBuffer.slice(0, length).toArray());
         // C# code: msgBuffer = msgBuffer.slice(length).compact()
         msgBuffer = msgBuffer.drop(length).compact(); // drop the bytes which be read
-        return message;
+        return TR.exit(message);
     }
 
 
     private void onRelay(IInventory inventory) {
+        TR.enter();
+
         if (version == null || !version.relay) {
+            TR.exit();
             return;
         }
 
         if (inventory.inventoryType() == InventoryType.Tx) {
             if (bloomFilter != null && !Helper.test(bloomFilter, (Transaction) inventory)) {
+                TR.exit();
                 return;
             }
         }
 
         UInt256[] hashes = new UInt256[]{inventory.hash()};
         enqueueMessage("inv", InvPayload.create(inventory.inventoryType(), hashes));
+
+        TR.exit();
     }
 
     private void onSend(IInventory inventory) {
+        TR.enter();
+
         if (version == null || !version.relay) {
+            TR.exit();
             return;
         }
         if (inventory.inventoryType() == InventoryType.Tx) {
             if (bloomFilter != null && !Helper.test(bloomFilter, (Transaction) inventory)) {
+                TR.exit();
                 return;
             }
         }
         enqueueMessage(inventory.inventoryType().toString().toLowerCase(), inventory);
+
+        TR.exit();
     }
 
     private void onSetFilter(BloomFilter filter) {
+        TR.enter();
+
         bloomFilter = filter;
+
+        TR.exit();
+    }
+
+
+    /**
+     * A callback function to handle ack type message.   Set the ack flag to true, then check the
+     * message in the message queue. and pop up and send the oldest message that first entered the
+     * message queue.
+     */
+    @Override
+    protected void onAck() {
+        TR.enter();
+
+        ack = true;
+        checkMessageQueue();
+
+        TR.exit();
     }
 
     private void onSetVerack() {
+        TR.enter();
+
         verack = true;
         TaskManager.Register register = new TaskManager.Register();
         register.version = version;
         system.taskManager.tell(register, self());
         checkMessageQueue();
+
+        TR.exit();
     }
 
     private void onSetVersion(VersionPayload version) {
+        TR.enter();
+
         this.version = version;
 
         if (version.nonce.equals(LocalNode.NONCE)) {
             disconnect(true);
+            TR.exit();
             return;
         }
 
@@ -265,15 +331,22 @@ public class RemoteNode extends Connection {
         if (repeatRemote) {
             // connect repeat
             disconnect(true);
+            TR.exit();
             return;
         }
         sendMessage(Message.create("verack"));
+
+        TR.exit();
     }
 
 
     private void sendMessage(Message message) {
+        TR.enter();
+
         ack = false;
         sendData(ByteString.fromArray(SerializeHelper.toBytes(message)));
+
+        TR.exit();
     }
 
     /**
@@ -282,8 +355,12 @@ public class RemoteNode extends Connection {
      */
     @Override
     public void postStop() throws Exception {
+        TR.enter();
+
         LocalNode.singleton().unregisterRemoteNode(this);
         super.postStop();
+
+        TR.exit();
     }
 
 
@@ -309,15 +386,17 @@ public class RemoteNode extends Connection {
      */
     @Override
     public AbstractActor.Receive createReceive() {
+        TR.enter();
+
         ReceiveBuilder builder = super.getReceiveBuilder();
-        return builder
+        return TR.exit(builder
                 .match(Message.class, msg -> enqueueMessage(msg))
                 .match(IInventory.class, inventory -> onSend(inventory))
                 .match(RemoteNode.Relay.class, relay -> onRelay(relay.inventory))
                 .match(ProtocolHandler.SetVersion.class, setVersion -> onSetVersion(setVersion.version))
                 .match(ProtocolHandler.SetVerack.class, setVerack -> onSetVerack())
                 .match(ProtocolHandler.SetFilter.class, setFilter -> onSetFilter(setFilter.filter))
-                .build();
+                .build());
     }
 
     /**
@@ -327,11 +406,13 @@ public class RemoteNode extends Connection {
      */
     @Override
     public SupervisorStrategy supervisorStrategy() {
+        TR.enter();
+
         return new OneForOneStrategy(10,
                 Duration.ofMinutes(1),
                 param -> {
                     disconnect(true);
-                    return SupervisorStrategy.stop();
+                    return TR.exit(SupervisorStrategy.stop());
                 });
     }
 
@@ -347,11 +428,13 @@ public class RemoteNode extends Connection {
 
         @Override
         protected boolean isHighPriority(Object message) {
+            TR.enter();
+
             if (message instanceof Tcp.ConnectionClosed
                     || message instanceof Connection.Timer) {
-                return true;
+                return TR.exit(true);
             }
-            return false;
+            return TR.exit(false);
         }
     }
 }

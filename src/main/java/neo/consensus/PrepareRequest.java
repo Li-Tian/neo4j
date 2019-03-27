@@ -9,6 +9,7 @@ import neo.csharp.Ulong;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
+import neo.log.notr.TR;
 import neo.network.p2p.payloads.MinerTransaction;
 
 /**
@@ -54,8 +55,9 @@ public class PrepareRequest extends ConsensusMessage {
      */
     @Override
     public int size() {
-        return super.size() + Ulong.BYTES + nextConsensus.size() + BitConverter.getVarSize(transactionHashes)
-                + minerTransaction.size() + signature.length;
+        TR.enter();
+        return TR.exit(super.size() + Ulong.BYTES + nextConsensus.size() + BitConverter.getVarSize(transactionHashes)
+                + minerTransaction.size() + signature.length);
     }
 
     /**
@@ -66,6 +68,7 @@ public class PrepareRequest extends ConsensusMessage {
      */
     @Override
     public void deserialize(BinaryReader reader) {
+        TR.enter();
         super.deserialize(reader);
         nonce = reader.readUlong();
         nextConsensus = reader.readSerializable(UInt160::new);
@@ -79,6 +82,7 @@ public class PrepareRequest extends ConsensusMessage {
         }
         // TODO hard code 64
         signature = reader.readFully(64);
+        TR.exit();
     }
 
     /**
@@ -100,12 +104,14 @@ public class PrepareRequest extends ConsensusMessage {
      */
     @Override
     public void serialize(BinaryWriter writer) {
+        TR.enter();
         super.serialize(writer);
         writer.writeUlong(nonce);
         writer.writeSerializable(nextConsensus);
         writer.writeArray(transactionHashes);
         writer.writeSerializable(minerTransaction);
         writer.write(signature);
+        TR.exit();
     }
 
 }

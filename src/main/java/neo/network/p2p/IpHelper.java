@@ -4,9 +4,10 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import inet.ipaddr.ipv4.IPv4Address;
+import inet.ipaddr.ipv6.IPv6Address;
 import neo.log.notr.TR;
 
 /**
@@ -22,50 +23,17 @@ public class IpHelper {
      * will return the source address.
      */
     public static InetAddress toIPv4(InetAddress address) {
+        TR.enter();
         if (address instanceof Inet4Address) {
-            return address;
+            return TR.exit(address);
         }
-
-        // TODO to complete ipv6Toipv4
-
         Inet6Address ipv6 = (Inet6Address) address;
-        if (ipv6.isIPv4CompatibleAddress()) {
-            byte[] data = ipv6.getAddress();
-            byte[] ipv4Data = new byte[4];
-            System.arraycopy(data, 12, ipv4Data, 0, 4);
-            try {
-                return Inet4Address.getByAddress(data);
-            } catch (UnknownHostException e) {
-                // log the error, and return the origin address
-                TR.error(e);
-                return address;
-            }
+        IPv6Address iPv6Address = new IPv6Address(ipv6);
+        if (iPv6Address.isIPv4Compatible() || iPv6Address.isIPv4Mapped()) {
+            IPv4Address iPv4Address = iPv6Address.getEmbeddedIPv4Address();
+            address = iPv4Address.toInetAddress();
         }
-        return address;
-    }
-
-    /**
-     * convert to ipv6 address
-     *
-     * @param address source address
-     * @return ipv6 address. if convert failed, it will return the source address
-     */
-    public static InetAddress toIPv6(InetAddress address) {
-        if (address instanceof Inet6Address) {
-            return address;
-        }
-
-        byte[] ipv4Data = address.getAddress();
-        byte[] ipv6Data = new byte[16];
-        Arrays.fill(ipv6Data, (byte) 0x00);
-        System.arraycopy(ipv4Data, 0, ipv6Data, 12, 8);
-        try {
-            return Inet6Address.getByAddress(ipv6Data);
-        } catch (UnknownHostException e) {
-            // log the error, and return the origin address
-            TR.error(e);
-            return address;
-        }
+        return TR.exit(address);
     }
 
     /**
@@ -75,26 +43,16 @@ public class IpHelper {
      * @return 16-byte array
      */
     public static byte[] toIPv6Bytes(InetAddress address) {
-        if (address instanceof Inet6Address) {
-            return address.getAddress();
+        TR.enter();
+        byte[] data = address.getAddress();
+        if (data.length == 16) {// ipv6
+            return TR.exit(data);
+        } else { // ipv4
+            byte[] ipv6Data = new byte[16];
+            Arrays.fill(ipv6Data, (byte) 0x00);
+            System.arraycopy(data, 0, ipv6Data, 12, 4);
+            return TR.exit(ipv6Data);
         }
-        byte[] ipv4Data = address.getAddress();
-        byte[] ipv6Data = new byte[16];
-        Arrays.fill(ipv6Data, (byte) 0x00);
-        System.arraycopy(ipv4Data, 0, ipv6Data, 12, 4);
-        return ipv6Data;
-    }
-
-
-    /**
-     * convert to ipv6 socket address
-     *
-     * @param socketAddress source socket address
-     * @return ipv6 socket address. if the source address is already the ipv6 socket address or
-     * convert failed, it will return the source address
-     */
-    public static InetSocketAddress toIPv6(InetSocketAddress socketAddress) {
-        return convert(socketAddress, true);
     }
 
 
@@ -106,19 +64,14 @@ public class IpHelper {
      * convert failed, it will return the source address
      */
     public static InetSocketAddress toIPv4(InetSocketAddress socketAddress) {
-        return convert(socketAddress, false);
-    }
-
-
-    private static InetSocketAddress convert(InetSocketAddress socketAddress, boolean ipv4Tov6) {
+        TR.enter();
         InetAddress address = socketAddress.getAddress();
 
-        InetAddress newAddress = ipv4Tov6 ? toIPv6(address) : toIPv4(address);
+        InetAddress newAddress = toIPv4(address);
         if (newAddress == address) {
             return socketAddress;
         }
-        return new InetSocketAddress(newAddress, socketAddress.getPort());
+        return TR.exit(new InetSocketAddress(newAddress, socketAddress.getPort()));
     }
-
 
 }

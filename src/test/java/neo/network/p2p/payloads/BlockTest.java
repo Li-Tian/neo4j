@@ -2,13 +2,16 @@ package neo.network.p2p.payloads;
 
 import com.google.gson.JsonObject;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
-import neo.AbstractBlockchainTest;
+import neo.persistence.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
@@ -26,6 +29,16 @@ import neo.persistence.Snapshot;
 import neo.vm.OpCode;
 
 public class BlockTest  extends AbstractBlockchainTest {
+
+    @BeforeClass
+    public static void setUp() throws IOException {
+        AbstractBlockchainTest.setUp();
+    }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        AbstractBlockchainTest.tearDown();
+    }
     @Test
     public void inventoryType() {
         Block block = new Block();

@@ -21,7 +21,7 @@ public class DBHelper {
      *
      * @param db        leveldb
      * @param keyPrefix key prefix
-     * @param generator value generator
+     * @param generator value generator eg: (keyBytes, valueBytes) -> item
      * @param <R>       value type
      * @return Collection<R>, empty set will be return if not found
      */

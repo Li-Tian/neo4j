@@ -47,8 +47,9 @@ public class Block extends BlockBase implements IInventory {
         TR.enter();
         if (header == null) {
             header = new Header();
+            header.version = this.version;
             header.prevHash = this.prevHash;
-            header.merkleRoot = this.prevHash;
+            header.merkleRoot = this.merkleRoot;
             header.timestamp = this.timestamp;
             header.index = this.index;
             header.consensusData = this.consensusData;

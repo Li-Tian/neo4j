@@ -144,7 +144,7 @@ public class RegisterTransaction extends Transaction {
      * Deserialization exclusive data
      *
      * @param reader The binary input reader
-     * @throws FormatException 1. If the version number is not 0<br/> 2. If the asset is not NEO/GAS
+     * @throws FormatException 1. If the VERSION number is not 0<br/> 2. If the asset is not NEO/GAS
      *                         and not specify owner.
      */
     @Override
