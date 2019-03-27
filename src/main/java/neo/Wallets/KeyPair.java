@@ -31,10 +31,8 @@ public class KeyPair {
         if (privateKey.length != 32 && privateKey.length != 96 && privateKey.length != 104)
             throw new IllegalArgumentException();
         this.privateKey = new byte[32];
-        System.arraycopy(privateKey, privateKey.length - 32, this.privateKey, 0, 32);
         if (privateKey.length == 32) {
-            this.publicKey = new ECPoint(ECC.Secp256r1.getG().multiply(new BigInteger
-                    (this.privateKey)));
+            this.publicKey = new ECPoint(ECC.Secp256r1.getG().multiply(new BigInteger(1, privateKey)).normalize());
         } else {
             this.publicKey = ECPoint.fromBytes(privateKey, ECC.Secp256r1.getCurve());
         }
@@ -67,17 +65,17 @@ public class KeyPair {
         String address = script_hash.toAddress();
         byte[] addresshash = new byte[0];
         try {
-            byte[] tempByteArray=new byte[4];
-            System.arraycopy(Helper.sha256(Helper.sha256(address.getBytes("ASCII"))),0,
-                    tempByteArray,0,4);
+            byte[] tempByteArray = new byte[4];
+            System.arraycopy(Helper.sha256(Helper.sha256(address.getBytes("ASCII"))), 0,
+                    tempByteArray, 0, 4);
             addresshash = tempByteArray;
             byte[] derivedkey = SCrypt.deriveKey(passphrase.getBytes("UTF8"), addresshash,
                     N, r, p, 64);
 
             byte[] derivedhalf1 = new byte[32];
-            System.arraycopy(derivedkey,0,derivedhalf1,0,32);
+            System.arraycopy(derivedkey, 0, derivedhalf1, 0, 32);
             byte[] derivedhalf2 = new byte[32];
-            System.arraycopy(derivedkey,32,derivedhalf2,0,32);
+            System.arraycopy(derivedkey, 32, derivedhalf2, 0, 32);
             byte[] encryptedkey = Helper.aes256Encrypt(XOR(privateKey, derivedhalf1), derivedhalf2);
             byte[] buffer = new byte[39];
             buffer[0] = 0x01;
@@ -92,25 +90,25 @@ public class KeyPair {
     }
 
     public String export(String passphrase) {
-        int N =16384;
-        int r =8;
-        int p =8;
+        int N = 16384;
+        int r = 8;
+        int p = 8;
         UInt160 script_hash = neo.smartcontract.Helper.toScriptHash(Contract.createSignatureRedeemScript
                 (publicKey));
         String address = script_hash.toAddress();
         byte[] addresshash = new byte[0];
         try {
-            byte[] tempByteArray=new byte[4];
-            System.arraycopy(Helper.sha256(Helper.sha256(address.getBytes("ASCII"))),0,
-                    tempByteArray,0,4);
+            byte[] tempByteArray = new byte[4];
+            System.arraycopy(Helper.sha256(Helper.sha256(address.getBytes("ASCII"))), 0,
+                    tempByteArray, 0, 4);
             addresshash = tempByteArray;
             byte[] derivedkey = SCrypt.deriveKey(passphrase.getBytes("UTF8"), addresshash,
                     N, r, p, 64);
 
             byte[] derivedhalf1 = new byte[32];
-            System.arraycopy(derivedkey,0,derivedhalf1,0,32);
+            System.arraycopy(derivedkey, 0, derivedhalf1, 0, 32);
             byte[] derivedhalf2 = new byte[32];
-            System.arraycopy(derivedkey,32,derivedhalf2,0,32);
+            System.arraycopy(derivedkey, 32, derivedhalf2, 0, 32);
             byte[] encryptedkey = Helper.aes256Encrypt(XOR(privateKey, derivedhalf1), derivedhalf2);
             byte[] buffer = new byte[39];
             buffer[0] = 0x01;
@@ -138,9 +136,9 @@ public class KeyPair {
         if (x.length != y.length) throw new IllegalArgumentException();
         //LINQ START
         //return x.zip(y, (a, b) =>(byte) (a ^ b)).ToArray();
-        byte[] tempArray=new byte[x.length];
-        for (int i=0;i<x.length;i++){
-            tempArray[i]= (byte) (x[i]^y[i]);
+        byte[] tempArray = new byte[x.length];
+        for (int i = 0; i < x.length; i++) {
+            tempArray[i] = (byte) (x[i] ^ y[i]);
         }
         return tempArray;
         //LINQ END
