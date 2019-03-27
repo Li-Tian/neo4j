@@ -62,6 +62,7 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
                 buffer = new byte[expectedLength + 1];
                 buffer[0] = firstByte;
                 reader.readFully(buffer, 1, expectedLength);
+                System.err.println(BitConverter.toHexString(buffer));
                 return TR.exit(new ECPoint(curve.decodePoint(buffer)));
             case 0x04:
             case 0x06:

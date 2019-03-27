@@ -50,31 +50,31 @@ public class ApplicationEngine extends ExecutionEngine {
     /// <summary>
     /// Max value for SHL and SHR
     /// </summary>
-    public final int Max_SHL_SHR = Ushort.MAX_VALUE;
+    public static final int Max_SHL_SHR = Ushort.MAX_VALUE;
     /// <summary>
     /// Min value for SHL and SHR
     /// </summary>
-    public final int Min_SHL_SHR = -Max_SHL_SHR;
+    public static final int Min_SHL_SHR = -Max_SHL_SHR;
     /// <summary>
     /// Set the max size allowed size for BigInteger
     /// </summary>
-    public final int MaxSizeForBigInteger = 32;
+    public static final int MaxSizeForBigInteger = 32;
     /// <summary>
     /// Set the max Stack Size
     /// </summary>
-    public final Uint MaxStackSize = new Uint(2 * 1024);
+    public static final Uint MaxStackSize = new Uint(2 * 1024);
     /// <summary>
     /// Set Max Item Size
     /// </summary>
-    public final Uint MaxItemSize = new Uint(1024 * 1024);
+    public static final Uint MaxItemSize = new Uint(1024 * 1024);
     /// <summary>
     /// Set Max Invocation Stack Size
     /// </summary>
-    public final Uint MaxInvocationStackSize = new Uint(1024);
+    public static final Uint MaxInvocationStackSize = new Uint(1024);
     /// <summary>
     /// Set Max Array Size
     /// </summary>
-    public final Uint MaxArraySize = new Uint(1024);
+    public static final Uint MaxArraySize = new Uint(1024);
 
     private final long ratio = 100000;
     private final long gas_free = 10 * 100000000;

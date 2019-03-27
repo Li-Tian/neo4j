@@ -74,6 +74,7 @@ fabric.properties
 .idea/
 *.iml
 *.iws
+*.log
 
 # Mac
 .DS_Store

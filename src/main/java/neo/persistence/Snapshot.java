@@ -695,11 +695,12 @@ public abstract class Snapshot extends AbstractPersistence implements IScriptTab
 
 
     /**
-     * get script by script hash
+     * get script by script hash, implement IScriptTable interface
      *
      * @param script_hash script hash
      * @return script source code
      */
+    @Override
     public byte[] getScript(byte[] script_hash) {
         TR.enter();
         UInt160 hash = new UInt160(script_hash);

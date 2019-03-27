@@ -74,11 +74,6 @@
             <artifactId>jetty-servlet</artifactId>
             <version>9.4.8.v20171121</version>
         </dependency>
-        <dependency>
-            <groupId>com.github.seancfoley</groupId>
-            <artifactId>ipaddress</artifactId>
-            <version>${ipaddress.version}</version>
-        </dependency>
 
         <!-- For Test -->
         <dependency>

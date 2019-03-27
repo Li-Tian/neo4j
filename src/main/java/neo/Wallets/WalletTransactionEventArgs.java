@@ -24,4 +24,7 @@ public class WalletTransactionEventArgs {
         this.height = height;
         this.time = time;
     }
+
+    public WalletTransactionEventArgs() {
+    }
 }
