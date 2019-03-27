@@ -39,4 +39,15 @@ public enum StorageFlags implements ByteEnum {
     public static StorageFlags parse(byte type) {
         return ByteEnum.parse(StorageFlags.values(), type);
     }
+
+
+    /**
+     * check whether has the specific flag
+     *
+     * @param flag the specific flag
+     * @return true - has, else false
+     */
+    public boolean hasFlag(StorageFlags flag) {
+        return (this.value & flag.value) == 0;
+    }
 }
