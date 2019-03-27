@@ -48,7 +48,7 @@ public class ValidatorState extends StateBase implements ICloneable<ValidatorSta
 
 
     /**
-     * 存储大小
+     * storage size
      */
     @Override
     public int size() {

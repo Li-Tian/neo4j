@@ -2,6 +2,8 @@ package neo.smartcontract;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 
 import neo.UInt160;
 import neo.log.notr.TR;
@@ -66,6 +68,20 @@ public class Contract {
             sb.emitPush(publicKey.getEncoded(true));
         }
         sb.emitPush(BigInteger.valueOf(publicKeys.length));
+        sb.emit(OpCode.CHECKMULTISIG);
+        return TR.exit(sb.toArray());
+    }
+
+    public static byte[] createMultiSigRedeemScript(int m, Collection<ECPoint> publicKeys) {
+        TR.enter();
+        if (!(1 <= m && m <= publicKeys.size() && publicKeys.size() <= 1024)) {
+            TR.exit();
+            throw new IllegalArgumentException();
+        }
+        ScriptBuilder sb = new ScriptBuilder();
+        sb.emitPush(BigInteger.valueOf(m));
+        publicKeys.stream().sorted().forEach(publicKey -> sb.emitPush(publicKey.getEncoded(true)));
+        sb.emitPush(BigInteger.valueOf(publicKeys.size()));
         sb.emit(OpCode.CHECKMULTISIG);
         return TR.exit(sb.toArray());
     }

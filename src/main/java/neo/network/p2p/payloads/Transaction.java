@@ -31,8 +31,14 @@ import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
 import neo.ledger.AssetState;
 import neo.ledger.Blockchain;
+import neo.ledger.ContractState;
 import neo.log.notr.TR;
 import neo.persistence.Snapshot;
+import neo.smartcontract.ApplicationEngine;
+import neo.smartcontract.TriggerType;
+import neo.vm.ScriptBuilder;
+
+import static scala.compat.java8.collectionImpl.Stepper.Distinct;
 
 /**
  * The parent class of all the transactions
@@ -728,27 +734,26 @@ public abstract class Transaction implements IInventory {
 
     private boolean verifyReceivingScripts() {
         TR.enter();
-        //TODO: run ApplicationEngine
-        //foreach (UInt160 hash in Outputs.Select(p => p.ScriptHash).Distinct())
-        //{
-        //    ContractState contract = Blockchain.Default.GetContract(hash);
-        //    if (contract == null) continue;
-        //    if (!contract.Payable) return false;
-        //    using (StateReader service = new StateReader())
-        //    {
-        //        ApplicationEngine engine = new ApplicationEngine(TriggerType.VerificationR, this, Blockchain.Default, service, Fixed8.Zero);
-        //        engine.LoadScript(contract.Script, false);
-        //        using (ScriptBuilder sb = new ScriptBuilder())
+        //TODO: run ApplicationEngine v2.10 之前都被注释
+        //        for (UInt160 hash : outputs.Select(p = > p.ScriptHash).Distinct())
         //        {
-        //            sb.EmitPush(0);
-        //            sb.Emit(OpCode.PACK);
-        //            sb.EmitPush("receiving");
-        //            engine.LoadScript(sb.ToArray(), false);
+        //            ContractState contract = Blockchain.Default.GetContract(hash);
+        //            if (contract == null) continue;
+        //            if (!contract.payable()) return false;
+        //            StateReader service = new StateReader()
+        //            ApplicationEngine engine = new ApplicationEngine(TriggerType.VerificationR, this, Blockchain.Default, service, Fixed8.Zero);
+        //            engine.loadScript(contract.Script, false);
+        //
+        //            ScriptBuilder sb = new ScriptBuilder();
+        //            sb.emitPush(0);
+        //            sb.emit(OpCode.PACK);
+        //            sb.emitPush("receiving");
+        //            engine.loadScript(sb.toArray(), false);
+        //
+        //            if (!engine.execute2()) return false;
+        //            if (engine.evaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean())
+        //                return false;
         //        }
-        //        if (!engine.Execute()) return false;
-        //        if (engine.EvaluationStack.Count != 1 || !engine.EvaluationStack.Pop().GetBoolean()) return false;
-        //    }
-        //}
         return TR.exit(true);
     }
 

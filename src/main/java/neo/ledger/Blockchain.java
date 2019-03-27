@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -343,6 +344,11 @@ public class Blockchain extends AbstractActor {
     public static UInt160 getConsensusAddress(ECPoint[] validators) {
         TR.enter();
         return TR.exit(UInt160.parseToScriptHash(Contract.createMultiSigRedeemScript(validators.length - (validators.length - 1) / 3, validators)));
+    }
+
+    public static UInt160 getConsensusAddress(Collection<ECPoint> validators) {
+        TR.enter();
+        return TR.exit(UInt160.parseToScriptHash(Contract.createMultiSigRedeemScript(validators.size() - (validators.size() - 1) / 3, validators)));
     }
 
     public Snapshot getSnapshot() {

@@ -383,7 +383,9 @@ public class ConsensusContext implements IDisposable {
      */
     public void reset() {
         TR.enter();
-        snapshot.dispose();
+        if (snapshot != null) {
+            snapshot.dispose();
+        }
         snapshot = Blockchain.singleton().getStore().getSnapshot();
         state = ConsensusState.Initial;
         prevHash = snapshot.getCurrentBlockHash();
@@ -428,7 +430,7 @@ public class ConsensusContext implements IDisposable {
         }
         ArrayList<Transaction> txWithMx = new ArrayList<>(mem_pool);
         Fixed8 amount_netfee = Block.calculateNetFee(txWithMx);
-        TransactionOutput[] outputs = amount_netfee == Fixed8.ZERO ? new TransactionOutput[0] : new TransactionOutput[]
+        TransactionOutput[] outputs = (amount_netfee == Fixed8.ZERO) ? new TransactionOutput[0] : new TransactionOutput[]
                 {
                         new TransactionOutput() {{
                             assetId = Blockchain.UtilityToken.hash();

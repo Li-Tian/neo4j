@@ -37,6 +37,7 @@ import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.VersionPayload;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractLeveldbTest;
+import neo.persistence.Snapshot;
 import neo.vm.OpCode;
 
 
@@ -66,12 +67,25 @@ public class TaskManagerTest extends AbstractLeveldbTest {
     }
 
 
+    public class MyBlock extends Block {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+    }
+
+
     @Test
     public void testRegisterMsg() {
         // 1. prepare data
 
         // init leveldb data
-        Block block1 = new Block() {
+        Block block1 = new MyBlock() {
             {
                 prevHash = Blockchain.GenesisBlock.hash();
                 timestamp = new Uint(Long.toString(new Date("Jul 15 15:08:21 UTC 2018").getTime() / 1000));
@@ -98,7 +112,7 @@ public class TaskManagerTest extends AbstractLeveldbTest {
             }
         };
         block1.rebuildMerkleRoot();
-        Block block2 = new Block() {
+        Block block2 = new MyBlock() {
             {
                 prevHash = block1.hash();
                 timestamp = new Uint(Long.toString(new Date("Jul 16 15:08:21 UTC 2018").getTime() / 1000));
@@ -126,7 +140,7 @@ public class TaskManagerTest extends AbstractLeveldbTest {
         };
         block2.rebuildMerkleRoot();
 
-        Block block3 = new Block() {
+        Block block3 = new MyBlock() {
             {
                 prevHash = block2.hash();
                 timestamp = new Uint(Long.toString(new Date("Jul 17 15:08:21 UTC 2018").getTime() / 1000));
@@ -258,10 +272,13 @@ public class TaskManagerTest extends AbstractLeveldbTest {
         block5.rebuildMerkleRoot();
 
 
+        System.err.println(Blockchain.singleton().getHeight());
+        System.err.println(Blockchain.singleton().getHeaderHeight());
+
         Header[] headers = new Header[]{block4.getHeader(), block5.getHeader()};
         neoSystem.blockchain.tell(headers, testKit.testActor()); // this will invoke taskManager.HeaderTaskCompleted
         message = testKit.expectMsgClass(Message.class);
-        Assert.assertEquals("getblocks", message.command);
+        Assert.assertEquals("getheaders", message.command);
         blocksPayload = SerializeHelper.parse(GetBlocksPayload::new, message.payload);
         Assert.assertNotNull(blocksPayload);
         Assert.assertEquals(block3.hash(), blocksPayload.hashStart[0]);

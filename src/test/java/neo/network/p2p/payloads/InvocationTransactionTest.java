@@ -151,4 +151,10 @@ public class InvocationTransactionTest extends AbstractBlockchainTest {
         Assert.assertEquals(BitConverter.toHexString(transaction.script), jsonObject.get("script").getAsString());
         Assert.assertEquals(transaction.gas.toString(), jsonObject.get("gas").getAsString());
     }
+
+    @Test
+    public void testOnlineData() {
+        //
+
+    }
 }

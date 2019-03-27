@@ -2,13 +2,20 @@ package neo.network.p2p.payloads;
 
 import java.io.ByteArrayOutputStream;
 
+import neo.Fixed8;
 import neo.UInt160;
+import neo.Wallets.KeyPair;
+import neo.cryptography.Crypto;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
+import neo.exception.InvalidOperationException;
 import neo.log.tr.TR;
 import neo.persistence.Snapshot;
+import neo.smartcontract.ApplicationEngine;
+import neo.smartcontract.TriggerType;
 import neo.vm.IScriptContainer;
+import neo.vm.ScriptBuilder;
 
 /**
  * An interface for signature verification
@@ -47,6 +54,21 @@ public interface IVerifiable extends ISerializable, IScriptContainer {
      */
     void serializeUnsigned(BinaryWriter writer);
 
+
+    /**
+     * sign the verifiable object
+     *
+     * @param verifiable object to be sign
+     * @param key        key pair
+     * @return signature
+     */
+    static byte[] sign(IVerifiable verifiable, KeyPair key) {
+        TR.enter();
+        byte[] tempByteArray = new byte[20];
+        System.arraycopy(key.publicKey.getEncoded(false), 1, tempByteArray, 0, 20);
+        return TR.exit(Crypto.Default.sign(IVerifiable.getHashData(verifiable), key.privateKey, tempByteArray));
+    }
+
     /**
      * verify witness
      *
@@ -55,46 +77,47 @@ public interface IVerifiable extends ISerializable, IScriptContainer {
      * @return true if verify success, otherwise false.
      */
     static boolean verifyWitnesses(IVerifiable verifiable, Snapshot snapshot) {
-        // TODO waiting for smartcontract
-        TR.fixMe("waiting for smartcontract....");
+        TR.enter();
 
-        return true;
+        UInt160[] hashes;
+        try {
+            hashes = verifiable.getScriptHashesForVerifying(snapshot);
+        } catch (InvalidOperationException e) {
+            // just return false
+            TR.error(e);
+            return TR.exit(false);
+        }
 
-        // C# code:
-        //        UInt160[] hashes;
-        //        try
-        //        {
-        //            hashes = verifiable.GetScriptHashesForVerifying(snapshot);
-        //        }
-        //        catch (InvalidOperationException)
-        //        {
-        //            return false;
-        //        }
-        //        if (hashes.Length != verifiable.Witnesses.Length) return false;
-        //        for (int i = 0; i < hashes.Length; i++)
-        //        {
-        //            byte[] verification = verifiable.Witnesses[i].VerificationScript;
-        //            if (verification.Length == 0)
-        //            {
-        //                using (ScriptBuilder sb = new ScriptBuilder())
-        //                {
-        //                    sb.EmitAppCall(hashes[i].ToArray());
-        //                    verification = sb.ToArray();
-        //                }
-        //            }
-        //            else
-        //            {
-        //                if (hashes[i] != verifiable.Witnesses[i].ScriptHash) return false;
-        //            }
-        //            using (ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, Fixed8.Zero))
-        //            {
-        //                engine.LoadScript(verification);
-        //                engine.LoadScript(verifiable.Witnesses[i].InvocationScript);
-        //                if (!engine.Execute()) return false;
-        //                if (engine.ResultStack.Count != 1 || !engine.ResultStack.Pop().GetBoolean()) return false;
-        //            }
-        //        }
-        //        return true;
+        Witness[] witnesses = verifiable.getWitnesses();
+
+        if (hashes.length != witnesses.length) {
+            return TR.exit(false);
+        }
+
+        for (int i = 0; i < hashes.length; i++) {
+            byte[] verification = witnesses[i].verificationScript;
+            if (verification.length == 0) {
+                ScriptBuilder sb = new ScriptBuilder();
+                sb.emitAppCall(hashes[i].toArray());
+                verification = sb.toArray();
+            } else {
+                if (hashes[i] != witnesses[i].scriptHash()) {
+                    return TR.exit(false);
+                }
+            }
+            ApplicationEngine engine = new ApplicationEngine(TriggerType.Verification, verifiable, snapshot, Fixed8.ZERO);
+            engine.loadScript(verification);
+            engine.loadScript(witnesses[i].invocationScript);
+
+            if (!engine.execute2()) {
+                return TR.exit(false);
+            }
+            if (engine.resultStack.getCount() != 1 || !engine.resultStack.pop().getBoolean()) {
+                return TR.exit(false);
+            }
+
+        }
+        return TR.exit(true);
     }
 
     /**
@@ -104,11 +127,12 @@ public interface IVerifiable extends ISerializable, IScriptContainer {
      * @return serialized data
      */
     static byte[] getHashData(IVerifiable verifiable) {
+        TR.enter();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         BinaryWriter writer = new BinaryWriter(outputStream);
         verifiable.serializeUnsigned(writer);
         writer.flush();
-        return outputStream.toByteArray();
+        return TR.exit(outputStream.toByteArray());
     }
 
 }
