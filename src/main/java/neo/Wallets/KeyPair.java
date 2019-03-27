@@ -33,7 +33,8 @@ public class KeyPair {
         this.privateKey = new byte[32];
         System.arraycopy(privateKey, privateKey.length - 32, this.privateKey, 0, 32);
         if (privateKey.length == 32) {
-            this.publicKey = new ECPoint(ECC.Secp256r1.getG().multiply(new BigInteger(privateKey)));
+            this.publicKey = new ECPoint(ECC.Secp256r1.getG().multiply(new BigInteger
+                    (this.privateKey)));
         } else {
             this.publicKey = ECPoint.fromBytes(privateKey, ECC.Secp256r1.getCurve());
         }
