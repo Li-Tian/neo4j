@@ -129,7 +129,7 @@ public class NEP6Wallet extends Wallet {
             this.accounts = new HashMap<UInt160, NEP6Account>();
             this.extra = null;
         }
-        indexer.WalletTransaction.addListener(this);
+        indexer.walletTransaction.addListener(this);
     }
 
 
@@ -171,7 +171,7 @@ public class NEP6Wallet extends Wallet {
             this.accounts = new HashMap<UInt160, NEP6Account>();
             this.extra = null;
         }
-        indexer.WalletTransaction.addListener(this);
+        indexer.walletTransaction.addListener(this);
     }
 
     private void addAccount(NEP6Account account, boolean is_import) {
@@ -324,7 +324,7 @@ public class NEP6Wallet extends Wallet {
 
     @Override
     public void dispose() {
-        indexer.WalletTransaction.removeListener(this);
+        indexer.walletTransaction.removeListener(this);
     }
 
     @Override

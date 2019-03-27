@@ -7,6 +7,8 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import neo.csharp.BitConverter;
+
 /**
  * @author doubi.liu
  * @version V1.0
@@ -30,6 +32,11 @@ public class Version {
         this.minor = minor;
         this.build = build;
         this.revision = revision;
+        System.arraycopy(BitConverter.getBytes(major), 0, value, 0, 4);
+        System.arraycopy(BitConverter.getBytes(minor), 0, value, 4, 4);
+        System.arraycopy(BitConverter.getBytes(build), 0, value, 8, 4);
+        System.arraycopy(BitConverter.getBytes(revision), 0, value, 12, 4);
+
     }
 
     public Version(byte[] buffer) {
@@ -92,5 +99,31 @@ public class Version {
             }
         }
         return new Version(major,minor,build,revision);
+    }
+
+    public static Version tryParse(String value,Version tDefault) {
+        try {
+            return parse(value);
+        }catch (Exception e){
+            return tDefault;
+        }
+    }
+
+    public int compareTo(Version oth){
+        if (oth==null){
+            throw new NullPointerException("参数不能为空");
+        }
+        if (this==oth){
+            return 0;
+        }
+        int[] thisArray = {major, minor, build, revision};
+        int[] otherArray = {oth.major, oth.minor, oth.build, oth.revision};
+        for (int i = 0; i < thisArray.length; i++) {
+            int comp = Integer.compare(thisArray[i], otherArray[i]);
+            if (comp != 0) {
+                return comp;
+            }
+        }
+        return 0;
     }
 }
