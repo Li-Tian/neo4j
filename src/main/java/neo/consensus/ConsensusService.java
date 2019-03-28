@@ -62,7 +62,7 @@ public class ConsensusService extends AbstractActor {
      * Time out message (AKKA customized message type). It contains the `Height` and `ViewNumber` of
      * the timeout block.
      */
-    private static class Timer {
+    public static class Timer {
         public Uint height;
         public byte viewNumber;
     }
@@ -115,6 +115,19 @@ public class ConsensusService extends AbstractActor {
                 .withMailbox("consensus-service-mailbox"));
     }
 
+    /**
+     * Create ActorRef with mail box `consensus-service-mailbox`
+     *
+     * @param localNode   local node
+     * @param taskManager task manager
+     * @param context     consensus context
+     * @return Akka.Actor.props
+     */
+    public static Props props(ActorRef localNode, ActorRef taskManager, ConsensusContext context) {
+        TR.enter();
+        return TR.exit(Props.create(ConsensusService.class, localNode, taskManager, context)
+                .withMailbox("consensus-service-mailbox"));
+    }
 
     @Override
     public Receive createReceive() {
@@ -184,7 +197,7 @@ public class ConsensusService extends AbstractActor {
      */
     private void changeTimer(Duration delay) {
         TR.enter();
-        if (!timerToken.isCancelled()) {
+        if (timerToken != null && !timerToken.isCancelled()) {
             timerToken.cancel();
         }
         Timer timer = new Timer() {{
@@ -254,7 +267,6 @@ public class ConsensusService extends AbstractActor {
      */
     private void initializeConsensus(byte view_number) {
         TR.enter();
-        //TODO 统一处理 view_number byte 值的问题
         if (view_number == 0) {
             context.reset();
         } else {
@@ -264,16 +276,25 @@ public class ConsensusService extends AbstractActor {
             TR.exit();
             return;
         }
+
+        int uint_view_number = view_number & 0xff;
         if (view_number > 0) {
-            int primaryIndex = context.getPrimaryIndex((byte) (view_number - 1)).intValue();
+            int primaryIndex = context.getPrimaryIndex((byte) (uint_view_number - 1)).intValue();
             ECPoint primary = context.validators[primaryIndex];
-            log(LogLevel.Warning, "changeview: view = %d primary = %s", view_number, primary);
+            log(LogLevel.Warning, "changeview: view = %d primary = %s", uint_view_number, primary);
         }
 
-        log(LogLevel.Info, "initialize: height={context.BlockIndex} view={view_number} index={context.MyIndex} role={(context.MyIndex == context.PrimaryIndex ? ConsensusState.Primary : ConsensusState.Backup)}");
+        log(LogLevel.Info, "initialize: height=%d view=%d index=%d role=%s",
+                context.blockIndex.intValue(), uint_view_number, context.myIndex, (context.myIndex == context.primaryIndex.intValue() ? "Primary" : "Backup"));
+
         if (context.myIndex == context.primaryIndex.intValue()) {
             context.state = context.state.or(ConsensusState.Primary);
-            long interval = TimeProvider.current().utcNow().getTime() - blockReceivedTime.getTime();
+
+            long interval = Blockchain.TimePerBlock.toMillis();
+            if (blockReceivedTime != null) {
+                interval = TimeProvider.current().utcNow().getTime() - blockReceivedTime.getTime();
+            }
+
             Duration span = Duration.ofMillis(interval);
             if (span.compareTo(Blockchain.TimePerBlock) >= 0) {
                 changeTimer(Duration.ofMillis(0));
@@ -301,8 +322,7 @@ public class ConsensusService extends AbstractActor {
      */
     private void onChangeViewReceived(ConsensusPayload payload, ChangeView message) {
         TR.enter();
-        // TODO 处理 byte 的符号位
-        if (message.newViewNumber <= context.expectedView[payload.validatorIndex.intValue()]) {
+        if ((message.newViewNumber & 0xff) <= (0xff & context.expectedView[payload.validatorIndex.intValue()])) {
             TR.exit();
             return;
         }
@@ -389,6 +409,7 @@ public class ConsensusService extends AbstractActor {
     private void onPersistCompleted(Block block) {
         TR.enter();
         log(LogLevel.Info, "persist block: %s", block.hash());
+        System.err.println("-------------onPersistCompleted -----");
         blockReceivedTime = TimeProvider.current().utcNow();
         initializeConsensus((byte) 0);
         TR.exit();
@@ -417,7 +438,7 @@ public class ConsensusService extends AbstractActor {
                 payload.blockIndex.intValue(), message.viewNumber & 0xff,
                 payload.validatorIndex.intValue(), message.transactionHashes.length);
 
-        if (!context.state.hasFlag(ConsensusState.Backup)){
+        if (!context.state.hasFlag(ConsensusState.Backup)) {
             TR.exit();
             return;
         }
@@ -463,7 +484,7 @@ public class ConsensusService extends AbstractActor {
         ArrayList<Transaction> unverified = new ArrayList<>();
         for (UInt256 hash : Arrays.stream(context.transactionHashes).skip(1).collect(Collectors.toList())) {
             if (mempoolVerified.containsKey(hash)) {
-                if (!addTransaction(mempoolVerified.get(hash), false)){
+                if (!addTransaction(mempoolVerified.get(hash), false)) {
                     TR.exit();
                     return;
                 }
@@ -481,7 +502,7 @@ public class ConsensusService extends AbstractActor {
             }
         }
 
-        if (!addTransaction(message.minerTransaction, true)){
+        if (!addTransaction(message.minerTransaction, true)) {
             TR.exit();
             return;
         }
@@ -552,11 +573,11 @@ public class ConsensusService extends AbstractActor {
      */
     private void onTimer(Timer timer) {
         TR.enter();
-        if (context.state.hasFlag(ConsensusState.BlockSent)){
+        if (context.state.hasFlag(ConsensusState.BlockSent)) {
             TR.exit();
             return;
         }
-        if (timer.height != context.blockIndex || timer.viewNumber != context.viewNumber){
+        if (timer.height != context.blockIndex || timer.viewNumber != context.viewNumber) {
             TR.exit();
             return;
         }
@@ -592,8 +613,10 @@ public class ConsensusService extends AbstractActor {
      */
     private void onTransaction(Transaction transaction) {
         TR.enter();
+        System.err.println("----- transaction ----- on ");
         if (transaction.type == TransactionType.MinerTransaction) {
             TR.exit();
+            System.err.println("----- transaction ----- on 1 ");
             return;
         }
         if (!context.state.hasFlag(ConsensusState.Backup)
@@ -602,17 +625,21 @@ public class ConsensusService extends AbstractActor {
                 || context.state.hasFlag(ConsensusState.ViewChanging)
                 || context.state.hasFlag(ConsensusState.BlockSent)) {
             TR.exit();
+            System.err.println("----- transaction ----- on 2");
             return;
         }
         if (context.transactions.containsKey(transaction.hash())) {
             TR.exit();
+            System.err.println("----- transaction ----- on 3 ");
             return;
         }
         if (!Arrays.stream(context.transactionHashes).anyMatch(p -> p.equals(transaction.hash()))) {
             TR.exit();
+            System.err.println("----- transaction ----- on 4 ");
             return;
         }
 
+        System.err.println("----- transaction ----- on 5");
         addTransaction(transaction, true);
         TR.exit();
     }

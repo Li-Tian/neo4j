@@ -362,7 +362,8 @@ public class ConsensusContext implements IDisposable {
      */
     public Uint getPrimaryIndex(byte view_number) {
         TR.enter();
-        int p = (blockIndex.intValue() - view_number) % validators.length;
+        int uint_view_number = view_number & 0xff;
+        int p = (blockIndex.intValue() - uint_view_number) % validators.length;
         Uint primaryIndex = p >= 0 ? new Uint(p) : new Uint(p + validators.length);
         return TR.exit(primaryIndex);
     }
