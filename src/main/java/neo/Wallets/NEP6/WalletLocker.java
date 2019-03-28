@@ -21,6 +21,6 @@ public class WalletLocker implements IDisposable{
     @Override
     public void dispose()
     {
-        wallet.Lock();
+        wallet.lock();
     }
 }

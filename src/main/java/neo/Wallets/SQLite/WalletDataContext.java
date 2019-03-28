@@ -1,13 +1,7 @@
 package neo.Wallets.SQLite;
 
-import com.sun.xml.internal.bind.v2.model.impl.ModelBuilder;
-
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 import neo.Wallets.SQLite.sqlitJDBC.ConnectionFactory;
 import neo.Wallets.SQLite.sqlitJDBC.DBUtils;

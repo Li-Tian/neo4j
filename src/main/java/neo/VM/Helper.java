@@ -1,7 +1,5 @@
 package neo.VM;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
 import java.math.BigInteger;
 import java.util.AbstractMap;
 import java.util.ArrayList;
