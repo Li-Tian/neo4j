@@ -382,13 +382,26 @@ public class BlockTest  extends AbstractBlockchainTest {
         Assert.assertArrayEquals(writer.toByteArray(), bytes);
     }
 
+    public static class MyBlock extends Block {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+    }
+
+
     @Test
     public void verify() {
         // prepare
         Snapshot snapshot = store.getSnapshot();
         DataCache<UInt256, BlockState> blockdb = snapshot.getBlocks();
 
-        Block preBlock = new Block() {{
+        Block preBlock = new MyBlock() {{
             version = new Uint(1);
             prevHash = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             timestamp = new Uint(14858584);
@@ -412,7 +425,7 @@ public class BlockTest  extends AbstractBlockchainTest {
         blockdb.add(preBlock.hash(), blockState);
 
 
-        Block block = new Block() {{
+        Block block = new MyBlock() {{
             version = new Uint(1);
             prevHash = preBlock.hash();
             timestamp = new Uint(14859624);

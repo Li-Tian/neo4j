@@ -95,7 +95,7 @@ public class ConsensusContext implements IDisposable {
     /**
      * The proposal block's nonce
      */
-    public Ulong nonce;
+    public Ulong nonce = Ulong.ZERO;
 
     /**
      * The proposal block's NextConsensus, which binding the consensus nodes in the next round
@@ -430,7 +430,7 @@ public class ConsensusContext implements IDisposable {
         }
         ArrayList<Transaction> txWithMx = new ArrayList<>(mem_pool);
         Fixed8 amount_netfee = Block.calculateNetFee(txWithMx);
-        TransactionOutput[] outputs = (amount_netfee == Fixed8.ZERO) ? new TransactionOutput[0] : new TransactionOutput[]
+        TransactionOutput[] outputs = (amount_netfee.compareTo(Fixed8.ZERO) == 0) ? new TransactionOutput[0] : new TransactionOutput[]
                 {
                         new TransactionOutput() {{
                             assetId = Blockchain.UtilityToken.hash();
@@ -449,7 +449,7 @@ public class ConsensusContext implements IDisposable {
             tx.witnesses = new Witness[0];
 
             if (!snapshot.containsTransaction(tx.hash())) {
-                tx.nonce = nonce.uintValue();
+                this.nonce = nonce;
                 txWithMx.add(0, tx);
                 break;
             }

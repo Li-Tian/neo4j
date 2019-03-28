@@ -59,9 +59,22 @@ public class ConsensusPayloadTest  extends AbstractBlockchainTest {
         Assert.assertEquals(InventoryType.Consensus, payload.inventoryType());
     }
 
+    public static class MyConsensusPayload extends ConsensusPayload {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+    }
+
+
     @Test
     public void verify() {
-        ConsensusPayload payload = new ConsensusPayload() {{
+        MyConsensusPayload payload = new MyConsensusPayload() {{
             version = Uint.ZERO;
             prevHash = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
             blockIndex = new Uint(10);

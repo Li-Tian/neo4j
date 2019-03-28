@@ -14,19 +14,21 @@ import java.util.concurrent.TimeUnit;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
 import neo.MyNeoSystem;
 import neo.NeoSystem;
 import neo.UInt160;
 import neo.UInt256;
+import neo.Utils;
 import neo.cryptography.BloomFilter;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
 import neo.io.SerializeHelper;
+import neo.io.actors.Idle;
 import neo.ledger.Blockchain;
-import neo.ledger.MemoryPool;
 import neo.ledger.MyBlockchain2;
 import neo.ledger.RelayResultReason;
 import neo.log.tr.TR;
@@ -38,6 +40,7 @@ import neo.network.p2p.payloads.ContractTransaction;
 import neo.network.p2p.payloads.FilterAddPayload;
 import neo.network.p2p.payloads.FilterLoadPayload;
 import neo.network.p2p.payloads.GetBlocksPayload;
+import neo.network.p2p.payloads.Header;
 import neo.network.p2p.payloads.HeadersPayload;
 import neo.network.p2p.payloads.InvPayload;
 import neo.network.p2p.payloads.InventoryType;
@@ -49,6 +52,8 @@ import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.VersionPayload;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractLeveldbTest;
+import neo.persistence.Snapshot;
+import neo.persistence.Store;
 import neo.vm.OpCode;
 import scala.concurrent.duration.FiniteDuration;
 
@@ -57,6 +62,7 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
     private static NeoSystem neoSystem;
     private static TestKit testKit;
     private static ActorRef protocolHandler;
+    private static ActorRef relBlockChain;
 
     public static class MyActor extends AbstractActor {
         private NeoSystem system;
@@ -77,11 +83,77 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
         @Override
         public Receive createReceive() {
             return receiveBuilder().matchAny(o -> {
-                TR.debug("MyActor receive msg => " + o);
                 testKit.testActor().forward(o, context());
             }).build();
         }
     }
+
+    // 过滤 header.verify 方法，不进行脚本检测
+    public static class MyHeader extends Header {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+
+        public static Header[] copy(Header[] headers) {
+            Header[] newHeaders = new Header[headers.length];
+
+            for (int i = 0; i < headers.length; i++) {
+                newHeaders[i] = Utils.copyFromSerialize(headers[i], MyHeader::new);
+            }
+            return newHeaders;
+        }
+    }
+
+    // 过滤 MyBlock.verify 方法，不进行脚本检测
+    public static class MyBlock extends Block {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+
+        @Override
+        public Header getHeader() {
+            neo.log.notr.TR.enter();
+            MyHeader header = new MyHeader();
+            header.version = this.version;
+            header.prevHash = this.prevHash;
+            header.merkleRoot = this.merkleRoot;
+            header.timestamp = this.timestamp;
+            header.index = this.index;
+            header.consensusData = this.consensusData;
+            header.nextConsensus = this.nextConsensus;
+            header.witness = this.witness;
+            return neo.log.notr.TR.exit(header);
+        }
+    }
+
+    // Blockchain 代理方法，将header 全部专成 myheader 跳过脚本检查，才能添加通过
+    public static class BlockchainProxy extends AbstractActor {
+
+        @Override
+        public Receive createReceive() {
+            return receiveBuilder()
+                    .match(Header[].class, headers -> relBlockChain.forward(MyHeader.copy(headers), context()))
+                    .matchAny(o -> relBlockChain.forward(o, context()))
+                    .build();
+        }
+
+        public static Props props() {
+            return Props.create(BlockchainProxy.class);
+        }
+    }
+
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -91,7 +163,8 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
             testKit = new TestKit(self.actorSystem);
 
             // Synchronous Unit Testing with TestActorRef
-            self.blockchain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
+            relBlockChain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
+            self.blockchain = TestActorRef.create(self.actorSystem, BlockchainProxy.props());
             self.localNode = TestActorRef.create(self.actorSystem, MyLocalNode.props(self, testKit.testActor()));
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
             self.consensus = null;
@@ -158,7 +231,7 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
 
 
         // case 4: test block event
-        Block block1 = new Block() {
+        Block block1 = new MyBlock() {
             {
                 prevHash = Blockchain.GenesisBlock.hash();
                 timestamp = new Uint(Long.toString(new Date("Jul 15 15:08:21 UTC 2018").getTime() / 1000));
@@ -291,7 +364,7 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
 
         // case 13: test headers event
         // add block2
-        Block block2 = new Block() {
+        Block block2 = new MyBlock() {
             {
                 prevHash = block1.hash();
                 timestamp = new Uint(Long.toString(new Date("Jul 16 15:08:21 UTC 2018").getTime() / 1000));
@@ -320,6 +393,9 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
         block2.rebuildMerkleRoot();
 
         headersPayload = HeadersPayload.create(Collections.singleton(block2.getHeader()));
+
+        System.err.println("blcok2 verify header: " + block2.getHeader().verify(Blockchain.singleton().getSnapshot()) + " class " + block2.getHeader().getClass());
+
         message = Message.create("headers", headersPayload);
         protocolHandler.tell(message, testKit.testActor());
         testKit.expectMsgClass(TaskManager.HeaderTaskCompleted.class);
