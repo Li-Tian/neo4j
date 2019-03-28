@@ -85,6 +85,18 @@ public class InvocationTransactionTest extends AbstractBlockchainTest {
         Assert.assertEquals(transaction.gas, transaction.getSystemFee());
     }
 
+    public static class MyInvocationTransaction extends InvocationTransaction {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+    }
+
     @Test
     public void verify() {
         // need gas
@@ -117,7 +129,7 @@ public class InvocationTransactionTest extends AbstractBlockchainTest {
         snapshot.commit();
 
 
-        InvocationTransaction transaction = new InvocationTransaction() {{
+        MyInvocationTransaction transaction = new MyInvocationTransaction() {{
             script = new byte[]{OpCode.PUSHT.getCode()};
             gas = Fixed8.fromDecimal(BigDecimal.valueOf(12));
             inputs = new CoinReference[]{

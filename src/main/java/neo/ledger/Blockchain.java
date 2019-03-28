@@ -501,8 +501,11 @@ public class Blockchain extends AbstractActor {
                 continue;
             }
             if (!header.verify(snapshot)) {
+                System.err.println("blcok2 verify header: false in blockchain" + header.getClass());
+                System.err.println(header.toJson());
                 break;
             }
+            System.err.println("blcok2 verify header: true in blockchain");
             headerIndex.add(header.hash());
             snapshot.getBlocks().add(header.hash(), new BlockState() {
                 {

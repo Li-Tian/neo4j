@@ -23,6 +23,7 @@ import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
 import neo.MyNeoSystem;
 import neo.NeoSystem;
+import neo.exception.InvalidOperationException;
 import neo.io.SerializeHelper;
 import neo.io.actors.Idle;
 import neo.ledger.MyBlockchain;
@@ -265,6 +266,12 @@ public class LocalNodeTest extends AbstractLeveldbTest {
             return Props.create(MyLocalNode2.class, system);
         }
 
+        // 减少单例的的冲突
+        @Override
+        protected void init() {
+            singleton = this;
+        }
+
         @Override
         public void initOnlyOnce() {
             // redirect all the message to TestActor
@@ -285,7 +292,7 @@ public class LocalNodeTest extends AbstractLeveldbTest {
         }
 
         public void clear() {
-            for (ActorRef actorRef: connectedPeers.keySet()){
+            for (ActorRef actorRef : connectedPeers.keySet()) {
                 context().unwatch(actorRef);
                 context().stop(actorRef);
             }

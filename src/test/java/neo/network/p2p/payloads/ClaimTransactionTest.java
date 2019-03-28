@@ -177,6 +177,20 @@ public class ClaimTransactionTest extends AbstractBlockchainTest {
         Assert.assertEquals(2, jsonObject.get("claims").getAsJsonArray().size());
     }
 
+
+    public static class MyClaimTransaction extends ClaimTransaction {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+    }
+
+
     @Test
     public void verify() {
         // 1. prepare data
@@ -245,7 +259,7 @@ public class ClaimTransactionTest extends AbstractBlockchainTest {
 
         // add test
 
-        ClaimTransaction claimTransaction = new ClaimTransaction() {{
+        MyClaimTransaction claimTransaction = new MyClaimTransaction() {{
             claims = new CoinReference[]{
                     new CoinReference() {{
                         prevHash = minerTransaction.hash();

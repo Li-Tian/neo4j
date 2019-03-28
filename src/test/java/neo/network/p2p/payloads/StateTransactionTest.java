@@ -132,6 +132,20 @@ public class StateTransactionTest extends AbstractBlockchainTest {
         Assert.assertEquals("Registered", descriptorArray.get(1).getAsJsonObject().get("field").getAsString());
     }
 
+    public static class MyStateTransaction extends StateTransaction {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+    }
+
+
+
     @Test
     public void verify() {
         // prepare data
@@ -182,6 +196,7 @@ public class StateTransactionTest extends AbstractBlockchainTest {
         snapshot.commit();
 
         // 2. check
+        MyStateTransaction transaction = new MyStateTransaction();
         transaction.descriptors = new StateDescriptor[]{
                 voteDesciptor,
                 validatorDescriptor

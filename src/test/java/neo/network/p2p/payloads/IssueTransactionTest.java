@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 
+import neo.log.notr.TR;
 import neo.persistence.AbstractBlockchainTest;
 import neo.Fixed8;
 import neo.ProtocolSettings;
@@ -26,7 +27,7 @@ import neo.ledger.TransactionState;
 import neo.ledger.UnspentCoinState;
 import neo.persistence.Snapshot;
 
-public class IssueTransactionTest  extends AbstractBlockchainTest {
+public class IssueTransactionTest extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -111,6 +112,18 @@ public class IssueTransactionTest  extends AbstractBlockchainTest {
         snapshot.commit();
     }
 
+    public static class MyIssueTransaction extends IssueTransaction {
+        @Override
+        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
+            return new UInt160[0];
+        }
+
+        @Override
+        public Witness[] getWitnesses() {
+            return new Witness[0];
+        }
+    }
+
     @Test
     public void verify() {
         // prepare data
@@ -157,7 +170,7 @@ public class IssueTransactionTest  extends AbstractBlockchainTest {
         snapshot.commit();
 
         // IssueTransaction need gas
-        IssueTransaction issue = new IssueTransaction() {{
+        MyIssueTransaction issue = new MyIssueTransaction() {{
             inputs = new CoinReference[]{
                     new CoinReference() {{
                         prevHash = minerTransaction.hash();
@@ -183,7 +196,7 @@ public class IssueTransactionTest  extends AbstractBlockchainTest {
 
 
         ArrayList<Transaction> mempool = new ArrayList<>();
-        IssueTransaction issue2 = new IssueTransaction() {{
+        MyIssueTransaction issue2 = new MyIssueTransaction() {{
             inputs = new CoinReference[]{
                     new CoinReference() {{
                         prevHash = minerTransaction.hash();
