@@ -1,8 +1,13 @@
 package neo.smartcontract;
 
+import org.bouncycastle.math.ec.ECCurve;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,18 +16,21 @@ import java.util.function.Function;
 
 import neo.UInt160;
 import neo.UInt256;
+import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.common.IDisposable;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
+import neo.csharp.io.MemoryStream;
 import neo.exception.FormatException;
 import neo.ledger.Blockchain;
 import neo.ledger.ContractState;
 import neo.ledger.StorageFlags;
 import neo.ledger.StorageItem;
 import neo.ledger.StorageKey;
+import neo.ledger.TransactionState;
 import neo.log.notr.TR;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.BlockBase;
@@ -106,7 +114,7 @@ public class StandardService implements IInteropService, IDisposable {
     }
 
     boolean checkStorageContext(StorageContext context) {
-        ContractState contract = snapshot.getContracts().TryGet(context.scriptHash);
+        ContractState contract = snapshot.getContracts().tryGet(context.scriptHash);
         if (contract == null) return false;
         if (!contract.hasStorage()) return false;
         return true;
@@ -129,9 +137,14 @@ public class StandardService implements IInteropService, IDisposable {
 
     @Override
     public boolean invoke(byte[] method, ExecutionEngine engine) {
-        Uint hash = method.length == 4
-                ? BitConverter.toUint(method, 0)
-                : Encoding.ASCII.GetString(method).ToInteropMethodHash();
+        Uint hash = null;
+        try {
+            hash = (method.length == 4)
+                    ? BitConverter.toUint(method)
+                    : Helper.toInteropMethodHash(new String(method,"ascii"));
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         Function<ExecutionEngine, java.lang.Boolean> func = methods.getOrDefault(hash, null);
         if (func == null) {
             return false;
@@ -192,11 +205,12 @@ public class StandardService implements IInteropService, IDisposable {
     protected boolean checkWitness(ExecutionEngine engine, UInt160 hash) {
         IVerifiable container = (IVerifiable) engine.scriptContainer;
         UInt160[] _hashes_for_verifying = container.getScriptHashesForVerifying(snapshot);
-        return _hashes_for_verifying.contains(hash);
+        return Arrays.asList(_hashes_for_verifying).stream().anyMatch(p -> p.equals(hash));
     }
 
     protected boolean checkWitness(ExecutionEngine engine, ECPoint pubkey) {
-        return checkWitness(engine, Contract.createSignatureRedeemScript(pubkey).ToScriptHash());
+        return checkWitness(engine, Helper.toScriptHash(Contract.createSignatureRedeemScript
+                (pubkey)));
     }
 
     protected boolean runtimeCheckWitness(ExecutionEngine engine) {
@@ -205,7 +219,8 @@ public class StandardService implements IInteropService, IDisposable {
         if (hashOrPubkey.length == 20)
             result = checkWitness(engine, new UInt160(hashOrPubkey));
         else if (hashOrPubkey.length == 33)
-            result = checkWitness(engine, ECPoint.DecodePoint(hashOrPubkey, ECCurve.Secp256r1));
+            result = checkWitness(engine, new ECPoint(ECC.Secp256r1.getCurve().decodePoint
+                    (hashOrPubkey)));
         else
             return false;
         engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(result));
@@ -238,11 +253,12 @@ public class StandardService implements IInteropService, IDisposable {
     protected boolean runtimeGetTime(ExecutionEngine engine) {
         if (snapshot.getPersistingBlock() == null) {
             Header header = snapshot.getHeader(snapshot.getCurrentBlockHash());
-            engine.getCurrentContext().evaluationStack.push(header.timestamp + Blockchain
-                    .SecondsPerBlock);
+            engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(StackItem.getStackItem(header
+                    .timestamp.add(new Uint(Blockchain.SecondsPerBlock)))));
         } else {
-            engine.getCurrentContext().evaluationStack.push(snapshot.getPersistingBlock()
-                    .timestamp);
+            engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(StackItem.getStackItem(snapshot
+                    .getPersistingBlock()
+                    .timestamp)));
         }
         return true;
     }
@@ -253,62 +269,79 @@ public class StandardService implements IInteropService, IDisposable {
         unserialized.push(item);
         while (unserialized.size() > 0) {
             item = unserialized.pop();
-            switch (item) {
-                case ByteArray _:
-                writer.write((byte) StackItemType.ByteArray);
-                    writer.writeVarBytes(item.getByteArray());
-                    break;
-                case VMBoolean _:
-                writer.write((byte) StackItemType.Boolean);
-                    writer.write(item.getBoolean());
-                    break;
-                case Integer _:
-                writer.write((byte) StackItemType.Integer);
-                    writer.writeVarBytes(item.getByteArray());
-                    break;
-                case InteropInterface _:
-                throw new NotSupportedException();
-                case VMArray array:
-                if (serialized.Any(p = > ReferenceEquals(p, array)))
-                    throw new NotSupportedException();
-                    serialized.Add(array);
-                    if (array is Struct)
-                    writer.Write((byte) StackItemType.Struct);
-                        else
-                    writer.Write((byte) StackItemType.Array);
-                    writer.WriteVarInt(array.Count);
-                    for (int i = array.Count - 1; i >= 0; i--)
-                        unserialized.Push(array[i]);
-                    break;
-                case Map map:
-                if (serialized.Any(p = > ReferenceEquals(p, map)))
-                    throw new NotSupportedException();
-                    serialized.Add(map);
-                    writer.Write((byte) StackItemType.Map);
-                    writer.WriteVarInt(map.Count);
-                    foreach(var pair in map.Reverse())
-                {
-                    unserialized.push(pair.Value);
-                    unserialized.push(pair.Key);
+            if (item instanceof ByteArray) {
+                writer.writeByte(StackItemType.ByteArray.getStackItemType());
+                writer.writeVarBytes(item.getByteArray());
+            } else if (item instanceof Boolean) {
+                writer.writeByte(StackItemType.Boolean.getStackItemType());
+                writer.writeBoolean(item.getBoolean());
+            } else if (item instanceof Integer) {
+                writer.writeByte(StackItemType.Integer.getStackItemType());
+                writer.writeVarBytes(item.getByteArray());
+            } else if (item instanceof InteropInterface) {
+                throw new UnsupportedOperationException();
+            } else if (item instanceof Array) {
+                //LINQ START
+/*                if (serialized.Any(p = > ReferenceEquals(p, array))){
+                    throw new UnsupportedOperationException();
+                }*/
+                StackItem finalItem = item;
+                if (serialized.stream().anyMatch(p -> p == finalItem)) {
+                    throw new UnsupportedOperationException();
+                }
+                //LINQ END
+                serialized.add(item);
+                if (item instanceof Struct) {
+                    writer.writeByte(StackItemType.Struct.getStackItemType());
+                } else {
+                    writer.writeByte(StackItemType.Array.getStackItemType());
+                }
+                writer.writeInt(((Array) item).getCount());
+                for (int i = ((Array) item).getCount() - 1; i >= 0; i--) {
+                    unserialized.push(((Array) item).getArrayItem(i));
                 }
                 break;
+            } else if (item instanceof neo.vm.Types.Map) {
+                //LINQ START
+/*                if (serialized.Any(p = > ReferenceEquals(p, map))){
+                    throw new UnsupportedOperationException();
+                }*/
+                StackItem finalItem = item;
+                if (serialized.stream().anyMatch(p -> p == finalItem)) {
+                    throw new UnsupportedOperationException();
+                }
+                //LINQ END
+                serialized.add(item);
+                writer.writeByte(StackItemType.Map.getStackItemType());
+                writer.writeInt(((neo.vm.Types.Map) item).getCount());
+                //// TODO: 2019/3/27
+                //不清楚为何map要reserve
+                for (Map.Entry<StackItem, StackItem> pair : ((neo.vm.Types.Map) item)) {
+                    unserialized.push(pair.getValue());
+                    unserialized.push(pair.getKey());
+                }
+/*                for (Map.Entry<StackItem,StackItem> pair:((neo.vm.Types.Map) item).reverse())
+                {
+                    unserialized.push(pair.getValue());
+                    unserialized.push(pair.getKey());
+                }*/
             }
         }
     }
 
     protected boolean runtimeSerialize(ExecutionEngine engine) {
-        MemoryStream ms = new MemoryStream()
-        using(BinaryWriter writer = new BinaryWriter(ms))
+        ByteArrayOutputStream ms=new ByteArrayOutputStream();
+        BinaryWriter writer = new BinaryWriter(new ByteArrayOutputStream());
         {
             try {
                 SerializeStackItem(engine.getCurrentContext().evaluationStack.pop(), writer);
-            } catch (NotSupportedException) {
+            } catch (UnsupportedOperationException e) {
                 return false;
             }
-            writer.Flush();
-            if (ms.Length > ApplicationEngine.MaxItemSize)
+            writer.flush();
+            if (ms.size() > ApplicationEngine.MaxItemSize.intValue())
                 return false;
-            engine.getCurrentContext().evaluationStack.push(ms.toArray());
+            engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(ms.toByteArray()));
         }
         return true;
     }
@@ -387,19 +420,16 @@ public class StandardService implements IInteropService, IDisposable {
 
     protected boolean runtimeDeserialize(ExecutionEngine engine) {
         byte[] data = engine.getCurrentContext().evaluationStack.pop().getByteArray();
-        using(MemoryStream ms = new MemoryStream(data, false))
-        using(BinaryReader reader = new BinaryReader(ms))
-        {
-            StackItem item;
-            try {
-                item = deserializeStackItem(reader);
-            } catch (FormatException) {
-                return false;
-            } catch (IOException) {
-                return false;
-            }
-            engine.getCurrentContext().evaluationStack.push(item);
+        MemoryStream ms = new MemoryStream(data);
+        BinaryReader reader = new BinaryReader(ms);
+        StackItem item;
+        try {
+            item = deserializeStackItem(reader);
+        } catch (FormatException e) {
+            return false;
         }
+        engine.getCurrentContext().evaluationStack.push(item);
+
         return true;
     }
 
@@ -413,7 +443,7 @@ public class StandardService implements IInteropService, IDisposable {
         byte[] data = engine.getCurrentContext().evaluationStack.pop().getByteArray();
         UInt256 hash;
         if (data.length <= 5)
-            hash = Blockchain.singleton().getBlockHash((uint) new BigInteger(data));
+            hash = Blockchain.singleton().getBlockHash(BitConverter.toUint(data));
         else if (data.length == 32)
             hash = new UInt256(data);
         else
@@ -455,14 +485,17 @@ public class StandardService implements IInteropService, IDisposable {
 
     protected boolean blockchainGetTransactionHeight(ExecutionEngine engine) {
         byte[] hash = engine.getCurrentContext().evaluationStack.pop().getByteArray();
-            int?height = (int?)snapshot.transactions.TryGet(new UInt256(hash)) ?.BlockIndex;
-        engine.getCurrentContext().evaluationStack.Push(height ? ? -1);
+        TransactionState temp = snapshot.getTransactions().tryGet(new UInt256(hash));
+        Uint height = temp.blockIndex;
+
+        engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(
+                (height != null ? StackItem.getStackItem(height) : new BigInteger("-1"))));
         return true;
     }
 
     protected boolean blockchainGetContract(ExecutionEngine engine) {
         UInt160 hash = new UInt160(engine.getCurrentContext().evaluationStack.pop().getByteArray());
-        ContractState contract = snapshot.getContracts().TryGet(hash);
+        ContractState contract = snapshot.getContracts().tryGet(hash);
         if (contract == null)
             engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(new byte[0]));
         else
@@ -511,7 +544,8 @@ public class StandardService implements IInteropService, IDisposable {
         if (_interface instanceof InteropInterface) {
             BlockBase header = ((InteropInterface<BlockBase>) _interface).getInterface();
             if (header == null) return false;
-            engine.getCurrentContext().evaluationStack.push(header.timestamp);
+            engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(StackItem.getStackItem(header
+                    .timestamp)));
             return true;
         }
         return false;
@@ -524,7 +558,7 @@ public class StandardService implements IInteropService, IDisposable {
             if (block == null) return false;
             engine.getCurrentContext().evaluationStack
                     .push(StackItem.getStackItem(StackItem.getStackItem(block
-                    .transactions.length)));
+                            .transactions.length)));
             return true;
         }
         return false;
@@ -537,9 +571,13 @@ public class StandardService implements IInteropService, IDisposable {
             if (block == null) return false;
             if (block.transactions.length > ApplicationEngine.MaxArraySize.intValue())
                 return false;
-            engine.getCurrentContext().evaluationStack.push(block.transactions.Select(p = >
-                    StackItem.fromInterface(p)).ToArray())
-            ;
+            //LINQ START
+            /*engine.getCurrentContext().evaluationStack.push(block.transactions.Select(p = >
+                    StackItem.fromInterface(p)).ToArray());*/
+            StackItem[] array = Arrays.asList(block.transactions).stream().map(p -> StackItem
+                    .fromInterface(p)).toArray(StackItem[]::new);
+            engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(array));
+            //LINQ END
             return true;
         }
         return false;
@@ -588,26 +626,26 @@ public class StandardService implements IInteropService, IDisposable {
     }
 
     protected boolean storageGet(ExecutionEngine engine) {
-        if (engine.getCurrentContext().evaluationStack.pop() is InteropInterface _interface)
-        {
-            StorageContext context = _interface.GetInterface < StorageContext > ();
+        StackItem tempItem = engine.getCurrentContext().evaluationStack.pop();
+        if (tempItem instanceof InteropInterface) {
+            StorageContext context = ((InteropInterface<StorageContext>) tempItem).getInterface();
             if (!checkStorageContext(context)) return false;
             byte[] key = engine.getCurrentContext().evaluationStack.pop().getByteArray();
-            StorageItem item = snapshot.getStorages().TryGet(new StorageKey
-            {
-                ScriptHash = context.ScriptHash,
-                        Key = key
-            });
-            engine.getCurrentContext().evaluationStack.push(item ?.Value ??new byte[0]);
+            StorageKey temp = new StorageKey();
+            temp.scriptHash = context.scriptHash;
+            temp.key = key;
+            StorageItem item = snapshot.getStorages().tryGet(temp);
+            engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem
+                    (item != null ? item.value : new byte[0]));
             return true;
         }
         return false;
     }
 
     protected boolean storageContextAsReadOnly(ExecutionEngine engine) {
-        StackItem tempItem=engine.getCurrentContext().evaluationStack.pop();
-        if (tempItem instanceof InteropInterface){
-            StorageContext context = ((InteropInterface<StorageContext>)tempItem).getInterface();
+        StackItem tempItem = engine.getCurrentContext().evaluationStack.pop();
+        if (tempItem instanceof InteropInterface) {
+            StorageContext context = ((InteropInterface<StorageContext>) tempItem).getInterface();
             if (!context.isReadOnly) {
                 StorageContext temp = new StorageContext();
                 temp.scriptHash = context.scriptHash;
@@ -621,20 +659,19 @@ public class StandardService implements IInteropService, IDisposable {
     }
 
     protected boolean contractGetStorageContext(ExecutionEngine engine) {
-        StackItem tempItem=engine.getCurrentContext().evaluationStack.pop();
-        if (tempItem instanceof InteropInterface)
-        {
-            ContractState contract = ((InteropInterface<ContractState>)tempItem).getInterface();
-            if (!contractsCreated.TryGetValue(contract.ScriptHash, out UInt160 created))
+        StackItem tempItem = engine.getCurrentContext().evaluationStack.pop();
+        if (tempItem instanceof InteropInterface) {
+            ContractState contract = ((InteropInterface<ContractState>) tempItem).getInterface();
+            UInt160 created = contractsCreated.getOrDefault(contract.getScriptHash(), null);
+            if (created == null)
                 return false;
-            if (!created.Equals(new UInt160(engine.getCurrentContext().getScriptHash())))
+            if (!created.equals(new UInt160(engine.getCurrentContext().getScriptHash())))
                 return false;
-            engine.getCurrentContext().evaluationStack.push(StackItem.fromInterface(new
-                    StorageContext
-            {
-                ScriptHash = contract.ScriptHash,
-                        IsReadOnly = false
-            }));
+
+            StorageContext temp = new StorageContext();
+            temp.scriptHash = contract.getScriptHash();
+            temp.isReadOnly = false;
+            engine.getCurrentContext().evaluationStack.push(StackItem.fromInterface(temp));
             return true;
         }
         return false;
@@ -643,12 +680,14 @@ public class StandardService implements IInteropService, IDisposable {
     protected boolean contractDestroy(ExecutionEngine engine) {
         if (trigger != TriggerType.Application) return false;
         UInt160 hash = new UInt160(engine.getCurrentContext().getScriptHash());
-        ContractState contract = snapshot.getContracts().TryGet(hash);
+        ContractState contract = snapshot.getContracts().tryGet(hash);
         if (contract == null) return true;
         snapshot.getContracts().delete(hash);
-        if (contract.hasStorage())
-            for (var pair in snapshot.getStorages().Find(hash.ToArray()))
-        snapshot.getStorages().delete(pair.Key);
+        if (contract.hasStorage()) {
+            for (Map.Entry<StorageKey, StorageItem> pair : snapshot.getStorages().find(hash.toArray())) {
+                snapshot.getStorages().delete(pair.getKey());
+            }
+        }
         return true;
     }
 
@@ -661,7 +700,7 @@ public class StandardService implements IInteropService, IDisposable {
         StorageKey skey = new StorageKey();
         skey.scriptHash = context.scriptHash;
         skey.key = key;
-        StorageItem item = snapshot.getStorages().getAndChange(skey, () = > new StorageItem());
+        StorageItem item = snapshot.getStorages().getAndChange(skey, StorageItem::new);
         if (item.isConstant) return false;
         item.value = value;
         item.isConstant = flags.hasFlag(StorageFlags.Constant);
@@ -706,7 +745,8 @@ public class StandardService implements IInteropService, IDisposable {
             StorageKey key = new StorageKey();
             key.scriptHash = context.scriptHash;
             key.key = engine.getCurrentContext().evaluationStack.pop().getByteArray();
-            if (snapshot.getStorages().TryGet(key) ?.isConstant == true){
+            StorageItem tempItem = snapshot.getStorages().tryGet(key);
+            if (tempItem != null ? tempItem.isConstant == true : false) {
                 return false;
             }
             snapshot.getStorages().delete(key);

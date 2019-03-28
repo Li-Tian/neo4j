@@ -1,6 +1,52 @@
 package neo.smartcontract;
 
+import org.bouncycastle.math.ec.ECCurve;
+
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import neo.Fixed8;
+import neo.UInt160;
+import neo.UInt256;
+import neo.cryptography.ecc.ECC;
+import neo.cryptography.ecc.ECPoint;
+import neo.csharp.BitConverter;
+import neo.csharp.Uint;
+import neo.csharp.io.BinaryWriter;
+import neo.io.SerializeHelper;
+import neo.ledger.AccountState;
+import neo.ledger.AssetState;
+import neo.ledger.ContractPropertyState;
+import neo.ledger.ContractState;
+import neo.ledger.StorageItem;
+import neo.ledger.StorageKey;
+import neo.log.notr.TR;
+import neo.network.p2p.payloads.AssetType;
+import neo.network.p2p.payloads.BlockBase;
+import neo.network.p2p.payloads.CoinReference;
+import neo.network.p2p.payloads.InvocationTransaction;
+import neo.network.p2p.payloads.Transaction;
+import neo.network.p2p.payloads.TransactionAttribute;
+import neo.network.p2p.payloads.TransactionOutput;
 import neo.persistence.Snapshot;
+import neo.smartcontract.enumerators.ConcatenatedEnumerator;
+import neo.smartcontract.enumerators.IEnumerator;
+import neo.smartcontract.enumerators.IteratorValuesWrapper;
+import neo.smartcontract.iterators.ArrayWrapper;
+import neo.smartcontract.iterators.IIterator;
+import neo.smartcontract.iterators.MapWrapper;
+import neo.smartcontract.iterators.StorageIterator;
+import neo.vm.ExecutionEngine;
+import neo.vm.ICollection;
+import neo.vm.StackItem;
+import neo.vm.Types.Array;
+import neo.vm.Types.InteropInterface;
+import neo.vm.Types.Map;
 
 /**
  * @author doubi.liu
@@ -10,895 +56,1053 @@ import neo.persistence.Snapshot;
  * @Description: (用一句话描述该文件做什么)
  * @date Created in 14:11 2019/3/12
  */
-public class NeoService extends StandardService{
+public class NeoService extends StandardService {
+
     public NeoService(TriggerType trigger, Snapshot snapshot) {
+        super(trigger, snapshot);
+        Register("Neo.Runtime.GetTrigger", this::runtimeGetTrigger, 1);
+        Register("Neo.Runtime.CheckWitness", this::runtimeCheckWitness, 200);
+        Register("Neo.Runtime.Notify", this::runtimeNotify, 1);
+        Register("Neo.Runtime.Log", this::runtimeLog, 1);
+        Register("Neo.Runtime.GetTime", this::runtimeGetTime, 1);
+        Register("Neo.Runtime.Serialize", this::runtimeSerialize, 1);
+        Register("Neo.Runtime.Deserialize", this::runtimeDeserialize, 1);
+        Register("Neo.Blockchain.GetHeight", this::blockchainGetHeight, 1);
+        Register("Neo.Blockchain.GetHeader", this::blockchainGetHeader, 100);
+        Register("Neo.Blockchain.GetBlock", this::blockchainGetBlock, 200);
+        Register("Neo.Blockchain.GetTransaction", this::blockchainGetTransaction, 100);
+        Register("Neo.Blockchain.GetTransactionHeight", this::blockchainGetTransactionHeight, 100);
+        Register("Neo.Blockchain.GetAccount", this::blockchainGetAccount, 100);
+        Register("Neo.Blockchain.GetValidators", this::blockchainGetValidators, 200);
+        Register("Neo.Blockchain.GetAsset", this::blockchainGetAsset, 100);
+        Register("Neo.Blockchain.GetContract", this::blockchainGetContract, 100);
+        Register("Neo.Header.GetHash", this::headerGetHash, 1);
+        Register("Neo.Header.GetVersion", this::headerGetVersion, 1);
+        Register("Neo.Header.GetPrevHash", this::headerGetPrevHash, 1);
+        Register("Neo.Header.GetMerkleRoot", this::headerGetMerkleRoot, 1);
+        Register("Neo.Header.GetTimestamp", this::headerGetTimestamp, 1);
+        Register("Neo.Header.GetIndex", this::headerGetIndex, 1);
+        Register("Neo.Header.GetConsensusData", this::headerGetConsensusData, 1);
+        Register("Neo.Header.GetNextConsensus", this::headerGetNextConsensus, 1);
+        Register("Neo.Block.GetTransactionCount", this::blockGetTransactionCount, 1);
+        Register("Neo.Block.GetTransactions", this::blockGetTransactions, 1);
+        Register("Neo.Block.GetTransaction", this::blockGetTransaction, 1);
+        Register("Neo.Transaction.GetHash", this::transactionGetHash, 1);
+        Register("Neo.Transaction.GetType", this::transactionGetType, 1);
+        Register("Neo.Transaction.GetAttributes", this::transactionGetAttributes, 1);
+        Register("Neo.Transaction.GetInputs", this::transactionGetInputs, 1);
+        Register("Neo.Transaction.GetOutputs", this::transactionGetOutputs, 1);
+        Register("Neo.Transaction.GetReferences", this::transactionGetReferences, 200);
+        Register("Neo.Transaction.GetUnspentCoins", this::transactionGetUnspentCoins, 200);
+        Register("Neo.Transaction.GetWitnesses", this::transactionGetWitnesses, 200);
+        Register("Neo.InvocationTransaction.GetScript", this::invocationTransactionGetScript, 1);
+        Register("Neo.Witness.GetVerificationScript", this::witnessGetVerificationScript, 100);
+        Register("Neo.Attribute.GetUsage", this::attributeGetUsage, 1);
+        Register("Neo.Attribute.GetData", this::attributeGetData, 1);
+        Register("Neo.Input.GetHash", this::inputGetHash, 1);
+        Register("Neo.Input.GetIndex", this::inputGetIndex, 1);
+        Register("Neo.Output.GetAssetId", this::outputGetAssetId, 1);
+        Register("Neo.Output.GetValue", this::outputGetValue, 1);
+        Register("Neo.Output.GetScriptHash", this::outputGetScriptHash, 1);
+        Register("Neo.Account.GetScriptHash", this::accountGetScriptHash, 1);
+        Register("Neo.Account.GetVotes", this::accountGetVotes, 1);
+        Register("Neo.Account.GetBalance", this::accountGetBalance, 1);
+        Register("Neo.Account.IsStandard", this::accountIsStandard, 100);
+        Register("Neo.Asset.Create", this::assetCreate);
+        Register("Neo.Asset.Renew", this::assetRenew);
+        Register("Neo.Asset.GetAssetId", this::assetGetAssetId, 1);
+        Register("Neo.Asset.GetAssetType", this::assetGetAssetType, 1);
+        Register("Neo.Asset.GetAmount", this::assetGetAmount, 1);
+        Register("Neo.Asset.GetAvailable", this::assetGetAvailable, 1);
+        Register("Neo.Asset.GetPrecision", this::assetGetPrecision, 1);
+        Register("Neo.Asset.GetOwner", this::assetGetOwner, 1);
+        Register("Neo.Asset.GetAdmin", this::assetGetAdmin, 1);
+        Register("Neo.Asset.GetIssuer", this::assetGetIssuer, 1);
+        Register("Neo.Contract.Create", this::contractCreate);
+        Register("Neo.Contract.Migrate", this::contractMigrate);
+        Register("Neo.Contract.Destroy", this::contractDestroy, 1);
+        Register("Neo.Contract.GetScript", this::contractGetScript, 1);
+        Register("Neo.Contract.IsPayable", this::contractIsPayable, 1);
+        Register("Neo.Contract.GetStorageContext", this::contractGetStorageContext, 1);
+        Register("Neo.Storage.GetContext", this::storageGetContext, 1);
+        Register("Neo.Storage.GetReadOnlyContext", this::storageGetReadOnlyContext, 1);
+        Register("Neo.Storage.Get", this::storageGet, 100);
+        Register("Neo.Storage.Put", this::storagePut);
+        Register("Neo.Storage.Delete", this::storageDelete, 100);
+        Register("Neo.Storage.Find", this::storageFind, 1);
+        Register("Neo.StorageContext.AsReadOnly", this::storageContextAsReadOnly, 1);
+        Register("Neo.Enumerator.Create", this::enumeratorCreate, 1);
+        Register("Neo.Enumerator.Next", this::enumeratorNext, 1);
+        Register("Neo.Enumerator.Value", this::enumeratorValue, 1);
+        Register("Neo.Enumerator.Concat", this::enumeratorConcat, 1);
+        Register("Neo.Iterator.Create", this::iteratorCreate, 1);
+        Register("Neo.Iterator.Key", this::iteratorKey, 1);
+        Register("Neo.Iterator.Keys", this::iteratorKeys, 1);
+        Register("Neo.Iterator.Values", this::iteratorValues, 1);
 
+        //region Aliases
+        Register("Neo.Iterator.Next", this::enumeratorNext, 1);
+        Register("Neo.Iterator.Value", this::enumeratorValue, 1);
+        //region Old APIs
+        Register("AntShares.Runtime.CheckWitness", this::runtimeCheckWitness, 200);
+        Register("AntShares.Runtime.Notify", this::runtimeNotify, 1);
+        Register("AntShares.Runtime.Log", this::runtimeLog, 1);
+        Register("AntShares.Blockchain.GetHeight", this::blockchainGetHeight, 1);
+        Register("AntShares.Blockchain.GetHeader", this::blockchainGetHeader, 100);
+        Register("AntShares.Blockchain.GetBlock", this::blockchainGetBlock, 200);
+        Register("AntShares.Blockchain.GetTransaction", this::blockchainGetTransaction, 100);
+        Register("AntShares.Blockchain.GetAccount", this::blockchainGetAccount, 100);
+        Register("AntShares.Blockchain.GetValidators", this::blockchainGetValidators, 200);
+        Register("AntShares.Blockchain.GetAsset", this::blockchainGetAsset, 100);
+        Register("AntShares.Blockchain.GetContract", this::blockchainGetContract, 100);
+        Register("AntShares.Header.GetHash", this::headerGetHash, 1);
+        Register("AntShares.Header.GetVersion", this::headerGetVersion, 1);
+        Register("AntShares.Header.GetPrevHash", this::headerGetPrevHash, 1);
+        Register("AntShares.Header.GetMerkleRoot", this::headerGetMerkleRoot, 1);
+        Register("AntShares.Header.GetTimestamp", this::headerGetTimestamp, 1);
+        Register("AntShares.Header.GetConsensusData", this::headerGetConsensusData, 1);
+        Register("AntShares.Header.GetNextConsensus", this::headerGetNextConsensus, 1);
+        Register("AntShares.Block.GetTransactionCount", this::blockGetTransactionCount, 1);
+        Register("AntShares.Block.GetTransactions", this::blockGetTransactions, 1);
+        Register("AntShares.Block.GetTransaction", this::blockGetTransaction, 1);
+        Register("AntShares.Transaction.GetHash", this::transactionGetHash, 1);
+        Register("AntShares.Transaction.GetType", this::transactionGetType, 1);
+        Register("AntShares.Transaction.GetAttributes", this::transactionGetAttributes, 1);
+        Register("AntShares.Transaction.GetInputs", this::transactionGetInputs, 1);
+        Register("AntShares.Transaction.GetOutputs", this::transactionGetOutputs, 1);
+        Register("AntShares.Transaction.GetReferences", this::transactionGetReferences, 200);
+        Register("AntShares.Attribute.GetUsage", this::attributeGetUsage, 1);
+        Register("AntShares.Attribute.GetData", this::attributeGetData, 1);
+        Register("AntShares.Input.GetHash", this::inputGetHash, 1);
+        Register("AntShares.Input.GetIndex", this::inputGetIndex, 1);
+        Register("AntShares.Output.GetAssetId", this::outputGetAssetId, 1);
+        Register("AntShares.Output.GetValue", this::outputGetValue, 1);
+        Register("AntShares.Output.GetScriptHash", this::outputGetScriptHash, 1);
+        Register("AntShares.Account.GetScriptHash", this::accountGetScriptHash, 1);
+        Register("AntShares.Account.GetVotes", this::accountGetVotes, 1);
+        Register("AntShares.Account.GetBalance", this::accountGetBalance, 1);
+        Register("AntShares.Asset.Create", this::assetCreate);
+        Register("AntShares.Asset.Renew", this::assetRenew);
+        Register("AntShares.Asset.GetAssetId", this::assetGetAssetId, 1);
+        Register("AntShares.Asset.GetAssetType", this::assetGetAssetType, 1);
+        Register("AntShares.Asset.GetAmount", this::assetGetAmount, 1);
+        Register("AntShares.Asset.GetAvailable", this::assetGetAvailable, 1);
+        Register("AntShares.Asset.GetPrecision", this::assetGetPrecision, 1);
+        Register("AntShares.Asset.GetOwner", this::assetGetOwner, 1);
+        Register("AntShares.Asset.GetAdmin", this::assetGetAdmin, 1);
+        Register("AntShares.Asset.GetIssuer", this::assetGetIssuer, 1);
+        Register("AntShares.Contract.Create", this::contractCreate);
+        Register("AntShares.Contract.Migrate", this::contractMigrate);
+        Register("AntShares.Contract.Destroy", this::contractDestroy, 1);
+        Register("AntShares.Contract.GetScript", this::contractGetScript, 1);
+        Register("AntShares.Contract.GetStorageContext", this::contractGetStorageContext, 1);
+        Register("AntShares.Storage.GetContext", this::storageGetContext, 1);
+        Register("AntShares.Storage.Get", this::storageGet, 100);
+        Register("AntShares.Storage.Put", this::storagePut);
+        Register("AntShares.Storage.Delete", this::storageDelete, 100);
     }
 
-
-    public NeoService(TriggerType trigger, Snapshot snapshot)
-            : base(trigger, snapshot)
-    {
-        Register("Neo.Runtime.GetTrigger", Runtime_GetTrigger, 1);
-        Register("Neo.Runtime.CheckWitness", Runtime_CheckWitness, 200);
-        Register("Neo.Runtime.Notify", Runtime_Notify, 1);
-        Register("Neo.Runtime.Log", Runtime_Log, 1);
-        Register("Neo.Runtime.GetTime", Runtime_GetTime, 1);
-        Register("Neo.Runtime.Serialize", Runtime_Serialize, 1);
-        Register("Neo.Runtime.Deserialize", Runtime_Deserialize, 1);
-        Register("Neo.Blockchain.GetHeight", Blockchain_GetHeight, 1);
-        Register("Neo.Blockchain.GetHeader", Blockchain_GetHeader, 100);
-        Register("Neo.Blockchain.GetBlock", Blockchain_GetBlock, 200);
-        Register("Neo.Blockchain.GetTransaction", Blockchain_GetTransaction, 100);
-        Register("Neo.Blockchain.GetTransactionHeight", Blockchain_GetTransactionHeight, 100);
-        Register("Neo.Blockchain.GetAccount", Blockchain_GetAccount, 100);
-        Register("Neo.Blockchain.GetValidators", Blockchain_GetValidators, 200);
-        Register("Neo.Blockchain.GetAsset", Blockchain_GetAsset, 100);
-        Register("Neo.Blockchain.GetContract", Blockchain_GetContract, 100);
-        Register("Neo.Header.GetHash", Header_GetHash, 1);
-        Register("Neo.Header.GetVersion", Header_GetVersion, 1);
-        Register("Neo.Header.GetPrevHash", Header_GetPrevHash, 1);
-        Register("Neo.Header.GetMerkleRoot", Header_GetMerkleRoot, 1);
-        Register("Neo.Header.GetTimestamp", Header_GetTimestamp, 1);
-        Register("Neo.Header.GetIndex", Header_GetIndex, 1);
-        Register("Neo.Header.GetConsensusData", Header_GetConsensusData, 1);
-        Register("Neo.Header.GetNextConsensus", Header_GetNextConsensus, 1);
-        Register("Neo.Block.GetTransactionCount", Block_GetTransactionCount, 1);
-        Register("Neo.Block.GetTransactions", Block_GetTransactions, 1);
-        Register("Neo.Block.GetTransaction", Block_GetTransaction, 1);
-        Register("Neo.Transaction.GetHash", Transaction_GetHash, 1);
-        Register("Neo.Transaction.GetType", Transaction_GetType, 1);
-        Register("Neo.Transaction.GetAttributes", Transaction_GetAttributes, 1);
-        Register("Neo.Transaction.GetInputs", Transaction_GetInputs, 1);
-        Register("Neo.Transaction.GetOutputs", Transaction_GetOutputs, 1);
-        Register("Neo.Transaction.GetReferences", Transaction_GetReferences, 200);
-        Register("Neo.Transaction.GetUnspentCoins", Transaction_GetUnspentCoins, 200);
-        Register("Neo.Transaction.GetWitnesses", Transaction_GetWitnesses, 200);
-        Register("Neo.InvocationTransaction.GetScript", InvocationTransaction_GetScript, 1);
-        Register("Neo.Witness.GetVerificationScript", Witness_GetVerificationScript, 100);
-        Register("Neo.Attribute.GetUsage", Attribute_GetUsage, 1);
-        Register("Neo.Attribute.GetData", Attribute_GetData, 1);
-        Register("Neo.Input.GetHash", Input_GetHash, 1);
-        Register("Neo.Input.GetIndex", Input_GetIndex, 1);
-        Register("Neo.Output.GetAssetId", Output_GetAssetId, 1);
-        Register("Neo.Output.GetValue", Output_GetValue, 1);
-        Register("Neo.Output.GetScriptHash", Output_GetScriptHash, 1);
-        Register("Neo.Account.GetScriptHash", Account_GetScriptHash, 1);
-        Register("Neo.Account.GetVotes", Account_GetVotes, 1);
-        Register("Neo.Account.GetBalance", Account_GetBalance, 1);
-        Register("Neo.Account.IsStandard", Account_IsStandard, 100);
-        Register("Neo.Asset.Create", Asset_Create);
-        Register("Neo.Asset.Renew", Asset_Renew);
-        Register("Neo.Asset.GetAssetId", Asset_GetAssetId, 1);
-        Register("Neo.Asset.GetAssetType", Asset_GetAssetType, 1);
-        Register("Neo.Asset.GetAmount", Asset_GetAmount, 1);
-        Register("Neo.Asset.GetAvailable", Asset_GetAvailable, 1);
-        Register("Neo.Asset.GetPrecision", Asset_GetPrecision, 1);
-        Register("Neo.Asset.GetOwner", Asset_GetOwner, 1);
-        Register("Neo.Asset.GetAdmin", Asset_GetAdmin, 1);
-        Register("Neo.Asset.GetIssuer", Asset_GetIssuer, 1);
-        Register("Neo.Contract.Create", Contract_Create);
-        Register("Neo.Contract.Migrate", Contract_Migrate);
-        Register("Neo.Contract.Destroy", Contract_Destroy, 1);
-        Register("Neo.Contract.GetScript", Contract_GetScript, 1);
-        Register("Neo.Contract.IsPayable", Contract_IsPayable, 1);
-        Register("Neo.Contract.GetStorageContext", Contract_GetStorageContext, 1);
-        Register("Neo.Storage.GetContext", Storage_GetContext, 1);
-        Register("Neo.Storage.GetReadOnlyContext", Storage_GetReadOnlyContext, 1);
-        Register("Neo.Storage.Get", Storage_Get, 100);
-        Register("Neo.Storage.Put", Storage_Put);
-        Register("Neo.Storage.Delete", Storage_Delete, 100);
-        Register("Neo.Storage.Find", Storage_Find, 1);
-        Register("Neo.StorageContext.AsReadOnly", StorageContext_AsReadOnly, 1);
-        Register("Neo.Enumerator.Create", Enumerator_Create, 1);
-        Register("Neo.Enumerator.Next", Enumerator_Next, 1);
-        Register("Neo.Enumerator.Value", Enumerator_Value, 1);
-        Register("Neo.Enumerator.Concat", Enumerator_Concat, 1);
-        Register("Neo.Iterator.Create", Iterator_Create, 1);
-        Register("Neo.Iterator.Key", Iterator_Key, 1);
-        Register("Neo.Iterator.Keys", Iterator_Keys, 1);
-        Register("Neo.Iterator.Values", Iterator_Values, 1);
-
-            #region Aliases
-        Register("Neo.Iterator.Next", Enumerator_Next, 1);
-        Register("Neo.Iterator.Value", Enumerator_Value, 1);
-            #endregion
-
-            #region Old APIs
-        Register("AntShares.Runtime.CheckWitness", Runtime_CheckWitness, 200);
-        Register("AntShares.Runtime.Notify", Runtime_Notify, 1);
-        Register("AntShares.Runtime.Log", Runtime_Log, 1);
-        Register("AntShares.Blockchain.GetHeight", Blockchain_GetHeight, 1);
-        Register("AntShares.Blockchain.GetHeader", Blockchain_GetHeader, 100);
-        Register("AntShares.Blockchain.GetBlock", Blockchain_GetBlock, 200);
-        Register("AntShares.Blockchain.GetTransaction", Blockchain_GetTransaction, 100);
-        Register("AntShares.Blockchain.GetAccount", Blockchain_GetAccount, 100);
-        Register("AntShares.Blockchain.GetValidators", Blockchain_GetValidators, 200);
-        Register("AntShares.Blockchain.GetAsset", Blockchain_GetAsset, 100);
-        Register("AntShares.Blockchain.GetContract", Blockchain_GetContract, 100);
-        Register("AntShares.Header.GetHash", Header_GetHash, 1);
-        Register("AntShares.Header.GetVersion", Header_GetVersion, 1);
-        Register("AntShares.Header.GetPrevHash", Header_GetPrevHash, 1);
-        Register("AntShares.Header.GetMerkleRoot", Header_GetMerkleRoot, 1);
-        Register("AntShares.Header.GetTimestamp", Header_GetTimestamp, 1);
-        Register("AntShares.Header.GetConsensusData", Header_GetConsensusData, 1);
-        Register("AntShares.Header.GetNextConsensus", Header_GetNextConsensus, 1);
-        Register("AntShares.Block.GetTransactionCount", Block_GetTransactionCount, 1);
-        Register("AntShares.Block.GetTransactions", Block_GetTransactions, 1);
-        Register("AntShares.Block.GetTransaction", Block_GetTransaction, 1);
-        Register("AntShares.Transaction.GetHash", Transaction_GetHash, 1);
-        Register("AntShares.Transaction.GetType", Transaction_GetType, 1);
-        Register("AntShares.Transaction.GetAttributes", Transaction_GetAttributes, 1);
-        Register("AntShares.Transaction.GetInputs", Transaction_GetInputs, 1);
-        Register("AntShares.Transaction.GetOutputs", Transaction_GetOutputs, 1);
-        Register("AntShares.Transaction.GetReferences", Transaction_GetReferences, 200);
-        Register("AntShares.Attribute.GetUsage", Attribute_GetUsage, 1);
-        Register("AntShares.Attribute.GetData", Attribute_GetData, 1);
-        Register("AntShares.Input.GetHash", Input_GetHash, 1);
-        Register("AntShares.Input.GetIndex", Input_GetIndex, 1);
-        Register("AntShares.Output.GetAssetId", Output_GetAssetId, 1);
-        Register("AntShares.Output.GetValue", Output_GetValue, 1);
-        Register("AntShares.Output.GetScriptHash", Output_GetScriptHash, 1);
-        Register("AntShares.Account.GetScriptHash", Account_GetScriptHash, 1);
-        Register("AntShares.Account.GetVotes", Account_GetVotes, 1);
-        Register("AntShares.Account.GetBalance", Account_GetBalance, 1);
-        Register("AntShares.Asset.Create", Asset_Create);
-        Register("AntShares.Asset.Renew", Asset_Renew);
-        Register("AntShares.Asset.GetAssetId", Asset_GetAssetId, 1);
-        Register("AntShares.Asset.GetAssetType", Asset_GetAssetType, 1);
-        Register("AntShares.Asset.GetAmount", Asset_GetAmount, 1);
-        Register("AntShares.Asset.GetAvailable", Asset_GetAvailable, 1);
-        Register("AntShares.Asset.GetPrecision", Asset_GetPrecision, 1);
-        Register("AntShares.Asset.GetOwner", Asset_GetOwner, 1);
-        Register("AntShares.Asset.GetAdmin", Asset_GetAdmin, 1);
-        Register("AntShares.Asset.GetIssuer", Asset_GetIssuer, 1);
-        Register("AntShares.Contract.Create", Contract_Create);
-        Register("AntShares.Contract.Migrate", Contract_Migrate);
-        Register("AntShares.Contract.Destroy", Contract_Destroy, 1);
-        Register("AntShares.Contract.GetScript", Contract_GetScript, 1);
-        Register("AntShares.Contract.GetStorageContext", Contract_GetStorageContext, 1);
-        Register("AntShares.Storage.GetContext", Storage_GetContext, 1);
-        Register("AntShares.Storage.Get", Storage_Get, 100);
-        Register("AntShares.Storage.Put", Storage_Put);
-        Register("AntShares.Storage.Delete", Storage_Delete, 100);
-            #endregion
-    }
-
-    private bool Blockchain_GetAccount(ExecutionEngine engine)
-    {
-        UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        AccountState account = Snapshot.Accounts.GetOrAdd(hash, () => new AccountState(hash));
-        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(account));
+    private boolean blockchainGetAccount(ExecutionEngine engine) {
+        UInt160 hash = new UInt160(engine.getCurrentContext().getEvaluationStack().pop()
+                .getByteArray());
+        //LINQ START
+        //AccountState account = Snapshot.Accounts.GetOrAdd(hash, () => new AccountState(hash));
+        AccountState account = snapshot.getAccounts().getOrAdd(hash, () -> {
+            return new AccountState
+                    (hash);
+        });
+        //LINQ END
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(account));
         return true;
     }
 
-    private bool Blockchain_GetValidators(ExecutionEngine engine)
-    {
-        ECPoint[] validators = Snapshot.GetValidators();
-        engine.CurrentContext.EvaluationStack.Push(validators.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
+    private boolean blockchainGetValidators(ExecutionEngine engine) {
+        ECPoint[] validators = snapshot.getValidatorPubkeys();
+        //LINQ START
+/*        engine.getCurrentContext().getEvaluationStack().push(validators.Select(p = > (StackItem) p
+                .EncodePoint(true)).ToArray());*/
+// TODO: 2019/3/28
+        StackItem[] tempArray = Arrays.asList(validators).stream()
+                .map(p -> StackItem.getStackItem(p.getEncoded(true))).toArray(StackItem[]::new);
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+        //LINQ END
         return true;
     }
 
-    private bool Blockchain_GetAsset(ExecutionEngine engine)
-    {
-        UInt256 hash = new UInt256(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        AssetState asset = Snapshot.Assets.TryGet(hash);
+    private boolean blockchainGetAsset(ExecutionEngine engine) {
+        UInt256 hash = new UInt256(engine.getCurrentContext().getEvaluationStack().pop()
+                .getByteArray());
+        AssetState asset = snapshot.getAssets().tryGet(hash);
         if (asset == null) return false;
-        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(asset));
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(asset));
         return true;
     }
 
-    private bool Header_GetVersion(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            BlockBase header = _interface.GetInterface<BlockBase>();
+    private boolean headerGetVersion(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            BlockBase header = ((InteropInterface<BlockBase>) _interface).getInterface();
             if (header == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(header.Version);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(header
+                    .version)));
             return true;
         }
         return false;
     }
 
-    private bool Header_GetMerkleRoot(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            BlockBase header = _interface.GetInterface<BlockBase>();
+    private boolean headerGetMerkleRoot(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            BlockBase header = ((InteropInterface<BlockBase>) _interface).getInterface();
             if (header == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(header.MerkleRoot.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(header
+                    .merkleRoot.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Header_GetConsensusData(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            BlockBase header = _interface.GetInterface<BlockBase>();
+    private boolean headerGetConsensusData(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            BlockBase header = ((InteropInterface<BlockBase>) _interface).getInterface();
             if (header == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(header.ConsensusData);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(header
+                    .consensusData)));
             return true;
         }
         return false;
     }
 
-    private bool Header_GetNextConsensus(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            BlockBase header = _interface.GetInterface<BlockBase>();
+    private boolean headerGetNextConsensus(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            BlockBase header = ((InteropInterface<BlockBase>) _interface).getInterface();
             if (header == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(header.NextConsensus.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(header
+                    .nextConsensus.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Transaction_GetType(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            Transaction tx = _interface.GetInterface<Transaction>();
+    private boolean transactionGetType(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            engine.CurrentContext.EvaluationStack.Push((int)tx.Type);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(tx.type
+                    .value())));
             return true;
         }
         return false;
     }
 
-    private bool Transaction_GetAttributes(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            Transaction tx = _interface.GetInterface<Transaction>();
+    private boolean transactionGetAttributes(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            if (tx.Attributes.Length > ApplicationEngine.MaxArraySize)
+            if (tx.attributes.length > ApplicationEngine.MaxArraySize.intValue())
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(tx.Attributes.Select(p => StackItem.FromInterface(p)).ToArray());
+            //LINQ START
+/*            engine.getCurrentContext().getEvaluationStack().push(tx.attributes.Select(p = >
+                    StackItem.FromInterface(p)).ToArray());*/
+            StackItem[] tempArray = Arrays.asList(tx.attributes).stream()
+                    .map(p -> StackItem.fromInterface(p)).toArray(StackItem[]::new);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+            //LINQ END
             return true;
         }
         return false;
     }
 
-    private bool Transaction_GetInputs(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            Transaction tx = _interface.GetInterface<Transaction>();
+    private boolean transactionGetInputs(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            if (tx.Inputs.Length > ApplicationEngine.MaxArraySize)
+            if (tx.inputs.length > ApplicationEngine.MaxArraySize.intValue())
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(p)).ToArray());
+            //LINQ START
+/*            engine.getCurrentContext().getEvaluationStack().push(tx.inputs.Select(p = > StackItem
+                    .FromInterface(p)).ToArray());*/
+            StackItem[] tempArray = Arrays.asList(tx.inputs).stream()
+                    .map(p -> StackItem.fromInterface(p)).toArray(StackItem[]::new);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+            //LINQ END
             return true;
         }
         return false;
     }
 
-    private bool Transaction_GetOutputs(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            Transaction tx = _interface.GetInterface<Transaction>();
+    private boolean transactionGetOutputs(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            if (tx.Outputs.Length > ApplicationEngine.MaxArraySize)
+            if (tx.outputs.length > ApplicationEngine.MaxArraySize.intValue())
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(tx.Outputs.Select(p => StackItem.FromInterface(p)).ToArray());
+            //LINQ START
+/*            engine.getCurrentContext().getEvaluationStack().push(tx.outputs.Select(p = > StackItem
+                    .FromInterface(p)).ToArray());*/
+            StackItem[] tempArray = Arrays.asList(tx.outputs).stream()
+                    .map(p -> StackItem.fromInterface(p)).toArray(StackItem[]::new);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+            //LINQ END
             return true;
         }
         return false;
     }
 
-    private bool Transaction_GetReferences(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            Transaction tx = _interface.GetInterface<Transaction>();
+    private boolean transactionGetReferences(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            if (tx.Inputs.Length > ApplicationEngine.MaxArraySize)
+            if (tx.inputs.length > ApplicationEngine.MaxArraySize.intValue())
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(tx.Inputs.Select(p => StackItem.FromInterface(tx.References[p])).ToArray());
+            //LINQ START
+/*            engine.getCurrentContext().getEvaluationStack().push(tx.inputs.Select(p = > StackItem
+                    .FromInterface(tx.References[p])).ToArray())
+            ;*/
+            StackItem[] tempArray = Arrays.asList(tx.inputs).stream()
+                    .map(p -> StackItem.fromInterface(tx.getReferences().get(p))).toArray(StackItem[]::new);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+            //LINQ END
             return true;
         }
         return false;
     }
 
-    private bool Transaction_GetUnspentCoins(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            Transaction tx = _interface.GetInterface<Transaction>();
+    private boolean transactionGetUnspentCoins(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            TransactionOutput[] outputs = Snapshot.GetUnspent(tx.Hash).ToArray();
-            if (outputs.Length > ApplicationEngine.MaxArraySize)
+            TransactionOutput[] outputs = snapshot.getUnspent(tx.hash()).toArray(new
+                    TransactionOutput[0]);
+            if (outputs.length > ApplicationEngine.MaxArraySize.intValue())
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(outputs.Select(p => StackItem.FromInterface(p)).ToArray());
+            //LINQ START
+/*            engine.getCurrentContext().getEvaluationStack().push(outputs.Select(p = > StackItem
+                    .FromInterface(p)).ToArray());*/
+            StackItem[] tempArray = Arrays.asList(outputs).stream()
+                    .map(p -> StackItem.fromInterface(p)).toArray(StackItem[]::new);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+            //LINQ END
             return true;
         }
         return false;
     }
 
-    private bool Transaction_GetWitnesses(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            Transaction tx = _interface.GetInterface<Transaction>();
+    private boolean transactionGetWitnesses(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            if (tx.Witnesses.Length > ApplicationEngine.MaxArraySize)
+            if (tx.witnesses.length > ApplicationEngine.MaxArraySize.intValue())
                 return false;
-            engine.CurrentContext.EvaluationStack.Push(WitnessWrapper.Create(tx, Snapshot).Select(p => StackItem.FromInterface(p)).ToArray());
+
+            //LINQ START
+/*            engine.getCurrentContext().getEvaluationStack().push(WitnessWrapper.create(tx, snapshot)
+                    .Select(p = > StackItem.FromInterface(p)).ToArray());*/
+
+            StackItem[] tempArray = Arrays.asList(WitnessWrapper.create(tx, snapshot)).stream()
+                    .map(p -> StackItem.fromInterface(p)).toArray(StackItem[]::new);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+            //LINQ END
             return true;
         }
         return false;
     }
 
-    private bool InvocationTransaction_GetScript(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            InvocationTransaction tx = _interface.GetInterface<InvocationTransaction>();
+    private boolean invocationTransactionGetScript(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            InvocationTransaction tx = ((InteropInterface<InvocationTransaction>) _interface).getInterface();
             if (tx == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(tx.Script);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tx.script));
             return true;
         }
         return false;
     }
 
-    private bool Witness_GetVerificationScript(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            WitnessWrapper witness = _interface.GetInterface<WitnessWrapper>();
+    private boolean witnessGetVerificationScript(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            WitnessWrapper witness = ((InteropInterface<WitnessWrapper>) _interface).getInterface();
             if (witness == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(witness.VerificationScript);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(witness
+                    .verificationScript));
             return true;
         }
         return false;
     }
 
 
-    private bool Attribute_GetUsage(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            TransactionAttribute attr = _interface.GetInterface<TransactionAttribute>();
+    private boolean attributeGetUsage(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            TransactionAttribute attr = ((InteropInterface<TransactionAttribute>) _interface).getInterface();
             if (attr == null) return false;
-            engine.CurrentContext.EvaluationStack.Push((int)attr.Usage);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(attr
+                    .usage.value())));
             return true;
         }
         return false;
     }
 
-    private bool Attribute_GetData(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            TransactionAttribute attr = _interface.GetInterface<TransactionAttribute>();
+    private boolean attributeGetData(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            TransactionAttribute attr = ((InteropInterface<TransactionAttribute>) _interface).getInterface();
             if (attr == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(attr.Data);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(attr.data));
             return true;
         }
         return false;
     }
 
-    private bool Input_GetHash(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            CoinReference input = _interface.GetInterface<CoinReference>();
+    private boolean inputGetHash(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            CoinReference input = ((InteropInterface<CoinReference>) _interface).getInterface();
             if (input == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(input.PrevHash.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(input
+                    .prevHash.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Input_GetIndex(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            CoinReference input = _interface.GetInterface<CoinReference>();
+    private boolean inputGetIndex(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            CoinReference input = ((InteropInterface<CoinReference>) _interface).getInterface();
             if (input == null) return false;
-            engine.CurrentContext.EvaluationStack.Push((int)input.PrevIndex);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(input
+                    .prevIndex.intValue())));
             return true;
         }
         return false;
     }
 
-    private bool Output_GetAssetId(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            TransactionOutput output = _interface.GetInterface<TransactionOutput>();
+    private boolean outputGetAssetId(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            TransactionOutput output = ((InteropInterface<TransactionOutput>) _interface)
+                    .getInterface();
             if (output == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(output.AssetId.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(output
+                    .assetId.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Output_GetValue(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            TransactionOutput output = _interface.GetInterface<TransactionOutput>();
+    private boolean outputGetValue(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            TransactionOutput output = ((InteropInterface<TransactionOutput>) _interface)
+                    .getInterface();
             if (output == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(output.Value.GetData());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(output
+                    .value.getData())));
             return true;
         }
         return false;
     }
 
-    private bool Output_GetScriptHash(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            TransactionOutput output = _interface.GetInterface<TransactionOutput>();
+    private boolean outputGetScriptHash(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            TransactionOutput output = ((InteropInterface<TransactionOutput>) _interface)
+                    .getInterface();
             if (output == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(output.ScriptHash.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(output
+                    .scriptHash.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Account_GetScriptHash(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AccountState account = _interface.GetInterface<AccountState>();
+    private boolean accountGetScriptHash(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AccountState account = ((InteropInterface<AccountState>) _interface).getInterface();
             if (account == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(account.ScriptHash.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(account
+                    .scriptHash.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Account_GetVotes(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AccountState account = _interface.GetInterface<AccountState>();
+    private boolean accountGetVotes(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AccountState account = ((InteropInterface<AccountState>) _interface).getInterface();
             if (account == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(account.Votes.Select(p => (StackItem)p.EncodePoint(true)).ToArray());
+            //LINQ START
+/*            engine.getCurrentContext().getEvaluationStack().push(account.Votes.Select(p = >
+                    (StackItem) p.EncodePoint(true)).ToArray());*/
+
+            StackItem[] tempArray = Arrays.asList(account.votes).stream()
+                    .map(p -> StackItem.getStackItem(p.getEncoded(true))).toArray(StackItem[]::new);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
+
+            //LINQ END
             return true;
         }
         return false;
     }
 
-    private bool Account_GetBalance(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AccountState account = _interface.GetInterface<AccountState>();
-            UInt256 asset_id = new UInt256(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
+    private boolean accountGetBalance(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AccountState account = ((InteropInterface<AccountState>) _interface).getInterface();
+            UInt256 asset_id = new UInt256(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray());
             if (account == null) return false;
-            Fixed8 balance = account.Balances.TryGetValue(asset_id, out Fixed8 value) ? value : Fixed8.Zero;
-            engine.CurrentContext.EvaluationStack.Push(balance.GetData());
+            Fixed8 value = account.balances.getOrDefault(asset_id, null);
+            Fixed8 balance = value != null ? value : Fixed8.ZERO;
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(balance
+                    .getData())));
             return true;
         }
         return false;
     }
 
-    private bool Account_IsStandard(ExecutionEngine engine)
-    {
-        UInt160 hash = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        ContractState contract = Snapshot.Contracts.TryGet(hash);
-        bool isStandard = contract is null || contract.Script.IsStandardContract();
-        engine.CurrentContext.EvaluationStack.Push(isStandard);
+    private boolean accountIsStandard(ExecutionEngine engine) {
+        UInt160 hash = new UInt160(engine.getCurrentContext().getEvaluationStack().pop()
+                .getByteArray());
+        ContractState contract = snapshot.getContracts().tryGet(hash);
+        boolean isStandard = ((contract == null) || (Helper.isStandardContract(contract.script)));
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(isStandard));
         return true;
     }
 
-    private bool Asset_Create(ExecutionEngine engine)
-    {
-        if (Trigger != TriggerType.Application) return false;
-        InvocationTransaction tx = (InvocationTransaction)engine.ScriptContainer;
-        AssetType asset_type = (AssetType)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-        if (!Enum.IsDefined(typeof(AssetType), asset_type) || asset_type == AssetType.CreditFlag || asset_type == AssetType.DutyFlag || asset_type == AssetType.GoverningToken || asset_type == AssetType.UtilityToken)
+    private boolean assetCreate(ExecutionEngine engine) {
+        if (trigger != TriggerType.Application) return false;
+        InvocationTransaction tx = (InvocationTransaction) engine.scriptContainer;
+        AssetType asset_type=null;
+        try {
+            asset_type = AssetType.parse(engine.getCurrentContext().getEvaluationStack()
+                    .pop().getBigInteger().byteValue());
+        }catch (IllegalArgumentException e){
+            TR.error(e);
+            asset_type=null;
+        }
+        if (asset_type==null || asset_type == AssetType.CreditFlag
+                || asset_type == AssetType.DutyFlag || asset_type == AssetType.GoverningToken || asset_type == AssetType.UtilityToken)
             return false;
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 1024)
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 1024)
             return false;
-        string name = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        Fixed8 amount = new Fixed8((long)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger());
-        if (amount == Fixed8.Zero || amount < -Fixed8.Satoshi) return false;
-        if (asset_type == AssetType.Invoice && amount != -Fixed8.Satoshi)
+        String name = null;
+        try {
+            name = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常");
+            throw new RuntimeException(e);
+        }
+        Fixed8 amount = new Fixed8(engine.getCurrentContext().getEvaluationStack().pop()
+                .getBigInteger().longValue());
+        if (amount == Fixed8.ZERO || amount.compareTo(Fixed8.negate(Fixed8.SATOSHI)) < 0)
             return false;
-        byte precision = (byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
+        if (asset_type == AssetType.Invoice && amount != Fixed8.negate(Fixed8.SATOSHI))
+            return false;
+        byte precision = engine.getCurrentContext().getEvaluationStack().pop()
+                .getBigInteger().byteValue();
         if (precision > 8) return false;
         if (asset_type == AssetType.Share && precision != 0) return false;
-        if (amount != -Fixed8.Satoshi && amount.GetData() % (long)Math.Pow(10, 8 - precision) != 0)
+        if (amount != Fixed8.negate(Fixed8.SATOSHI) && amount.getData() % (long) Math.pow(10, 8 -
+                precision)
+                != 0)
             return false;
-        ECPoint owner = ECPoint.DecodePoint(engine.CurrentContext.EvaluationStack.Pop().GetByteArray(), ECCurve.Secp256r1);
-        if (owner.IsInfinity) return false;
-        if (!CheckWitness(engine, owner))
+        ECPoint owner = new ECPoint(ECC.Secp256r1.getCurve().decodePoint(engine.getCurrentContext()
+                .getEvaluationStack().pop()
+                .getByteArray()));
+        if (owner.isInfinity()) return false;
+        if (!checkWitness(engine, owner))
             return false;
-        UInt160 admin = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        UInt160 issuer = new UInt160(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        AssetState asset = Snapshot.Assets.GetOrAdd(tx.Hash, () => new AssetState
-        {
-            AssetId = tx.Hash,
-                    AssetType = asset_type,
-                    Name = name,
-                    Amount = amount,
-                    Available = Fixed8.Zero,
-                    Precision = precision,
-                    Fee = Fixed8.Zero,
-                    FeeAddress = new UInt160(),
-                    Owner = owner,
-                    Admin = admin,
-                    Issuer = issuer,
-                    Expiration = Snapshot.Height + 1 + 2000000,
-                    IsFrozen = false
+        UInt160 admin = new UInt160(engine.getCurrentContext().getEvaluationStack().pop()
+                .getByteArray());
+        UInt160 issuer = new UInt160(engine.getCurrentContext().getEvaluationStack().pop()
+                .getByteArray());
+        String finalName = name;
+        AssetType finalAsset_type = asset_type;
+        AssetState asset = snapshot.getAssets().getOrAdd(tx.hash(), () -> {
+            AssetState tempState = new AssetState();
+            tempState.assetId = tx.hash();
+            tempState.assetType = finalAsset_type;
+            tempState.name = finalName;
+            tempState.amount = amount;
+            tempState.available = Fixed8.ZERO;
+            tempState.precision = precision;
+            tempState.fee = Fixed8.ZERO;
+            tempState.feeAddress = new UInt160();
+            tempState.owner = owner;
+            tempState.admin = admin;
+            tempState.issuer = issuer;
+            tempState.expiration = snapshot.getHeight().add(Uint.ONE).add(new Uint(2000000));
+            tempState.isFrozen = false;
+            return tempState;
         });
-        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(asset));
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(asset));
         return true;
     }
 
-    private bool Asset_Renew(ExecutionEngine engine)
-    {
-        if (Trigger != TriggerType.Application) return false;
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetRenew(ExecutionEngine engine) {
+        if (trigger != TriggerType.Application) return false;
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            byte years = (byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-            asset = Snapshot.Assets.GetAndChange(asset.AssetId);
-            if (asset.Expiration < Snapshot.Height + 1)
-                asset.Expiration = Snapshot.Height + 1;
-            try
-            {
-                asset.Expiration = checked(asset.Expiration + years * 2000000u);
-            }
-            catch (OverflowException)
-            {
-                asset.Expiration = uint.MaxValue;
-            }
-            engine.CurrentContext.EvaluationStack.Push(asset.Expiration);
+            byte years = engine.getCurrentContext().getEvaluationStack().pop()
+                    .getBigInteger().byteValue();
+            asset = snapshot.getAssets().getAndChange(asset.assetId);
+            if (asset.expiration.compareTo(snapshot.getHeight().add(Uint.ONE)) < 0)
+                asset.expiration = snapshot.getHeight().add(Uint.ONE);
+
+                asset.expiration = new Uint(String.valueOf(Math.addExact(asset.expiration.longValue(),Math
+                        .multiplyExact(new Uint(years).longValue(),new Uint(2000000).longValue()))));
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(asset
+                    .expiration)));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetAssetId(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetAssetId(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(asset.AssetId.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(asset
+                    .assetId.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetAssetType(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetAssetType(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push((int)asset.AssetType);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(asset
+                    .assetType.value())));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetAmount(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetAmount(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(asset.Amount.GetData());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(asset
+                    .amount.getData())));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetAvailable(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetAvailable(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(asset.Available.GetData());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(asset
+                    .available.getData())));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetPrecision(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetPrecision(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push((int)asset.Precision);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(asset
+                    .precision)));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetOwner(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetOwner(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(asset.Owner.EncodePoint(true));
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(asset
+                    .owner.getEncoded(true)));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetAdmin(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetAdmin(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(asset.Admin.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(asset
+                    .admin.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Asset_GetIssuer(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            AssetState asset = _interface.GetInterface<AssetState>();
+    private boolean assetGetIssuer(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            AssetState asset = ((InteropInterface<AssetState>) _interface).getInterface();
             if (asset == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(asset.Issuer.ToArray());
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(asset
+                    .issuer.toArray()));
             return true;
         }
         return false;
     }
 
-    private bool Contract_Create(ExecutionEngine engine)
-    {
-        if (Trigger != TriggerType.Application) return false;
-        byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-        if (script.Length > 1024 * 1024) return false;
-        ContractParameterType[] parameter_list = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
-        if (parameter_list.Length > 252) return false;
-        ContractParameterType return_type = (ContractParameterType)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-        ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string name = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string version = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string author = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string email = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 65536) return false;
-        string description = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        UInt160 hash = script.ToScriptHash();
-        ContractState contract = Snapshot.Contracts.TryGet(hash);
-        if (contract == null)
-        {
-            contract = new ContractState
-            {
-                Script = script,
-                        ParameterList = parameter_list,
-                        ReturnType = return_type,
-                        ContractProperties = contract_properties,
-                        Name = name,
-                        CodeVersion = version,
-                        Author = author,
-                        Email = email,
-                        Description = description
-            };
-            Snapshot.Contracts.Add(hash, contract);
-            ContractsCreated.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
+    private boolean contractCreate(ExecutionEngine engine) {
+        if (trigger != TriggerType.Application) return false;
+        byte[] script = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
+        if (script.length > 1024 * 1024) return false;
+        ContractParameterType[] parameter_list = Arrays.asList(engine.getCurrentContext()
+                .getEvaluationStack().pop().getByteArray()).stream().map(p ->
+                ContractParameterType.parse(p)).toArray(ContractParameterType[]::new);
+        if (parameter_list.length > 252) return false;
+        ContractParameterType return_type = ContractParameterType.parse(engine.getCurrentContext()
+                .getEvaluationStack().pop().getBigInteger().byteValue());
+        ContractPropertyState contract_properties = new ContractPropertyState(engine
+                .getCurrentContext().getEvaluationStack().pop().getBigInteger().byteValue());
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String name = null;
+        try {
+            name = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常");
+            throw new RuntimeException(e);
         }
-        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String version = null;
+        try {
+            version = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常");
+            throw new RuntimeException(e);
+        }
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String author = null;
+        try {
+            author = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常");
+            throw new RuntimeException(e);
+        }
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String email = null;
+        try {
+            email = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常");
+            throw new RuntimeException(e);
+        }
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 65536)
+            return false;
+        String description = null;
+        try {
+            description = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常");
+            throw new RuntimeException(e);
+        }
+        UInt160 hash = Helper.toScriptHash(script);
+        ContractState contract = snapshot.getContracts().tryGet(hash);
+        if (contract == null) {
+            contract = new ContractState();
+            contract.script = script;
+            contract.parameterList = parameter_list;
+            contract.returnType = return_type;
+            contract.contractProperties = contract_properties;
+            contract.name = name;
+            contract.codeVersion = version;
+            contract.author = author;
+            contract.email = email;
+            contract.description = description;
+            snapshot.getContracts().add(hash, contract);
+            contractsCreated.put(hash, new UInt160(engine.getCurrentContext().getScriptHash()));
+        }
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(contract));
         return true;
     }
 
-    private bool Contract_Migrate(ExecutionEngine engine)
-    {
-        if (Trigger != TriggerType.Application) return false;
-        byte[] script = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
-        if (script.Length > 1024 * 1024) return false;
-        ContractParameterType[] parameter_list = engine.CurrentContext.EvaluationStack.Pop().GetByteArray().Select(p => (ContractParameterType)p).ToArray();
-        if (parameter_list.Length > 252) return false;
-        ContractParameterType return_type = (ContractParameterType)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-        ContractPropertyState contract_properties = (ContractPropertyState)(byte)engine.CurrentContext.EvaluationStack.Pop().GetBigInteger();
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string name = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string version = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string author = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 252) return false;
-        string email = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        if (engine.CurrentContext.EvaluationStack.Peek().GetByteArray().Length > 65536) return false;
-        string description = Encoding.UTF8.GetString(engine.CurrentContext.EvaluationStack.Pop().GetByteArray());
-        UInt160 hash = script.ToScriptHash();
-        ContractState contract = Snapshot.Contracts.TryGet(hash);
-        if (contract == null)
-        {
-            contract = new ContractState
-            {
-                Script = script,
-                        ParameterList = parameter_list,
-                        ReturnType = return_type,
-                        ContractProperties = contract_properties,
-                        Name = name,
-                        CodeVersion = version,
-                        Author = author,
-                        Email = email,
-                        Description = description
-            };
-            Snapshot.Contracts.Add(hash, contract);
-            ContractsCreated.Add(hash, new UInt160(engine.CurrentContext.ScriptHash));
-            if (contract.HasStorage)
-            {
-                foreach (var pair in Snapshot.Storages.Find(engine.CurrentContext.ScriptHash).ToArray())
-                {
-                    Snapshot.Storages.Add(new StorageKey
-                    {
-                        ScriptHash = hash,
-                                Key = pair.Key.Key
-                    }, new StorageItem
-                    {
-                        Value = pair.Value.Value,
-                                IsConstant = false
-                    });
+    private boolean contractMigrate(ExecutionEngine engine) {
+        if (trigger != TriggerType.Application) return false;
+        byte[] script = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
+        if (script.length > 1024 * 1024) return false;
+        ContractParameterType[] parameter_list = Arrays.asList(engine.getCurrentContext()
+                .getEvaluationStack().pop().getByteArray()).stream().map(p ->
+                ContractParameterType.parse(p)).toArray(ContractParameterType[]::new);
+        if (parameter_list.length > 252) return false;
+        ContractParameterType return_type = ContractParameterType.parse(engine.getCurrentContext()
+                .getEvaluationStack().pop().getBigInteger().byteValue());
+        ContractPropertyState contract_properties = new ContractPropertyState(engine
+                .getCurrentContext().getEvaluationStack().pop().getBigInteger().byteValue());
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String name = null;
+        try {
+            name = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常，一般不发生");
+            throw new RuntimeException(e);
+        }
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String version = null;
+        try {
+            version = new String(engine.getCurrentContext().getEvaluationStack()
+                    .pop().getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常，一般不发生");
+            throw new RuntimeException(e);
+        }
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String author = null;
+        try {
+            author = new String(engine.getCurrentContext().getEvaluationStack()
+                    .pop().getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常，一般不发生");
+            throw new RuntimeException(e);
+        }
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
+            return false;
+        String email = null;
+        try {
+            email = new String(engine.getCurrentContext().getEvaluationStack().pop()
+                    .getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常，一般不发生");
+            throw new RuntimeException(e);
+        }
+        if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 65536)
+            return false;
+        String description = null;
+        try {
+            description = new String(engine.getCurrentContext().getEvaluationStack()
+                    .pop().getByteArray(), "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            TR.fixMe("字符串类型转换异常，一般不发生");
+            throw new RuntimeException(e);
+        }
+        UInt160 hash = Helper.toScriptHash(script);
+        ContractState contract = snapshot.getContracts().tryGet(hash);
+        if (contract == null) {
+            contract = new ContractState();
+            contract.script = script;
+            contract.parameterList = parameter_list;
+            contract.returnType = return_type;
+            contract.contractProperties = contract_properties;
+            contract.name = name;
+            contract.codeVersion = version;
+            contract.author = author;
+            contract.email = email;
+            contract.description = description;
+            snapshot.getContracts().add(hash, contract);
+            contractsCreated.put(hash, new UInt160(engine.getCurrentContext().getScriptHash()));
+            if (contract.hasStorage()) {
+                for (java.util.Map.Entry<StorageKey, StorageItem> pair : snapshot.getStorages().find(engine
+                        .getCurrentContext().getScriptHash())) {
+                    StorageKey storageKey = new StorageKey();
+                    storageKey.scriptHash = hash;
+                    storageKey.key = pair.getKey().key;
+                    StorageItem storageItem = new StorageItem();
+                    storageItem.value = pair.getValue().value;
+                    storageItem.isConstant = false;
+                    snapshot.getStorages().add(storageKey, storageItem);
                 }
             }
         }
-        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(contract));
-        return Contract_Destroy(engine);
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(contract));
+        return contractDestroy(engine);
     }
 
-    private bool Contract_GetScript(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            ContractState contract = _interface.GetInterface<ContractState>();
+    private boolean contractGetScript(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            ContractState contract = ((InteropInterface<ContractState>) _interface).getInterface();
             if (contract == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(contract.Script);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(contract
+                    .script));
             return true;
         }
         return false;
     }
 
-    private bool Contract_IsPayable(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            ContractState contract = _interface.GetInterface<ContractState>();
+    private boolean contractIsPayable(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            ContractState contract = ((InteropInterface<ContractState>) _interface).getInterface();
             if (contract == null) return false;
-            engine.CurrentContext.EvaluationStack.Push(contract.Payable);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(contract
+                    .payable()));
             return true;
         }
         return false;
     }
 
-    private bool Storage_Find(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            StorageContext context = _interface.GetInterface<StorageContext>();
-            if (!CheckStorageContext(context)) return false;
-            byte[] prefix = engine.CurrentContext.EvaluationStack.Pop().GetByteArray();
+    private boolean storageFind(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            StorageContext context = ((InteropInterface<StorageContext>) _interface)
+                    .getInterface();
+            if (!checkStorageContext(context)) return false;
+            byte[] prefix = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
             byte[] prefix_key;
-            using (MemoryStream ms = new MemoryStream())
-            {
-                int index = 0;
-                int remain = prefix.Length;
-                while (remain >= 16)
-                {
-                    ms.Write(prefix, index, 16);
-                    ms.WriteByte(0);
-                    index += 16;
-                    remain -= 16;
-                }
-                if (remain > 0)
-                    ms.Write(prefix, index, remain);
-                prefix_key = context.ScriptHash.ToArray().Concat(ms.ToArray()).ToArray();
+            ByteArrayOutputStream temp=new ByteArrayOutputStream();
+            BinaryWriter ms = new BinaryWriter(temp);
+            int index = 0;
+            int remain = prefix.length;
+            while (remain >= 16) {
+                ms.write(prefix, index, 16);
+                ms.write(new byte[]{0x00});
+                index += 16;
+                remain -= 16;
             }
-            StorageIterator iterator = new StorageIterator(Snapshot.Storages.Find(prefix_key).Where(p => p.Key.Key.Take(prefix.Length).SequenceEqual(prefix)).GetEnumerator());
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
-            Disposables.Add(iterator);
+            if (remain > 0)
+                ms.write(prefix, index, remain);
+            prefix_key = BitConverter.merge(context.scriptHash.toArray(),temp.toByteArray());
+            //LINQ START
+/*            StorageIterator iterator = new StorageIterator(snapshot.getStorages().find(prefix_key)
+                    .Where(p-> p.Key.Key.Take(prefix.length).SequenceEqual(prefix))
+                    .GetEnumerator());*/
+
+            StorageIterator iterator = new StorageIterator(snapshot.getStorages().find(prefix_key)
+                    .stream().filter(p -> {
+                        if (Arrays.equals(BitConverter.subBytes(p.getKey().key, 0, prefix.length - 1), prefix)) {
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    }).collect(Collectors.toList()).iterator());
+            //LINQ END
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(iterator));
+            disposables.add(iterator);
             return true;
         }
         return false;
     }
 
-    private bool Enumerator_Create(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is VMArray array)
-        {
-            IEnumerator enumerator = new ArrayWrapper(array);
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(enumerator));
+    private boolean enumeratorCreate(ExecutionEngine engine) {
+        StackItem array = engine.getCurrentContext().getEvaluationStack().pop();
+        if (array instanceof Array) {
+
+            List<StackItem> temp=StreamSupport.stream(((Array) array).getEnumerator()
+                    .spliterator(),false).collect(Collectors.toList());
+            IEnumerator enumerator = new ArrayWrapper(temp);
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface
+                    (enumerator));
             return true;
         }
         return false;
     }
 
-    private bool Enumerator_Next(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            IEnumerator enumerator = _interface.GetInterface<IEnumerator>();
-            engine.CurrentContext.EvaluationStack.Push(enumerator.Next());
+    private boolean enumeratorNext(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            IEnumerator enumerator = ((InteropInterface<IEnumerator>) _interface).getInterface();
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem
+                    (enumerator.next()));
             return true;
         }
         return false;
     }
 
-    private bool Enumerator_Value(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            IEnumerator enumerator = _interface.GetInterface<IEnumerator>();
-            engine.CurrentContext.EvaluationStack.Push(enumerator.Value());
+    private boolean enumeratorValue(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            IEnumerator enumerator = ((InteropInterface<IEnumerator>) _interface).getInterface();
+            engine.getCurrentContext().getEvaluationStack().push(enumerator.value());
             return true;
         }
         return false;
     }
 
-    private bool Enumerator_Concat(ExecutionEngine engine)
-    {
-        if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface1)) return false;
-        if (!(engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface2)) return false;
-        IEnumerator first = _interface1.GetInterface<IEnumerator>();
-        IEnumerator second = _interface2.GetInterface<IEnumerator>();
+    private boolean enumeratorConcat(ExecutionEngine engine) {
+        StackItem _interface1 = engine.getCurrentContext().getEvaluationStack().pop();
+        if (!(_interface1 instanceof InteropInterface)) return false;
+        StackItem _interface2 = engine.getCurrentContext().getEvaluationStack().pop();
+        if (!(_interface2 instanceof InteropInterface)) return false;
+        IEnumerator first = ((InteropInterface<IEnumerator>) _interface1).getInterface();
+        IEnumerator second = ((InteropInterface<IEnumerator>) _interface2).getInterface();
         IEnumerator result = new ConcatenatedEnumerator(first, second);
-        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(result));
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(result));
         return true;
     }
 
-    private bool Iterator_Create(ExecutionEngine engine)
-    {
+    private boolean iteratorCreate(ExecutionEngine engine) {
         IIterator iterator;
-        switch (engine.CurrentContext.EvaluationStack.Pop())
-        {
-            case VMArray array:
-            iterator = new ArrayWrapper(array);
-                break;
-            case Map map:
-            iterator = new MapWrapper(map);
-                break;
-            default:
-                return false;
+        StackItem stackItem = engine.getCurrentContext().getEvaluationStack().pop();
+        if (stackItem instanceof Array) {
+            List<StackItem> temp=StreamSupport.stream(((Array) stackItem).getEnumerator()
+                    .spliterator(),false).collect(Collectors.toList());
+            iterator = new ArrayWrapper(temp);
+        } else if (stackItem instanceof Map) {
+            iterator = new MapWrapper((Map) stackItem);
+        } else {
+            return false;
         }
-        engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(iterator));
+        engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(iterator));
         return true;
     }
 
-    private bool Iterator_Key(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            IIterator iterator = _interface.GetInterface<IIterator>();
-            engine.CurrentContext.EvaluationStack.Push(iterator.Key());
+    private boolean iteratorKey(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            IIterator iterator = ((InteropInterface<IIterator>) _interface).getInterface();
+            engine.getCurrentContext().getEvaluationStack().push(iterator.key());
             return true;
         }
         return false;
     }
 
-    private bool Iterator_Keys(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            IIterator iterator = _interface.GetInterface<IIterator>();
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new IteratorKeysWrapper(iterator)));
+    private boolean iteratorKeys(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            IIterator iterator = ((InteropInterface<IIterator>) _interface).getInterface();
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(new
+                    IteratorValuesWrapper(iterator)));
             return true;
         }
         return false;
     }
 
-    private bool Iterator_Values(ExecutionEngine engine)
-    {
-        if (engine.CurrentContext.EvaluationStack.Pop() is InteropInterface _interface)
-        {
-            IIterator iterator = _interface.GetInterface<IIterator>();
-            engine.CurrentContext.EvaluationStack.Push(StackItem.FromInterface(new IteratorValuesWrapper(iterator)));
+    private boolean iteratorValues(ExecutionEngine engine) {
+        StackItem _interface = engine.getCurrentContext().getEvaluationStack().pop();
+        if (_interface instanceof InteropInterface) {
+            IIterator iterator = ((InteropInterface<IIterator>) _interface).getInterface();
+            engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(new
+                    IteratorValuesWrapper(iterator)));
             return true;
         }
         return false;
