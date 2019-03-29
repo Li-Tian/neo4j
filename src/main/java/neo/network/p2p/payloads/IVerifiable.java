@@ -101,7 +101,7 @@ public interface IVerifiable extends ISerializable, IScriptContainer {
                 sb.emitAppCall(hashes[i].toArray());
                 verification = sb.toArray();
             } else {
-                if (hashes[i] != witnesses[i].scriptHash()) {
+                if (!hashes[i].equals(witnesses[i].scriptHash())) {
                     return TR.exit(false);
                 }
             }

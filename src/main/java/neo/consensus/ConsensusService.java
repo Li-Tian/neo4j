@@ -309,11 +309,11 @@ public class ConsensusService extends AbstractActor {
     }
 
     private void log(LogLevel level, String message) {
-        Plugin.log(ConsensusService.class.getSimpleName(), level, message);
+        Plugin.pluginLog(ConsensusService.class.getSimpleName(), level, message);
     }
 
     private void log(LogLevel level, String message, Object... params) {
-        Plugin.log(ConsensusService.class.getSimpleName(), level, String.format(message, params));
+        Plugin.pluginLog(ConsensusService.class.getSimpleName(), level, String.format(message, params));
     }
 
 

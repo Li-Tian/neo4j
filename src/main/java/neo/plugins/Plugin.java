@@ -216,7 +216,7 @@ public abstract class Plugin {
         for (Plugin plugin : plugins) {
             if (plugin.configFile().equals(path.toString())) {
                 plugin.configure();
-                plugin.log("Reloaded config for " + plugin.name(), null);
+                plugin.pluginLog("Reloaded config for " + plugin.name(), null);
                 break;
             }
         }
@@ -257,16 +257,16 @@ public abstract class Plugin {
         TR.exit();
     }
 
-    protected void log(String message, LogLevel level) {
+    protected void pluginLog(String message, LogLevel level) {
         TR.enter();
         if (level == null) {
             level = LogLevel.Info;
         }
-        log(Plugin.class.getSimpleName() + ":" + name(), level, message);
+        pluginLog(Plugin.class.getSimpleName() + ":" + name(), level, message);
         TR.exit();
     }
 
-    public static void log(String source, LogLevel level, String message) {
+    public static void pluginLog(String source, LogLevel level, String message) {
         TR.enter();
         for (ILogPlugin plugin : loggers) {
             plugin.log(source, level, message);

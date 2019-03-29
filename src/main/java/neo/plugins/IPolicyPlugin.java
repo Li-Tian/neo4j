@@ -9,6 +9,6 @@ public interface IPolicyPlugin {
 
     Collection<Transaction> filterForBlock(Collection<Transaction> transactions);
 
-    int maxTxPerBlock = 0;
-    int maxLowPriorityTxPerBlock = 0;
+    int maxTxPerBlock();
+    int maxLowPriorityTxPerBlock();
 }
