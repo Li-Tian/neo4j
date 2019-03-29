@@ -4,6 +4,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
@@ -220,16 +223,10 @@ public abstract class Plugin {
         TR.exit();
     }
 
-    protected JsonArray getConfiguration() {
-        try {
-            TR.enter();
-            JsonParser parser = new JsonParser();
-            JsonObject object = (JsonObject) parser.parse(new FileReader("test.json"));
-            return TR.exit(object.getAsJsonArray("PluginConfiguration"));
-        } catch (FileNotFoundException e) {
-            TR.error(e);
-            throw new RuntimeException(e);
-        }
+    protected Config getConfiguration() {
+        TR.enter();
+        Config config = ConfigFactory.load("protocol.json").getConfig("PluginConfiguration");
+        return TR.exit(config);
     }
 
     public static void loadPlugins(NeoSystem system) {
