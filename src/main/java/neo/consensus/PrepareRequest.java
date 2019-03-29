@@ -33,7 +33,7 @@ public class PrepareRequest extends ConsensusMessage {
     public UInt256[] transactionHashes;
 
     /**
-     * Miner transanction. It contains block reward for the `Primary` node
+     * Miner transaction. It contains block reward for the `Primary` node
      */
     public MinerTransaction minerTransaction;
 

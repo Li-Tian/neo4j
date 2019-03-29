@@ -33,19 +33,27 @@ public class MyWallet extends Wallet {
 
         privateKey = new byte[32];
         rng.nextBytes(privateKey);
-        account = createAccount(privateKey);
+        createAccount(privateKey);
 
         privateKey = new byte[32];
         rng.nextBytes(privateKey);
-        account = createAccount(privateKey);
+        createAccount(privateKey);
 
         privateKey = new byte[32];
         rng.nextBytes(privateKey);
-        account = createAccount(privateKey);
+       createAccount(privateKey);
 
         privateKey = new byte[32];
         rng.nextBytes(privateKey);
-        account = createAccount(privateKey);
+       createAccount(privateKey);
+
+        privateKey = new byte[32];
+        rng.nextBytes(privateKey);
+        createAccount(privateKey);
+
+        privateKey = new byte[32];
+        rng.nextBytes(privateKey);
+        createAccount(privateKey);
     }
 
     @Override

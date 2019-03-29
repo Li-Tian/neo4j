@@ -32,6 +32,7 @@ import neo.network.p2p.Message;
 import neo.network.p2p.TaskManager;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.ConsensusPayload;
+import neo.network.p2p.payloads.IVerifiable;
 import neo.network.p2p.payloads.InvPayload;
 import neo.network.p2p.payloads.InventoryType;
 import neo.network.p2p.payloads.Transaction;
@@ -168,7 +169,6 @@ public class ConsensusService extends AbstractActor {
         }
         if (!Plugin.checkPolicy(tx)) {
             log(LogLevel.Warning, "reject tx: %s\n %s", tx.hash(), BitConverter.toHexString(SerializeHelper.toBytes(tx)));
-
             requestChangeView();
             return TR.exit(false);
         }
@@ -322,12 +322,16 @@ public class ConsensusService extends AbstractActor {
      */
     private void onChangeViewReceived(ConsensusPayload payload, ChangeView message) {
         TR.enter();
-        if ((message.newViewNumber & 0xff) <= (0xff & context.expectedView[payload.validatorIndex.intValue()])) {
+        int uintViewNumber = message.viewNumber & 0xff;
+        int uintNewViewNumber = message.newViewNumber & 0xff;
+        int uintExpectedViewNumber = 0xff & context.expectedView[payload.validatorIndex.intValue()];
+        if (uintNewViewNumber <= uintExpectedViewNumber) {
             TR.exit();
             return;
         }
         log(LogLevel.Info, "onChangeViewReceived: height = %d view = %d index = %d nv = %d ",
-                payload.blockIndex.intValue(), message.viewNumber & 0xff, payload.validatorIndex, message.newViewNumber & 0xff);
+                payload.blockIndex.intValue(), uintViewNumber, payload.validatorIndex.intValue(), uintNewViewNumber);
+
         context.expectedView[payload.validatorIndex.intValue()] = message.newViewNumber;
         CheckExpectedView(message.newViewNumber);
         TR.exit();
@@ -409,7 +413,6 @@ public class ConsensusService extends AbstractActor {
     private void onPersistCompleted(Block block) {
         TR.enter();
         log(LogLevel.Info, "persist block: %s", block.hash());
-        System.err.println("-------------onPersistCompleted -----");
         blockReceivedTime = TimeProvider.current().utcNow();
         initializeConsensus((byte) 0);
         TR.exit();
@@ -439,7 +442,6 @@ public class ConsensusService extends AbstractActor {
                 payload.validatorIndex.intValue(), message.transactionHashes.length);
 
         if (!context.state.hasFlag(ConsensusState.Backup)) {
-            TR.exit();
             return;
         }
         if (payload.timestamp.longValue() <= context.getPrevHeader().timestamp.longValue()
@@ -454,7 +456,6 @@ public class ConsensusService extends AbstractActor {
             return;
         }
 
-
         context.state = context.state.or(ConsensusState.RequestReceived);
         context.timestamp = payload.timestamp;
         context.nonce = message.nonce;
@@ -464,6 +465,7 @@ public class ConsensusService extends AbstractActor {
 
         byte[] hashData = context.makeHeader().getHashData();
         byte[] publicKeyBytes = context.validators[payload.validatorIndex.intValue()].getEncoded(false);
+
         if (!Crypto.Default.verifySignature(hashData, message.signature, publicKeyBytes)) {
             TR.exit();
             return;
@@ -584,7 +586,8 @@ public class ConsensusService extends AbstractActor {
         log(LogLevel.Info, "timeout: height={timer.Height} view={timer.ViewNumber} state={context.State}");
 
         if (context.state.hasFlag(ConsensusState.Primary) && !context.state.hasFlag(ConsensusState.RequestSent)) {
-            log(LogLevel.Info, "send prepare request: height=%d view=%d", timer.height, timer.viewNumber & 0xff);
+            log(LogLevel.Info, "send prepare request: height=%d view=%d",
+                    timer.height.intValue(), timer.viewNumber & 0xff);
             context.state = context.state.or(ConsensusState.RequestSent);
             if (!context.state.hasFlag(ConsensusState.SignatureSent)) {
                 context.fill();
@@ -613,10 +616,8 @@ public class ConsensusService extends AbstractActor {
      */
     private void onTransaction(Transaction transaction) {
         TR.enter();
-        System.err.println("----- transaction ----- on ");
         if (transaction.type == TransactionType.MinerTransaction) {
             TR.exit();
-            System.err.println("----- transaction ----- on 1 ");
             return;
         }
         if (!context.state.hasFlag(ConsensusState.Backup)
@@ -625,21 +626,17 @@ public class ConsensusService extends AbstractActor {
                 || context.state.hasFlag(ConsensusState.ViewChanging)
                 || context.state.hasFlag(ConsensusState.BlockSent)) {
             TR.exit();
-            System.err.println("----- transaction ----- on 2");
             return;
         }
         if (context.transactions.containsKey(transaction.hash())) {
             TR.exit();
-            System.err.println("----- transaction ----- on 3 ");
             return;
         }
         if (!Arrays.stream(context.transactionHashes).anyMatch(p -> p.equals(transaction.hash()))) {
             TR.exit();
-            System.err.println("----- transaction ----- on 4 ");
             return;
         }
 
-        System.err.println("----- transaction ----- on 5");
         addTransaction(transaction, true);
         TR.exit();
     }

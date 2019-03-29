@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -110,7 +111,7 @@ public class ConsensusContext implements IDisposable {
     /**
      * The proposal block's txs
      */
-    public Map<UInt256, Transaction> transactions;
+    public Map<UInt256, Transaction> transactions = Collections.emptyMap();
 
     /**
      * Store the proposal block's signatures recevied
@@ -247,7 +248,6 @@ public class ConsensusContext implements IDisposable {
             TR.exit();
             return null;
         }
-
         if (header == null) {
             header = new Block();
             header.version = VERSION;
