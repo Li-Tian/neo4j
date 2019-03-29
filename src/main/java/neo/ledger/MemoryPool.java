@@ -154,8 +154,8 @@ public class MemoryPool {
         _maxTxPerBlock = Integer.MAX_VALUE;
         _maxLowPriorityTxPerBlock = Integer.MAX_VALUE;
         for (IPolicyPlugin plugin : Plugin.getPolicies()) {
-            _maxTxPerBlock = Math.min(_maxTxPerBlock, plugin.maxTxPerBlock);
-            _maxLowPriorityTxPerBlock = Math.min(_maxLowPriorityTxPerBlock, plugin.maxLowPriorityTxPerBlock);
+            _maxTxPerBlock = Math.min(_maxTxPerBlock, plugin.maxTxPerBlock());
+            _maxLowPriorityTxPerBlock = Math.min(_maxLowPriorityTxPerBlock, plugin.maxLowPriorityTxPerBlock());
         }
         TR.exit();
     }
