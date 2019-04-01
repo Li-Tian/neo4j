@@ -48,6 +48,6 @@ public enum StorageFlags implements ByteEnum {
      * @return true - has, else false
      */
     public boolean hasFlag(StorageFlags flag) {
-        return (this.value & flag.value) == 0;
+        return (this.value & flag.value) == flag.value;
     }
 }
