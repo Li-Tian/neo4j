@@ -34,7 +34,7 @@ public class ByteFlag implements ISerializable {
      */
     public boolean hasFlag(ByteFlag flag) {
         TR.enter();
-        return TR.exit((this.value & flag.value) != (byte) 0x00);
+        return TR.exit((this.value & flag.value) == flag.value);
     }
 
     /**

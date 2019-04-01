@@ -31,6 +31,7 @@ public class KeyPair {
         if (privateKey.length != 32 && privateKey.length != 96 && privateKey.length != 104)
             throw new IllegalArgumentException();
         this.privateKey = new byte[32];
+        System.arraycopy(privateKey, privateKey.length - 32,    this.privateKey, 0, 32);
         if (privateKey.length == 32) {
             this.publicKey = new ECPoint(ECC.Secp256r1.getG().multiply(new BigInteger(1, privateKey)).normalize());
         } else {
