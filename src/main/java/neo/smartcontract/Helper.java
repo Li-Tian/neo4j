@@ -92,8 +92,10 @@ public class Helper {
     public static Uint toInteropMethodHash(String method) {
         if (methodHashes.get(method)==null){
             try {
-                return methodHashes.put(method,BitConverter.toUint(neo.cryptography.Helper.sha256(method
-                        .getBytes("ASCII"))));
+                byte[] temp=neo.cryptography.Helper.sha256(method.getBytes("ASCII"));
+                methodHashes.put(method,BitConverter.toUint(BitConverter.subBytes(temp,0,
+                        4)));
+                return methodHashes.get(method);
             } catch (UnsupportedEncodingException e) {
                 e.printStackTrace();
                 TR.fixMe("字符串转码异常");

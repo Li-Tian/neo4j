@@ -36,7 +36,7 @@ public class StorageIterator implements IIterator{
     }
 
     @Override
-    public StackItem value() {
+    public StackItem key() {
         if (current==null){
             TR.fixMe("行为未定义");
             throw new RuntimeException("迭代器行为未定义");
@@ -46,7 +46,7 @@ public class StorageIterator implements IIterator{
     }
 
     @Override
-    public StackItem key() {
+    public StackItem value() {
         if (current==null){
             TR.fixMe("行为未定义");
             throw new RuntimeException("迭代器行为未定义");

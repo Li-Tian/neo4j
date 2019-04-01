@@ -10,20 +10,23 @@ import neo.vm.StackItem;
  * @Description: (用一句话描述该文件做什么)
  * @date Created in 16:30 2019/3/12
  */
-public class ConcatenatedEnumerator implements IEnumerator{
+public class ConcatenatedEnumerator implements IEnumerator {
 
     private IEnumerator first;
     private IEnumerator second;
     private IEnumerator current;
 
     public ConcatenatedEnumerator(IEnumerator first, IEnumerator second) {
+        this.current = first;
         this.first = first;
         this.second = second;
     }
 
     @Override
     public boolean next() {
-        if (current.next()) return true;
+        if (current.next()) {
+            return true;
+        }
         current = second;
         return current.next();
     }
