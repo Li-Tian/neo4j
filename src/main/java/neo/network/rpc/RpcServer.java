@@ -718,7 +718,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
         }
     }
 
-    private JsonObject processRequest(HttpServletRequest req, JsonObject request) {
+    private JsonObject processRequest(HttpServletRequest req, HttpServletResponse resp, JsonObject request) {
         TR.enter();
         if (!request.has("id")) {
             return TR.exit(null);
@@ -731,7 +731,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
             String method = request.get("method").getAsString();
             JsonArray _params = request.getAsJsonArray("params");
             for (IRpcPlugin plugin : Plugin.getRPCPlugins()) {
-                result = plugin.onProcess(req, method, _params);
+                result = plugin.onProcess(req, resp, method, _params);
                 if (result != null) {
                     break;
                 }
@@ -802,7 +802,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
         if (request == null) {
             response = createErrorResponse(0, -32700, "Parse error", null);
         } else {
-            response = processRequest(req, request);
+            response = processRequest(req, resp, request);
         }
         if (response == null) {
             TR.exit();
@@ -835,7 +835,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                 JsonArray array2 = response.getAsJsonArray();
                 array.forEach(p -> {
                     if (p.isJsonObject()) {
-                        JsonObject q = processRequest(req, p.getAsJsonObject());
+                        JsonObject q = processRequest(req, resp, p.getAsJsonObject());
                         if (q != null) {
                             array2.add(q);
                         }
@@ -843,7 +843,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                 });
             }
         } else if (request.isJsonObject()) {
-            response = processRequest(req, request.getAsJsonObject());
+            response = processRequest(req, resp, request.getAsJsonObject());
         }
         if (response == null) {
             TR.exit();
