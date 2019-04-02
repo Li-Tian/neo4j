@@ -50,12 +50,11 @@ public class NeoSystem {
         Plugin.loadPlugins(this);
     }
 
-
     public void dispose() {
         TR.enter();
-        /*if (rpcServer != null) {
+        if (rpcServer != null) {
             rpcServer.dispose();
-        }*/
+        }
         actorSystem.stop(localNode);
         actorSystem.terminate();
         TR.exit();

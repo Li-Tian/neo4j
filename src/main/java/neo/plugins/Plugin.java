@@ -1,16 +1,10 @@
 package neo.plugins;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.FileSystems;
@@ -225,7 +219,7 @@ public abstract class Plugin {
 
     protected Config getConfiguration() {
         TR.enter();
-        Config config = ConfigFactory.load("protocol.json").getConfig("PluginConfiguration");
+        Config config = ConfigFactory.parseFile(new File(configFile())).getConfig("PluginConfiguration");
         return TR.exit(config);
     }
 
