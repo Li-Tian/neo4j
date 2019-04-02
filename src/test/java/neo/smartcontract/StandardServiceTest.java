@@ -89,6 +89,7 @@ public class StandardServiceTest extends AbstractLeveldbTest {
 
     @Test
     public void getNotifications() {
+        standardService.getNotifications().clear();
         EventHandler.Listener<NotifyEventArgs> listener = (sender, eventArgs) -> Assert.assertEquals("hello", eventArgs.getState().getString());
 
         ContractTransaction contractTransaction = new ContractTransaction();
@@ -98,7 +99,6 @@ public class StandardServiceTest extends AbstractLeveldbTest {
         engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem("hello"));
 
         standardService.notify.addListener(listener);
-
         boolean success = standardService.runtimeNotify(engine);
         Assert.assertTrue(success);
 
