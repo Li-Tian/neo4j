@@ -44,7 +44,7 @@ public abstract class Plugin {
     private static final ArrayList<IMemoryPoolTxObserverPlugin> txObserverPlugins = new ArrayList<IMemoryPoolTxObserverPlugin>();
     private static final HashMap<WatchKey, Path> keys = new HashMap<WatchKey, Path>();
 
-    private static final String pluginsPath = System.getProperty("user.dir") + "/Plugins";
+    private static final String pluginsPath = Paths.get(System.getProperty("user.dir")).resolve("Plugins").toString();
     private static WatchService configWatcher = null;
     private boolean hasBeenInitialized = false;
 
