@@ -26,7 +26,7 @@ public class ContractDao {
 
     public int createTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="CREATE TABLE \"Contract\" (\n" +
+        String sql="CREATE TABLE IF NOT EXISTS \"Contract\" (\n" +
                 "  \"ScriptHash\" Binary NOT NULL,\n" +
                 "  \"PublicKeyHash\" Binary NOT NULL,\n" +
                 "  \"RawData\" VarBinary NOT NULL,\n" +
@@ -51,7 +51,7 @@ public class ContractDao {
             public void setValues(PreparedStatement pstmt) throws SQLException {
                 pstmt.setBytes(1,contract.getScriptHash());
                 pstmt.setBytes(2,contract.getPublicKeyHash());
-                pstmt.setBytes(2,contract.getRawData());
+                pstmt.setBytes(3,contract.getRawData());
             }
         });
     }
@@ -93,7 +93,7 @@ public class ContractDao {
         }, new RowCallBackHandler() {
             @Override
             public void processRow(ResultSet rs) throws SQLException {
-                if(rs.next()){
+                while(rs.next()){
                     Contract tempContract=new Contract();
                     tempContract.setScriptHash(rs.getBytes(1));
                     tempContract.setPublicKeyHash(rs.getBytes(2));
@@ -114,7 +114,7 @@ public class ContractDao {
         jt.query(sql,new RowCallBackHandler() {
             @Override
             public void processRow(ResultSet rs) throws SQLException {
-                if(rs.next()){
+                while(rs.next()){
                     Contract tempContract=new Contract();
                     tempContract.setScriptHash(rs.getBytes(1));
                     tempContract.setPublicKeyHash(rs.getBytes(2));

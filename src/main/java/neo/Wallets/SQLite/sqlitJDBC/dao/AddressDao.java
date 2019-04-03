@@ -26,7 +26,7 @@ public class AddressDao {
 
     public int createTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="CREATE TABLE \"Address\" (\n" +
+        String sql="CREATE TABLE IF NOT EXISTS \"Address\" (\n" +
                 "  \"ScriptHash\" Binary NOT NULL,\n" +
                 "  CONSTRAINT \"PK_Address\" PRIMARY KEY (\"ScriptHash\")\n" +
                 ");";
@@ -74,7 +74,7 @@ public class AddressDao {
         }, new RowCallBackHandler() {
             @Override
             public void processRow(ResultSet rs) throws SQLException {
-                if(rs.next()){
+                while(rs.next()){
                     Address tempAddress=new Address();
                     tempAddress.setScriptHash(rs.getBytes(1));
                     resultlist.add(tempAddress);
@@ -92,7 +92,7 @@ public class AddressDao {
         jt.query(sql, new RowCallBackHandler() {
             @Override
             public void processRow(ResultSet rs) throws SQLException {
-                if(rs.next()){
+                while(rs.next()){
                     Address tempAddress=new Address();
                     tempAddress.setScriptHash(rs.getBytes(1));
                     resultlist.add(tempAddress);

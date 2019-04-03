@@ -26,7 +26,7 @@ public class AccountDao {
 
     public int createTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="CREATE TABLE \"Account\" (\n" +
+        String sql="CREATE TABLE IF NOT EXISTS \"Account\" (\n" +
                 "  \"PublicKeyHash\" Binary NOT NULL,\n" +
                 "  \"PrivateKeyEncrypted\" VarBinary NOT NULL,\n" +
                 "  CONSTRAINT \"PK_Account\" PRIMARY KEY (\"PublicKeyHash\")\n" +
@@ -89,7 +89,7 @@ public class AccountDao {
         }, new RowCallBackHandler() {
             @Override
             public void processRow(ResultSet rs) throws SQLException {
-                if(rs.next()){
+                while(rs.next()){
                     Account tempAccount=new Account();
                     tempAccount.setPublicKeyHash(rs.getBytes(1));
                     tempAccount.setPrivateKeyEncrypted(rs.getBytes(2));

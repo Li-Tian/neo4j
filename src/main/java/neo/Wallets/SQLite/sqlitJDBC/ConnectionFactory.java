@@ -56,7 +56,7 @@ public class ConnectionFactory {
         try {
             Class.forName(DRIVER);
             String localurl = "jdbc:sqlite:" + localaddress;
-            conn = DriverManager.getConnection(URL);
+            conn = DriverManager.getConnection(localurl);
         } catch (Exception e) {
             throw new DataAccessException(e);
         }
