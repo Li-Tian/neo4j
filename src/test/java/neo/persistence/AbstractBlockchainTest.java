@@ -19,7 +19,6 @@ public abstract class AbstractBlockchainTest extends AbstractLeveldbTest {
     protected static NeoSystem neoSystem;
 
     public static void setUp() throws IOException {
-        TR.debug("----  AbstractBlockchainTest setup......");
         AbstractLeveldbTest.setUp();
 
         neoSystem = new MyNeoSystem(store, self -> {
@@ -36,9 +35,7 @@ public abstract class AbstractBlockchainTest extends AbstractLeveldbTest {
     }
 
     public static void tearDown() throws IOException {
-        TR.debug("----  AbstractBlockchainTest tearDown......");
         AbstractLeveldbTest.tearDown();
-        //TestKit.shutdownActorSystem(neoSystem.actorSystem, Duration.create(0, TimeUnit.SECONDS), true);
     }
 }
 

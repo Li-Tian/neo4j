@@ -9,10 +9,11 @@ import neo.persistence.leveldb.LevelDBStore;
 
 public class AbstractLeveldbTest {
 
-    protected final static String LEVELDB_TEST_PATH = "Chain_test";
+    protected final static String LEVELDB_TEST_PATH = AbstractLeveldbTest.class.getClassLoader().getResource("").getPath() + "Chain_test";
     protected static LevelDBStore store;
 
     public static void setUp() throws IOException {
+
         File file = new File(LEVELDB_TEST_PATH);
         if (file.exists()) {
             for (File subFile : file.listFiles()) {
