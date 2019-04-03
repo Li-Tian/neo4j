@@ -27,12 +27,14 @@ import neo.exception.FormatException;
 import neo.io.SerializeHelper;
 import neo.io.actors.PriorityMailbox;
 import neo.ledger.Blockchain;
-import neo.log.tr.TR;
 import neo.network.p2p.payloads.IInventory;
 import neo.network.p2p.payloads.InvPayload;
 import neo.network.p2p.payloads.InventoryType;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.VersionPayload;
+
+
+import neo.log.notr.TR;
 
 /**
  * Describe the various properties and functions of the remote node.

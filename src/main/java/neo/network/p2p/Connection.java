@@ -10,7 +10,7 @@ import akka.io.Tcp;
 import akka.io.TcpMessage;
 import akka.japi.pf.ReceiveBuilder;
 import akka.util.ByteString;
-import neo.csharp.BitConverter;
+
 import neo.log.notr.TR;
 
 /**
