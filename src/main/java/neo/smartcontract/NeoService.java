@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -36,6 +37,7 @@ import neo.network.p2p.payloads.TransactionOutput;
 import neo.persistence.Snapshot;
 import neo.smartcontract.enumerators.ConcatenatedEnumerator;
 import neo.smartcontract.enumerators.IEnumerator;
+import neo.smartcontract.enumerators.IteratorKeysWrapper;
 import neo.smartcontract.enumerators.IteratorValuesWrapper;
 import neo.smartcontract.iterators.ArrayWrapper;
 import neo.smartcontract.iterators.IIterator;
@@ -380,14 +382,13 @@ public class NeoService extends StandardService {
         if (_interface instanceof InteropInterface) {
             Transaction tx = ((InteropInterface<Transaction>) _interface).getInterface();
             if (tx == null) return false;
-            TransactionOutput[] outputs = snapshot.getUnspent(tx.hash()).toArray(new
-                    TransactionOutput[0]);
-            if (outputs.length > ApplicationEngine.MaxArraySize.intValue())
+            Collection<TransactionOutput> outputs = snapshot.getUnspent(tx.hash());
+            if (outputs.size() > ApplicationEngine.MaxArraySize.intValue())
                 return false;
             //LINQ START
 /*            engine.getCurrentContext().getEvaluationStack().push(outputs.Select(p = > StackItem
                     .FromInterface(p)).ToArray());*/
-            StackItem[] tempArray = Arrays.asList(outputs).stream()
+            StackItem[] tempArray = outputs.stream()
                     .map(p -> StackItem.fromInterface(p)).toArray(StackItem[]::new);
             engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(tempArray));
             //LINQ END
@@ -586,17 +587,23 @@ public class NeoService extends StandardService {
     private boolean assetCreate(ExecutionEngine engine) {
         if (trigger != TriggerType.Application) return false;
         InvocationTransaction tx = (InvocationTransaction) engine.scriptContainer;
-        AssetType asset_type=null;
+        AssetType asset_type = null;
         try {
-            asset_type = AssetType.parse(engine.getCurrentContext().getEvaluationStack()
-                    .pop().getBigInteger().byteValue());
-        }catch (IllegalArgumentException e){
+            byte type = engine.getCurrentContext().getEvaluationStack()
+                    .pop().getBigInteger().byteValue();
+            asset_type = AssetType.parse(type);
+        } catch (IllegalArgumentException e) {
             TR.error(e);
-            asset_type=null;
+            asset_type = null;
         }
-        if (asset_type==null || asset_type == AssetType.CreditFlag
-                || asset_type == AssetType.DutyFlag || asset_type == AssetType.GoverningToken || asset_type == AssetType.UtilityToken)
+        if (asset_type == null
+                || asset_type == AssetType.CreditFlag
+                || asset_type == AssetType.DutyFlag
+                || asset_type == AssetType.GoverningToken
+                || asset_type == AssetType.UtilityToken) {
             return false;
+        }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 1024)
             return false;
         String name = null;
@@ -613,8 +620,10 @@ public class NeoService extends StandardService {
             return false;
         if (asset_type == AssetType.Invoice && amount != Fixed8.negate(Fixed8.SATOSHI))
             return false;
+
         byte precision = engine.getCurrentContext().getEvaluationStack().pop()
                 .getBigInteger().byteValue();
+
         if (precision > 8) return false;
         if (asset_type == AssetType.Share && precision != 0) return false;
         if (amount != Fixed8.negate(Fixed8.SATOSHI) && amount.getData() % (long) Math.pow(10, 8 -
@@ -666,8 +675,8 @@ public class NeoService extends StandardService {
             if (asset.expiration.compareTo(snapshot.getHeight().add(Uint.ONE)) < 0)
                 asset.expiration = snapshot.getHeight().add(Uint.ONE);
 
-                asset.expiration = new Uint(String.valueOf(Math.addExact(asset.expiration.longValue(),Math
-                        .multiplyExact(new Uint(years).longValue(),new Uint(2000000).longValue()))));
+            asset.expiration = new Uint(String.valueOf(Math.addExact(asset.expiration.longValue(), Math
+                    .multiplyExact(new Uint(years).longValue(), new Uint(2000000).longValue()))));
             engine.getCurrentContext().getEvaluationStack().push(StackItem.getStackItem(StackItem.getStackItem(asset
                     .expiration)));
             return true;
@@ -775,14 +784,17 @@ public class NeoService extends StandardService {
         if (trigger != TriggerType.Application) return false;
         byte[] script = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
         if (script.length > 1024 * 1024) return false;
-        ContractParameterType[] parameter_list = Arrays.asList(engine.getCurrentContext()
-                .getEvaluationStack().pop().getByteArray()).stream().map(p ->
-                ContractParameterType.parse(p)).toArray(ContractParameterType[]::new);
+
+        byte[] paramTypes = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
+        ContractParameterType[] parameter_list = ContractParameterType.parse(paramTypes);
         if (parameter_list.length > 252) return false;
+
         ContractParameterType return_type = ContractParameterType.parse(engine.getCurrentContext()
                 .getEvaluationStack().pop().getBigInteger().byteValue());
+
         ContractPropertyState contract_properties = new ContractPropertyState(engine
                 .getCurrentContext().getEvaluationStack().pop().getBigInteger().byteValue());
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
         String name = null;
@@ -793,6 +805,7 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常");
             throw new RuntimeException(e);
         }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
         String version = null;
@@ -803,6 +816,7 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常");
             throw new RuntimeException(e);
         }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
         String author = null;
@@ -813,6 +827,7 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常");
             throw new RuntimeException(e);
         }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
         String email = null;
@@ -823,6 +838,7 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常");
             throw new RuntimeException(e);
         }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 65536)
             return false;
         String description = null;
@@ -833,7 +849,9 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常");
             throw new RuntimeException(e);
         }
+
         UInt160 hash = Helper.toScriptHash(script);
+
         ContractState contract = snapshot.getContracts().tryGet(hash);
         if (contract == null) {
             contract = new ContractState();
@@ -857,16 +875,19 @@ public class NeoService extends StandardService {
         if (trigger != TriggerType.Application) return false;
         byte[] script = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
         if (script.length > 1024 * 1024) return false;
-        ContractParameterType[] parameter_list = Arrays.asList(engine.getCurrentContext()
-                .getEvaluationStack().pop().getByteArray()).stream().map(p ->
-                ContractParameterType.parse(p)).toArray(ContractParameterType[]::new);
+
+        byte[] paramTypes = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
+        ContractParameterType[] parameter_list = ContractParameterType.parse(paramTypes);
         if (parameter_list.length > 252) return false;
+
         ContractParameterType return_type = ContractParameterType.parse(engine.getCurrentContext()
                 .getEvaluationStack().pop().getBigInteger().byteValue());
+
         ContractPropertyState contract_properties = new ContractPropertyState(engine
                 .getCurrentContext().getEvaluationStack().pop().getBigInteger().byteValue());
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
+
         String name = null;
         try {
             name = new String(engine.getCurrentContext().getEvaluationStack().pop()
@@ -875,6 +896,7 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常，一般不发生");
             throw new RuntimeException(e);
         }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
         String version = null;
@@ -885,6 +907,7 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常，一般不发生");
             throw new RuntimeException(e);
         }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
         String author = null;
@@ -895,6 +918,7 @@ public class NeoService extends StandardService {
             TR.fixMe("字符串类型转换异常，一般不发生");
             throw new RuntimeException(e);
         }
+
         if (engine.getCurrentContext().getEvaluationStack().peek().getByteArray().length > 252)
             return false;
         String email = null;
@@ -979,7 +1003,7 @@ public class NeoService extends StandardService {
             if (!checkStorageContext(context)) return false;
             byte[] prefix = engine.getCurrentContext().getEvaluationStack().pop().getByteArray();
             byte[] prefix_key;
-            ByteArrayOutputStream temp=new ByteArrayOutputStream();
+            ByteArrayOutputStream temp = new ByteArrayOutputStream();
             BinaryWriter ms = new BinaryWriter(temp);
             int index = 0;
             int remain = prefix.length;
@@ -991,7 +1015,8 @@ public class NeoService extends StandardService {
             }
             if (remain > 0)
                 ms.write(prefix, index, remain);
-            prefix_key = BitConverter.merge(context.scriptHash.toArray(),temp.toByteArray());
+            prefix_key = BitConverter.merge(context.scriptHash.toArray(), temp.toByteArray());
+
             //LINQ START
 /*            StorageIterator iterator = new StorageIterator(snapshot.getStorages().find(prefix_key)
                     .Where(p-> p.Key.Key.Take(prefix.length).SequenceEqual(prefix))
@@ -999,7 +1024,7 @@ public class NeoService extends StandardService {
 
             StorageIterator iterator = new StorageIterator(snapshot.getStorages().find(prefix_key)
                     .stream().filter(p -> {
-                        if (Arrays.equals(BitConverter.subBytes(p.getKey().key, 0, prefix.length - 1), prefix)) {
+                        if (Arrays.equals(BitConverter.subBytes(p.getKey().key, 0, prefix.length), prefix)) {
                             return true;
                         } else {
                             return false;
@@ -1016,9 +1041,8 @@ public class NeoService extends StandardService {
     private boolean enumeratorCreate(ExecutionEngine engine) {
         StackItem array = engine.getCurrentContext().getEvaluationStack().pop();
         if (array instanceof Array) {
-
-            List<StackItem> temp=StreamSupport.stream(((Array) array).getEnumerator()
-                    .spliterator(),false).collect(Collectors.toList());
+            List<StackItem> temp = StreamSupport.stream(((Array) array).getEnumerator()
+                    .spliterator(), false).collect(Collectors.toList());
             IEnumerator enumerator = new ArrayWrapper(temp);
             engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface
                     (enumerator));
@@ -1064,8 +1088,8 @@ public class NeoService extends StandardService {
         IIterator iterator;
         StackItem stackItem = engine.getCurrentContext().getEvaluationStack().pop();
         if (stackItem instanceof Array) {
-            List<StackItem> temp=StreamSupport.stream(((Array) stackItem).getEnumerator()
-                    .spliterator(),false).collect(Collectors.toList());
+            List<StackItem> temp = StreamSupport.stream(((Array) stackItem).getEnumerator()
+                    .spliterator(), false).collect(Collectors.toList());
             iterator = new ArrayWrapper(temp);
         } else if (stackItem instanceof Map) {
             iterator = new MapWrapper((Map) stackItem);
@@ -1091,7 +1115,7 @@ public class NeoService extends StandardService {
         if (_interface instanceof InteropInterface) {
             IIterator iterator = ((InteropInterface<IIterator>) _interface).getInterface();
             engine.getCurrentContext().getEvaluationStack().push(StackItem.fromInterface(new
-                    IteratorValuesWrapper(iterator)));
+                    IteratorKeysWrapper(iterator)));
             return true;
         }
         return false;

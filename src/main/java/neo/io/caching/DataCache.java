@@ -9,10 +9,12 @@ import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import neo.csharp.BitConverter;
 import neo.exception.KeyAlreadyExistException;
 import neo.exception.KeyNotFoundException;
 import neo.io.ICloneable;
 import neo.csharp.io.ISerializable;
+import neo.io.SerializeHelper;
 import neo.log.notr.TR;
 
 import static neo.io.caching.TrackState.ADDED;
@@ -160,7 +162,7 @@ public abstract class DataCache<TKey extends ISerializable, TValue extends IClon
 
         for (Map.Entry<TKey, Trackable> entry : map.entrySet()) {
             Trackable trackable = entry.getValue();
-            if (trackable.state != DELETED && (keyPrefix != null && entry.getKey().toString().startsWith(new String(keyPrefix)))) {
+            if (trackable.state != DELETED && (keyPrefix == null || BitConverter.startWith(SerializeHelper.toBytes(entry.getKey()), keyPrefix))) {
                 results.add(new AbstractMap.SimpleEntry<>(entry.getKey(), trackable.item));
             }
         }
