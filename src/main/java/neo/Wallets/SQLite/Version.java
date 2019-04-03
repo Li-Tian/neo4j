@@ -64,7 +64,7 @@ public class Version {
         if (value == null) {
             throw new NullPointerException("参数不能为空");
         }
-        if (value.split(".").length < 2) {
+        if (value.split("\\.").length < 2) { // 转义
             throw new IllegalArgumentException("非法参数格式");
         }
         if (!Arrays.asList(value.split(".")).stream().allMatch(p -> {
@@ -74,16 +74,16 @@ public class Version {
                 return false;
             }
             return true;
-        })){
+        })) {
             throw new IllegalArgumentException("非法参数格式");
         }
-        String[] temp=value.split(".");
+        String[] temp = value.split("\\.");
         int major = 0;
         int minor = 0;
         int build = 0;
         int revision = 0;
-        for (int i=0;i<temp.length;i++){
-            switch (i){
+        for (int i = 0; i < temp.length; i++) {
+            switch (i) {
                 case 0:
                     major = Integer.parseInt(temp[i]);
                     break;
@@ -98,22 +98,22 @@ public class Version {
                     break;
             }
         }
-        return new Version(major,minor,build,revision);
+        return new Version(major, minor, build, revision);
     }
 
-    public static Version tryParse(String value,Version tDefault) {
+    public static Version tryParse(String value, Version tDefault) {
         try {
             return parse(value);
-        }catch (Exception e){
+        } catch (Exception e) {
             return tDefault;
         }
     }
 
-    public int compareTo(Version oth){
-        if (oth==null){
+    public int compareTo(Version oth) {
+        if (oth == null) {
             throw new NullPointerException("参数不能为空");
         }
-        if (this==oth){
+        if (this == oth) {
             return 0;
         }
         int[] thisArray = {major, minor, build, revision};
