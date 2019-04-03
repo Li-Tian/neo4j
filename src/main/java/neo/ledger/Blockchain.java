@@ -84,7 +84,7 @@ import neo.vm.StackItem;
  */
 public class Blockchain extends AbstractActor {
 
-    public class Register {
+    public static class Register {
     }
 
     public class ApplicationExecuted {
@@ -811,38 +811,6 @@ public class Blockchain extends AbstractActor {
         updateCurrentSnapshot();
         onPersistCompleted(block);
         TR.exit();
-
-
-        // TODO 待移除，等上面代码完成ok，移除下面代码，目前是方便测试
-        /*Snapshot snapshot = getSnapshot();
-        if (block.index.intValue() == headerIndex.size()) {
-            headerIndex.add(block.hash());
-            snapshot.getHeaderHashIndex().getAndChange().hash = block.hash();
-            snapshot.getHeaderHashIndex().getAndChange().index = block.index;
-        }
-        snapshot.setPersistingBlock(block);
-        snapshot.getBlocks().add(block.hash(), new BlockState() {
-            {
-                systemFeeAmount = snapshot.getSysFeeAmount(block.prevHash) + Fixed8.toLong(Helper.sum(Arrays.asList(block.transactions), p -> p.getSystemFee()));
-                trimmedBlock = block.trim();
-            }
-        });
-
-        for (Transaction tx : block.transactions) {
-            snapshot.getTransactions().add(tx.hash(), new TransactionState() {
-                {
-                    blockIndex = block.index;
-                    transaction = tx;
-                }
-            });
-        }
-
-        snapshot.getBlockHashIndex().getAndChange().hash = block.hash();
-        snapshot.getBlockHashIndex().getAndChange().index = block.index;
-
-        snapshot.commit();
-        updateCurrentSnapshot();
-        onPersistCompleted(block);*/
     }
 
     @Override
