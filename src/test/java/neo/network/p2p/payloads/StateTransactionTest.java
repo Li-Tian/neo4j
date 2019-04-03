@@ -53,12 +53,12 @@ public class StateTransactionTest extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(StateTransactionTest.class.getSimpleName());
     }
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractBlockchainTest.tearDown();
+        AbstractBlockchainTest.tearDown(StateTransactionTest.class.getSimpleName());
     }
 
     @Test
@@ -143,7 +143,6 @@ public class StateTransactionTest extends AbstractBlockchainTest {
             return new Witness[0];
         }
     }
-
 
 
     @Test

@@ -69,13 +69,13 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
     // 总共14个方法
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(ConsensusServiceTest.class.getSimpleName());
         initOnce();
     }
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(ConsensusServiceTest.class.getSimpleName());
     }
 
     private static void initOnce() {

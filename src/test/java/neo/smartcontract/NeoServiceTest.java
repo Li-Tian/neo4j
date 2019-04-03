@@ -76,7 +76,7 @@ public class NeoServiceTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(NeoServiceTest.class.getSimpleName());
 
         snapshot = store.getSnapshot();
         neoService = new NeoService(TriggerType.Application, snapshot);
@@ -96,7 +96,7 @@ public class NeoServiceTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(NeoServiceTest.class.getSimpleName());
     }
 
     private ExecutionEngine getEngine() {

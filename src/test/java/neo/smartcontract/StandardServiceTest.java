@@ -64,7 +64,7 @@ public class StandardServiceTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(StandardServiceTest.class.getSimpleName());
 
         snapshot = store.getSnapshot();
         standardService = new StandardService(TriggerType.Application, snapshot);
@@ -84,7 +84,7 @@ public class StandardServiceTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(StandardServiceTest.class.getSimpleName());
     }
 
     @Test
@@ -548,10 +548,6 @@ public class StandardServiceTest extends AbstractLeveldbTest {
         Assert.assertEquals(map.getMapItem(integer), otherMap.getMapItem(integer));
     }
 
-    @Test
-    public void runtimeDeserialize() {
-        // TODO runtimeDeserialize
-    }
 
     @Test
     public void blockchainGetHeight() {

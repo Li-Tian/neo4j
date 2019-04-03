@@ -46,7 +46,7 @@ public class BlockChainTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(BlockChainTest.class.getSimpleName());
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 
@@ -62,7 +62,7 @@ public class BlockChainTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(BlockChainTest.class.getSimpleName());
     }
 
     public static final Block testBlock1 = new Block() {
@@ -176,7 +176,7 @@ public class BlockChainTest extends AbstractLeveldbTest {
     @Test
     public void testEvent() {
         //case Register
-        neoSystem.blockchain.tell(blockchain.new Register(), testKit.testActor());
+        neoSystem.blockchain.tell(new Blockchain.Register(), testKit.testActor());
         testKit.expectNoMessage();
 
         //case Import

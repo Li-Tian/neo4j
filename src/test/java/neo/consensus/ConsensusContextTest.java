@@ -63,9 +63,16 @@ public class ConsensusContextTest extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(ConsensusContextTest.class.getSimpleName());
         initOnce();
     }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        AbstractLeveldbTest.tearDown(ConsensusContextTest.class.getSimpleName());
+    }
+
+
 
     // 屏蔽掉验证模块的验证，等那边完善
     public static class MyBlock extends Block {
@@ -186,11 +193,6 @@ public class ConsensusContextTest extends AbstractBlockchainTest {
 
         // init consensus context
         context.reset();
-    }
-
-    @AfterClass
-    public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
     }
 
 

@@ -32,12 +32,12 @@ public class BlockTest  extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(BlockTest.class.getSimpleName());
     }
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractBlockchainTest.tearDown();
+        AbstractBlockchainTest.tearDown(BlockTest.class.getSimpleName());
     }
     @Test
     public void inventoryType() {

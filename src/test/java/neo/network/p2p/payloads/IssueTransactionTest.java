@@ -31,12 +31,12 @@ public class IssueTransactionTest extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(IssueTransactionTest.class.getSimpleName());
     }
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractBlockchainTest.tearDown();
+        AbstractBlockchainTest.tearDown(IssueTransactionTest.class.getSimpleName());
     }
 
     @Test

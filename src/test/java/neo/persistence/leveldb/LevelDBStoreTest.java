@@ -1,9 +1,7 @@
 package neo.persistence.leveldb;
 
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -17,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
-import neo.UInt32;
 import neo.cryptography.ecc.ECC;
+import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
@@ -47,13 +45,12 @@ import neo.network.p2p.payloads.AssetType;
 import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.Snapshot;
-import neo.cryptography.ecc.ECPoint;
 import neo.smartcontract.ContractParameterType;
 
 
 public class LevelDBStoreTest {
 
-    private final static String LEVELDB_TEST_PATH = "Chain_test";
+    private final static String LEVELDB_TEST_PATH = "leveldb_Chain_test";
 
     private static LevelDBStore store;
 

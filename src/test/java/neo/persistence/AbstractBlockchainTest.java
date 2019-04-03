@@ -2,6 +2,7 @@ package neo.persistence;
 
 
 import java.io.IOException;
+import java.util.Random;
 
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
@@ -18,9 +19,17 @@ public abstract class AbstractBlockchainTest extends AbstractLeveldbTest {
     protected static MyBlockchain blockchain;
     protected static NeoSystem neoSystem;
 
-    public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+    /**
+     * init leveldb and blockchain
+     *
+     * @param leveldbName leveldb file name
+     */
+    public static void setUp(String leveldbName) throws IOException {
+        AbstractLeveldbTest.setUp(leveldbName);
+        init();
+    }
 
+    private static void init() {
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 
@@ -34,9 +43,15 @@ public abstract class AbstractBlockchainTest extends AbstractLeveldbTest {
         blockchain = (MyBlockchain) MyBlockchain.singleton();
     }
 
-    public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+    /**
+     * tear down levedb
+     *
+     * @param leveldbName leveldb file name
+     */
+    public static void tearDown(String leveldbName) throws IOException {
+        AbstractLeveldbTest.tearDown(leveldbName);
     }
+
 }
 
 

@@ -14,8 +14,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -122,6 +120,8 @@ public class PluginTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
+        AbstractLeveldbTest.setUp(PluginTest.class.getSimpleName());
+
         File file = new File(pluginsPath);
         if (file.exists()) {
             for (File subFile : file.listFiles()) {
@@ -148,6 +148,8 @@ public class PluginTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
+        AbstractLeveldbTest.tearDown(PluginTest.class.getSimpleName());
+
         File file = new File(pluginsPath);
         if (file.exists()) {
             for (File subFile : file.listFiles()) {

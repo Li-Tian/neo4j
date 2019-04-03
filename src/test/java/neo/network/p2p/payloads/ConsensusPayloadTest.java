@@ -27,12 +27,12 @@ public class ConsensusPayloadTest  extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(ConsensusPayloadTest.class.getSimpleName());
     }
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractBlockchainTest.tearDown();
+        AbstractBlockchainTest.tearDown(ConsensusPayloadTest.class.getSimpleName());
     }
 
     @Test

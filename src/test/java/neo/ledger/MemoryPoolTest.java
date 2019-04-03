@@ -34,7 +34,7 @@ public class MemoryPoolTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(MemoryPoolTest.class.getSimpleName());
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 
@@ -48,7 +48,7 @@ public class MemoryPoolTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(MemoryPoolTest.class.getSimpleName());
     }
 
     @Test

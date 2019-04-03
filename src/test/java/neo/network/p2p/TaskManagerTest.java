@@ -49,7 +49,7 @@ public class TaskManagerTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(TaskManagerTest.class.getSimpleName());
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 
@@ -63,7 +63,7 @@ public class TaskManagerTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(TaskManagerTest.class.getSimpleName());
     }
 
 
