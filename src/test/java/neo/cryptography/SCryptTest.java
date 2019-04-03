@@ -4,9 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-
-import neo.csharp.BitConverter;
 
 public class SCryptTest {
     @Test
