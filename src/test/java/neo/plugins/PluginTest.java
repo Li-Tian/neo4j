@@ -196,7 +196,7 @@ public class PluginTest extends AbstractLeveldbTest {
                     "}");
             bw.flush();
             bw.close();
-            while(true){}
+            Thread.sleep(5000);
         } catch (Exception e){
         }
     }
