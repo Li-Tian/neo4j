@@ -360,6 +360,6 @@ public class ContractParametersContext {
     @Override
     public String toString() {
         TR.enter();
-        return TR.exit(toJson().getAsString());
+        return TR.exit(toJson().toString());
     }
 }

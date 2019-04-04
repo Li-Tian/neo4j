@@ -41,6 +41,7 @@ public abstract class Plugin {
     private static final String pluginsPath = Paths.get(System.getProperty("user.dir")).resolve("Plugins").toString();
     private static WatchService configWatcher = null;
     private boolean hasBeenInitialized = false;
+    private Thread fileListener = null;
 
     private static AtomicInteger suspend = new AtomicInteger(0);
 
@@ -135,7 +136,7 @@ public abstract class Plugin {
                 }
                 configWatcher = FileSystems.getDefault().newWatchService();
                 registerAll(toWatch);
-                Thread thread = new Thread() {
+                fileListener = new Thread() {
                     public void run() {
                         try {
                             WatchKey key = configWatcher.take();
@@ -175,7 +176,7 @@ public abstract class Plugin {
                         }
                     }
                 };
-                thread.start();
+                fileListener.start();
                 hasBeenInitialized = true;
             } catch (IOException e) {
                 TR.error(e);
@@ -293,7 +294,14 @@ public abstract class Plugin {
     }
 
     protected static void suspendNodeStartup() {
+        TR.enter();
         suspend.incrementAndGet();
         system.suspendNodeStartup();
+        TR.exit();
+    }
+
+    protected Thread getFileListener() {
+        TR.enter();
+        return TR.exit(fileListener);
     }
 }
