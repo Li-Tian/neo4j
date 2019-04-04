@@ -42,4 +42,14 @@ public class CoinState extends ByteFlag {
         super(value);
     }
 
+
+    /**
+     * 状态或操作
+     *
+     * @param other 或操作对象
+     * @return 新的状态
+     */
+    public CoinState OR(CoinState other) {
+        return new CoinState((byte) (this.value | other.value));
+    }
 }

@@ -100,14 +100,12 @@ public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValu
     @Override
     protected Collection<Map.Entry<TKey, TValue>> findInternal(byte[] keyPrefix) {
         TR.enter();
-        byte[] keyBytes = BitConverter.merge(prefix, keyPrefix);
-
         // C# code
         //  db.Find(options, SliceBuilder.Begin(prefix).Add(key_prefix),
         //            (k, v) => new KeyValuePair<TKey, TValue>(k.ToArray().AsSerializable<TKey>(1),
         //            v.ToArray().AsSerializable<TValue>()));
         // be careful with the prefix!
-        return TR.exit(DBHelper.find(db, keyBytes, (key, value) ->
+        return TR.exit(DBHelper.find(db, prefix,keyPrefix, (key, value) ->
                 new AbstractMap.SimpleEntry<>(SerializeHelper.parse(keyGenerator, key, 1),
                         SerializeHelper.parse(valueGenerator, value))));
     }
