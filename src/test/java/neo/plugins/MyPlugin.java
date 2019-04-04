@@ -3,6 +3,9 @@ package neo.plugins;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import com.typesafe.config.Config;
+
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -41,9 +44,15 @@ public class MyPlugin extends Plugin implements IPolicyPlugin, ILogPlugin, IRpcP
     }
 
     protected ArrayList<MyLog> log = new ArrayList<MyLog>();
+    public int maxOnImportHeight = 0;
     @Override
     public void configure() {
         TR.enter();
+        File file = new File(configFile());
+        if (file.exists()) {
+            Config config = getConfiguration();
+            maxOnImportHeight = config.getInt("MaxOnImportHeight");
+        }
         TR.exit();
     }
 

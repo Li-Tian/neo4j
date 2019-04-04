@@ -133,8 +133,6 @@ public class PluginTest extends AbstractLeveldbTest {
             file.delete();
         }
         file.mkdir();
-        file = new File(pluginsPath + "\\" + MyPlugin.class.getSimpleName());
-        file.mkdir();
 
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
@@ -178,7 +176,8 @@ public class PluginTest extends AbstractLeveldbTest {
     public void PluginTest() {
         try {
             MyPlugin plugin = new MyPlugin();
-            File file = new File(Paths.get(pluginsPath).resolve("MyPlugin1").toString());
+            Thread.sleep(1000);
+            File file = new File(Paths.get(pluginsPath).resolve("MyPlugin").toString());
             if (!file.exists()) {
                 file.mkdir();
             }
@@ -191,12 +190,13 @@ public class PluginTest extends AbstractLeveldbTest {
             BufferedWriter bw = new BufferedWriter(fw);
             bw.write("{\n" +
                     "  \"PluginConfiguration\": {\n" +
-                    "    \"MaxOnImportHeight\": 0\n" +
+                    "    \"MaxOnImportHeight\": 100\n" +
                     "  }\n" +
                     "}");
             bw.flush();
             bw.close();
-            Thread.sleep(5000);
+            while(plugin.maxOnImportHeight == 0);
+            plugin.getFileListener().stop();
         } catch (Exception e){
         }
     }
@@ -219,13 +219,13 @@ public class PluginTest extends AbstractLeveldbTest {
             BufferedWriter bw = new BufferedWriter(fw);
             bw.write("{\n" +
                     "  \"PluginConfiguration\": {\n" +
-                    "    \"MaxOnImportHeight\": 0\n" +
+                    "    \"MaxOnImportHeight\": 100\n" +
                     "  }\n" +
                     "}");
             bw.flush();
             bw.close();
             Config config = plugin.getConfiguration();
-            Assert.assertEquals(0, config.getInt("MaxOnImportHeight"));
+            Assert.assertEquals(100, config.getInt("MaxOnImportHeight"));
         } catch (IOException e) {
         }
     }
