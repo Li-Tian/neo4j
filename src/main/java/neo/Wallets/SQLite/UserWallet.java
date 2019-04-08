@@ -24,6 +24,7 @@ import neo.Wallets.WalletAccount;
 import neo.Wallets.WalletIndexer;
 import neo.Wallets.WalletTransactionEventArgs;
 import neo.cryptography.Helper;
+import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.Ushort;
 import neo.io.SerializeHelper;
@@ -460,7 +461,7 @@ public class UserWallet extends Wallet {
     }
 
     Iterable<Coin> getCoinsInternal(Iterable<UInt160> accounts) {
-        Set<Coin> resultSet=new HashSet<>();
+        Set<Coin> resultSet = new HashSet<>();
         HashSet<CoinReference> inputs;
         HashSet<CoinReference> claims;
         Coin[] coins_unconfirmed;
@@ -497,20 +498,20 @@ public class UserWallet extends Wallet {
 
 
             coins_unconfirmed = unconfirmed.values().stream().map(p -> {
-                TransactionOutput[] transactionOutputArray=p.outputs;
-                List<Coin> coinlist=new ArrayList<Coin>();
-                for(int i=0;i<transactionOutputArray.length;i++){
-                    Coin tempCoin=new Coin();
-                    tempCoin.reference=new CoinReference();
-                    tempCoin.reference.prevHash=p.hash();
-                    tempCoin.reference.prevIndex=new Ushort(i);
-                    tempCoin.output=transactionOutputArray[i];
-                    tempCoin.state=CoinState.Unconfirmed;
+                TransactionOutput[] transactionOutputArray = p.outputs;
+                List<Coin> coinlist = new ArrayList<Coin>();
+                for (int i = 0; i < transactionOutputArray.length; i++) {
+                    Coin tempCoin = new Coin();
+                    tempCoin.reference = new CoinReference();
+                    tempCoin.reference.prevHash = p.hash();
+                    tempCoin.reference.prevIndex = new Ushort(i);
+                    tempCoin.output = transactionOutputArray[i];
+                    tempCoin.state = CoinState.Unconfirmed;
                     coinlist.add(tempCoin);
                 }
                 return coinlist;
 
-            }).flatMap(q->q.stream()).toArray(Coin[]::new);
+            }).flatMap(q -> q.stream()).toArray(Coin[]::new);
         }
         //LINQ END
         for (Coin coin : indexer.getCoins(accounts)) {
@@ -529,7 +530,7 @@ public class UserWallet extends Wallet {
             resultSet.add(coin);
         }
         HashSet<UInt160> accounts_set = new HashSet<>();
-        accounts_set.addAll(StreamSupport.stream(accounts.spliterator(),false).collect(Collectors.toSet()));
+        accounts_set.addAll(StreamSupport.stream(accounts.spliterator(), false).collect(Collectors.toSet()));
         for (Coin coin : coins_unconfirmed) {
             if (accounts_set.contains(coin.output.scriptHash))
                 resultSet.add(coin);
@@ -578,7 +579,7 @@ public class UserWallet extends Wallet {
                         .privateKeyEncrypted));
             }
             //LINQ END
-
+            return accounts;
         } catch (DataAccessException e) {
             TR.warn(e.getMessage());
             throw new RuntimeException(e);
@@ -592,8 +593,6 @@ public class UserWallet extends Wallet {
                 }
             }
         }
-        return accounts;
-
     }
 
     private byte[] loadStoredData(String name) {

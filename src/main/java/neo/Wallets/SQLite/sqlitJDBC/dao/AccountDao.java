@@ -36,7 +36,7 @@ public class AccountDao {
 
     public int deleteTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="DROP TABLE Account;";
+        String sql="DROP TABLE IF EXISTS Account;";
         return jt.update(sql,null);
     }
 
