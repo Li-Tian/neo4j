@@ -11,7 +11,7 @@ import neo.network.p2p.payloads.IVerifiable;
  * @version V1.0
  * @Title: Helper
  * @Package neo.Wallets
- * @Description: (用一句话描述该文件做什么)
+ * @Description: 钱包相关辅助类
  * @date Created in 10:58 2019/3/14
  */
 public class Helper {

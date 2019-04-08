@@ -33,11 +33,17 @@ import neo.vm.Types.Map;
  * @version V1.0
  * @Title: Helper
  * @Package neo.VM
- * @Description: (用一句话描述该文件做什么)
+ * @Description: VM 扩展类
  * @date Created in 10:23 2019/3/14
  */
 public class Helper {
 
+    /**
+      * @Author:doubi.liu
+      * @description:一次构建多个OpCode
+      * @param ops OpCode集合
+      * @date:2019/4/4
+    */
     public static ScriptBuilder emit(ScriptBuilder sb, OpCode... ops) {
         for (OpCode op : ops) {
             sb.emit(op);

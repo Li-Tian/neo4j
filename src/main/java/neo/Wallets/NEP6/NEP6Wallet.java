@@ -3,6 +3,7 @@ package neo.Wallets.NEP6;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -54,44 +55,80 @@ import neo.smartcontract.Helper;
  * @version V1.0
  * @Title: NEP6Wallet
  * @Package neo.Wallets.NEP6
- * @Description: (用一句话描述该文件做什么)
+ * @Description: NEP6钱包类
  * @date Created in 14:09 2019/3/14
  */
 public class NEP6Wallet extends Wallet {
 
+    //钱包委托事件寄存器
     private EventHandler<WalletTransactionEventArgs> walletTransaction = new EventHandler<>();
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取委托寄存器
+      * @date:2019/4/2
+    */
     @Override
     public EventHandler<WalletTransactionEventArgs> getWalletTransaction() {
         return walletTransaction;
     }
 
+    //钱包索引
     private WalletIndexer indexer;
+    //路径
     private String path;
+    //密码
     private String password;
+    //名称
     private String name;
+    //版本
     public Version version;
+    //scrypt算法加密参数
     public ScryptParameters scrypt;
+    //账户列表
     private Map<UInt160, NEP6Account> accounts;
+    //扩展
     private JsonObject extra;
+    //未确认交易列表
     private Map<UInt256, Transaction> unconfirmed = new HashMap<>();
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取名字
+      * @date:2019/4/2
+    */
     @Override
     public String getName() {
         return name;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取版本
+      * @date:2019/4/2
+    */
     @Override
     public Version getVersion() {
         return version;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取钱包高度
+      * @date:2019/4/2
+    */
     @Override
     public Uint getWalletHeight() {
         return indexer.getIndexHeight();
     }
 
 
+    /**
+      * @Author:doubi.liu
+      * @description:构造函数
+      * @param indexer 钱包索引 path 路径 name 名字
+      * @date:2019/4/2
+    */
     public NEP6Wallet(WalletIndexer indexer, String path, String name) {
         this.indexer = indexer;
         this.path = path;
@@ -107,15 +144,17 @@ public class NEP6Wallet extends Wallet {
                 }
                 String tempString = stringBuffer.toString();
                 // 解析,创建Gson,需要导入gson的jar包
-                JsonObject wallet=new Gson().fromJson(tempString,JsonObject.class);
-                this.name = wallet.get("name")==null?null:wallet.get("name").getAsString();
-                this.version = Version.parse(wallet.get("version").getAsString());
-                this.scrypt = ScryptParameters.FromJson(wallet.get("scrypt").getAsJsonObject());
-                this.accounts = StreamSupport.stream(wallet.get("accounts").getAsJsonArray()
-                        .spliterator(),false).map(p->NEP6Account.fromJson(p.getAsJsonObject(),this))
-                        .collect(Collectors.toMap(q->q.scriptHash,q->q));
+                JsonObject wallet=new JsonParser().parse(tempString).getAsJsonObject();
+                this.name = wallet.get("name").isJsonNull()?null:wallet.get("name").getAsString();
 
-                this.extra = wallet.get("extra").getAsJsonObject();
+                this.version = wallet.get("version").isJsonNull()?null:Version.parse(wallet.get
+                        ("version").getAsString().replace("\"", ""));
+                this.scrypt = wallet.get("scrypt").isJsonNull()?null:ScryptParameters.FromJson(wallet.get("scrypt").getAsJsonObject());
+                this.accounts = wallet.get("accounts").isJsonNull()?null:StreamSupport.stream(wallet.get("accounts").getAsJsonArray()
+                        .spliterator(),false).map(p->NEP6Account.fromJson(p.getAsJsonObject(),this))
+                        .collect(Collectors.toMap(k->k.scriptHash,v->v));
+
+                this.extra = wallet.get("extra").isJsonNull()?null:wallet.get("extra").getAsJsonObject();
                 indexer.registerAccounts(accounts.keySet());
             }catch (FileNotFoundException e) {
                 e.printStackTrace();
@@ -132,7 +171,21 @@ public class NEP6Wallet extends Wallet {
         indexer.walletTransaction.addListener(this);
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:默认构造函数
+      * @date:2019/4/2
+    */
+    public NEP6Wallet(){
 
+    }
+
+    /**
+      * @Author:doubi.liu
+      * @description:构造函数
+      * @param indexer 钱包索引 path 路劲
+      * @date:2019/4/2
+    */
     public NEP6Wallet(WalletIndexer indexer, String path) {
         String name =null;
         this.indexer = indexer;
@@ -174,6 +227,12 @@ public class NEP6Wallet extends Wallet {
         indexer.walletTransaction.addListener(this);
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:添加账户
+      * @param account 账户 is_import 是否是主账户
+      * @date:2019/4/2
+    */
     private void addAccount(NEP6Account account, boolean is_import) {
         synchronized (accounts) {
             NEP6Account account_old=accounts.getOrDefault(account.scriptHash,null);
@@ -201,6 +260,12 @@ public class NEP6Wallet extends Wallet {
         }
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:发送交易
+      * @param tx 交易
+      * @date:2019/4/2
+    */
     @Override
     public void applyTransaction(Transaction tx) {
         synchronized (unconfirmed) {
@@ -221,6 +286,12 @@ public class NEP6Wallet extends Wallet {
         //LINQ END
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:是否包含脚本
+      * @param scriptHash 哈希
+      * @date:2019/4/2
+    */
     @Override
     public boolean contains(neo.UInt160 scriptHash) {
         synchronized (accounts) {
@@ -228,6 +299,12 @@ public class NEP6Wallet extends Wallet {
         }
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:创建账户
+      * @param privateKey 私钥
+      * @date:2019/4/2
+    */
     @Override
     public WalletAccount createAccount(byte[] privateKey) {
         KeyPair key = new KeyPair(privateKey);
@@ -242,6 +319,12 @@ public class NEP6Wallet extends Wallet {
         return account;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:创建账户
+      * @param contract 合约 key 密钥对
+      * @date:2019/4/2
+    */
     @Override
     public WalletAccount createAccount(Contract contract, KeyPair key) {
         NEP6Contract nep6contract = (NEP6Contract) contract;
@@ -270,6 +353,12 @@ public class NEP6Wallet extends Wallet {
         return account;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:创建账户
+      * @param contract 合同
+      * @date:2019/4/2
+    */
     @Override
     public WalletAccount createAccount(Contract contract) {
         KeyPair key = null;
@@ -299,6 +388,12 @@ public class NEP6Wallet extends Wallet {
         return account;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:创建账户
+      * @param scriptHash 脚本哈希
+      * @date:2019/4/2
+    */
     @Override
     public WalletAccount createAccount(UInt160 scriptHash) {
         NEP6Account account = new NEP6Account(this, scriptHash);
@@ -306,10 +401,22 @@ public class NEP6Wallet extends Wallet {
         return account;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:解密nep2key
+      * @param nep2key
+      * @date:2019/4/2
+    */
     public KeyPair decryptKey(String nep2key) {
         return new KeyPair(getPrivateKeyFromNEP2(nep2key, password, scrypt.N, scrypt.R, scrypt.P));
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:删除账户
+      * @param scriptHash 脚本哈希
+      * @date:2019/4/2
+    */
     @Override
     public boolean deleteAccount(UInt160 scriptHash) {
         NEP6Account removed;
@@ -322,11 +429,22 @@ public class NEP6Wallet extends Wallet {
         return removed != null ? true : false;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:资源回收方法
+      * @date:2019/4/2
+    */
     @Override
     public void dispose() {
         indexer.walletTransaction.removeListener(this);
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:查找未花费coin
+      * @param asset_id 资产id amount 数量 from 地址
+      * @date:2019/4/2
+    */
     @Override
     public Coin[] findUnspentCoins(UInt256 asset_id, neo.Fixed8 amount, UInt160[] from) {
         //LINQ START
@@ -343,6 +461,12 @@ public class NEP6Wallet extends Wallet {
         //LINQ END
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取账户
+      * @param scriptHash 脚本哈希
+      * @date:2019/4/2
+    */
     @Override
     public WalletAccount getAccount(UInt160 scriptHash) {
         synchronized (accounts) {
@@ -350,6 +474,11 @@ public class NEP6Wallet extends Wallet {
         }
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取账户集合
+      * @date:2019/4/2
+    */
     @Override
     public Iterable<NEP6Account> getAccounts() {
         synchronized (accounts) {
@@ -357,6 +486,12 @@ public class NEP6Wallet extends Wallet {
         }
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取指定账户的coin集合
+      * @param accounts 指定账户
+      * @date:2019/4/2
+    */
     @Override
     public Iterable<Coin> getCoins(Iterable<UInt160> accounts) {
         if (unconfirmed.size() == 0)
@@ -365,6 +500,12 @@ public class NEP6Wallet extends Wallet {
             return getCoinsInternal(accounts);
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取指定账户的coin集合
+      * @param accounts 指定账户
+      * @date:2019/4/2
+    */
     Iterable<Coin> getCoinsInternal(Iterable<UInt160> accounts) {
         HashSet<Coin> resultSet=new HashSet<>();
         HashSet<CoinReference> inputs;
@@ -440,6 +581,11 @@ public class NEP6Wallet extends Wallet {
         return resultSet;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取交易
+      * @date:2019/4/2
+    */
     @Override
     public Iterable<UInt256> getTransactions() {
         Set<UInt256> result = new HashSet<>();
@@ -470,6 +616,12 @@ public class NEP6Wallet extends Wallet {
         return account;
     }*/
 
+    /**
+      * @Author:doubi.liu
+      * @description:导入账户
+      * @param wif wif格式字符串
+      * @date:2019/4/2
+    */
     @Override
     public WalletAccount imports(String wif) {
         KeyPair key = new KeyPair(getPrivateKeyFromWIF(wif));
@@ -484,6 +636,12 @@ public class NEP6Wallet extends Wallet {
         return account;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:导入账户
+      * @param nep2 nep2字符串 passphrase密码
+      * @date:2019/4/2
+    */
     @Override
     public WalletAccount imports(String nep2, String passphrase) {
         KeyPair key = new KeyPair(getPrivateKeyFromNEP2(nep2, passphrase));
@@ -502,10 +660,21 @@ public class NEP6Wallet extends Wallet {
         return account;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:锁钱包
+      * @date:2019/4/2
+    */
     void lock() {
         password = null;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:升级钱包
+      * @param indexer 钱包索引 path 路径 db3path db3钱包路径 password 密码
+      * @date:2019/4/2
+    */
     public static NEP6Wallet migrate(WalletIndexer indexer, String path, String db3path, String
             password) {
         UserWallet wallet_old = UserWallet.open(indexer, db3path, password);
@@ -519,6 +688,11 @@ public class NEP6Wallet extends Wallet {
 
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:保存密码
+      * @date:2019/4/2
+    */
     public void save() {
         JsonObject wallet = new JsonObject();
         wallet.addProperty("name", name);
@@ -546,6 +720,12 @@ public class NEP6Wallet extends Wallet {
         }
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:解锁钱包
+      * @param password 密码
+      * @date:2019/4/2
+    */
     public IDisposable unlock(String password) {
         if (!verifyPassword(password))
             throw new RuntimeException("密码验证错误");
@@ -553,6 +733,12 @@ public class NEP6Wallet extends Wallet {
         return new WalletLocker(this);
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:确认密码
+      * @param password 密码
+      * @date:2019/4/2
+    */
     @Override
     public boolean verifyPassword(String password) {
         synchronized (accounts) {
@@ -589,6 +775,12 @@ public class NEP6Wallet extends Wallet {
         }
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:委托事件处理方法
+      * @param sender 消息发送者，eventArgs 消息
+      * @date:2019/4/2
+    */
     @Override
     public void doWork(Object sender, WalletTransactionEventArgs eventArgs) {
         synchronized (unconfirmed) {

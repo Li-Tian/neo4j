@@ -79,6 +79,8 @@ public class WalletIndexer implements IDisposable {
         }
     }
 
+    public WalletIndexer(){}
+
     public WalletIndexer(String path) {
         DBFactory factory = new JniDBFactory();
         // 默认如果没有则创建

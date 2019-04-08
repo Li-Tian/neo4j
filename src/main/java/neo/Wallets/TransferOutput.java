@@ -13,16 +13,29 @@ import neo.network.p2p.payloads.TransactionOutput;
  * @version V1.0
  * @Title: TransferOutput
  * @Package neo.Wallets
- * @Description: (用一句话描述该文件做什么)
+ * @Description: 交易输出
  * @date Created in 11:42 2019/3/14
  */
 public class TransferOutput {
+    //资产ID
     public UIntBase assetId;
+    //数值
     public BigDecimal value;
+    //脚本哈希
     public UInt160 scriptHash;
 
+    /**
+      * @Author:doubi.liu
+      * @description:是否是全局资产
+      * @date:2019/4/3
+    */
     public boolean isGlobalAsset(){return assetId.size() == 32;}
 
+    /**
+      * @Author:doubi.liu
+      * @description:转成交易输出
+      * @date:2019/4/3
+    */
     public TransactionOutput toTxOutput()
     {
         if (assetId instanceof UInt256){//asset_id
@@ -36,20 +49,41 @@ public class TransferOutput {
         throw new UnsupportedOperationException();
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:构造函数
+      * @param null
+      * @date:2019/4/3
+    */
     public TransferOutput(UIntBase assetId, BigDecimal value, UInt160 scriptHash) {
         this.assetId = assetId;
         this.value = value;
         this.scriptHash = scriptHash;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取资产id
+      * @date:2019/4/3
+    */
     public UIntBase getAssetId() {
         return assetId;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取值
+      * @date:2019/4/3
+    */
     public BigDecimal getValue() {
         return value;
     }
 
+    /**
+      * @Author:doubi.liu
+      * @description:获取脚本哈希
+      * @date:2019/4/3
+    */
     public UInt160 getScriptHash() {
         return scriptHash;
     }

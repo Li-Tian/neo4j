@@ -9,7 +9,7 @@ import neo.network.p2p.payloads.TransactionOutput;
  * @version V1.0
  * @Title: Coin
  * @Package neo.Wallets
- * @Description: (用一句话描述该文件做什么)
+ * @Description: Coin对象
  * @date Created in 13:47 2019/3/14
  */
 public class Coin {

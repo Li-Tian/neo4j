@@ -64,10 +64,10 @@ public class Version {
         if (value == null) {
             throw new NullPointerException("参数不能为空");
         }
-        if (value.split(".").length < 2) {
+        if (value.split("\\.").length < 2) {
             throw new IllegalArgumentException("非法参数格式");
         }
-        if (!Arrays.asList(value.split(".")).stream().allMatch(p -> {
+        if (!Arrays.asList(value.split("\\.")).stream().allMatch(p -> {
             Pattern pattern = Pattern.compile("[0-9]*");
             Matcher isNum = pattern.matcher(p);
             if (!isNum.matches()) {
@@ -77,7 +77,7 @@ public class Version {
         })){
             throw new IllegalArgumentException("非法参数格式");
         }
-        String[] temp=value.split(".");
+        String[] temp=value.split("\\.");
         int major = 0;
         int minor = 0;
         int build = 0;
