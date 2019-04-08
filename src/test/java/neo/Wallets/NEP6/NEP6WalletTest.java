@@ -63,7 +63,7 @@ public class NEP6WalletTest {
     class UserWalletIndexer extends WalletIndexer{
 
         public UserWalletIndexer() {
-            super();
+            //super();
         }
 
         @Override
@@ -304,6 +304,10 @@ public class NEP6WalletTest {
     @Test
     public void migrate() throws Exception {
       //// TODO: 2019/4/3 等userwallet测试好在做
+        UserWalletIndexer indexer=new UserWalletIndexer();
+        NEP6Wallet.migrate(indexer,"C:\\wallet\\neo\\testclient\\testwallet\\test5address.json",
+                "C:\\wallet\\neo\\testclient\\testwallet\\test5.db3","1234567890");
+
     }
 
     @Test

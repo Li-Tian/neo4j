@@ -8,7 +8,7 @@ import neo.vm.StackItem;
  * @version V1.0
  * @Title: IEnumerator
  * @Package neo.smartcontract.enumerators
- * @Description: (用一句话描述该文件做什么)
+ * @Description: 可迭代器接口
  * @date Created in 15:55 2019/3/12
  */
 public interface IEnumerator extends IDisposable{
