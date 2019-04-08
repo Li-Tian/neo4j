@@ -67,6 +67,7 @@ public abstract class AbstractPersistence implements IPersistence {
     public Block getBlock(Uint index) {
         TR.enter();
         UInt256 hash = Blockchain.singleton().getBlockHash(index);
+        System.err.println("block hash=>" + hash);
         if (hash == null) {
             return TR.exit(null);
         }

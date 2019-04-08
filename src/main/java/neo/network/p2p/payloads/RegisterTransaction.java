@@ -22,7 +22,7 @@ import neo.cryptography.ecc.ECPoint;
 
 
 /**
- * A transaction for registering asset(given up, please use InvocationTransaction)
+ * A transaction for registering asset(Abandoned, please use InvocationTransaction)
  */
 @Deprecated
 public class RegisterTransaction extends Transaction {

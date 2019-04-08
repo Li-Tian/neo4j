@@ -4,6 +4,7 @@ package neo.persistence;
 import java.io.File;
 import java.io.IOException;
 
+import neo.Utils;
 import neo.log.tr.TR;
 import neo.persistence.leveldb.LevelDBStore;
 
@@ -18,13 +19,7 @@ public class AbstractLeveldbTest {
      */
     public static void setUp(String leveldbName) throws IOException {
         String leveldbPath = AbstractLeveldbTest.class.getClassLoader().getResource("").getPath() + leveldbName + "_leveldb";
-        File file = new File(leveldbPath);
-        if (file.exists()) {
-            for (File subFile : file.listFiles()) {
-                subFile.delete();
-            }
-            file.delete();
-        }
+        Utils.deleteFolder(leveldbPath);
 
         store = new LevelDBStore(leveldbPath);
     }
@@ -40,13 +35,7 @@ public class AbstractLeveldbTest {
         store.close();
 
         // free leveldb file
-        File file = new File(leveldbPath);
-        if (file.exists()) {
-            for (File subFile : file.listFiles()) {
-                subFile.delete();
-            }
-            file.delete();
-        }
+        Utils.deleteFolder(leveldbPath);
     }
 
 }

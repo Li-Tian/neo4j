@@ -2,8 +2,12 @@ package neo;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.util.Random;
 import java.util.function.Supplier;
 
+import neo.Wallets.KeyPair;
+import neo.Wallets.WalletAccount;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
@@ -22,4 +26,22 @@ public class Utils {
         return t;
     }
 
+    public static KeyPair getRandomKeyPair() {
+        byte[] privateKey = new byte[32];
+        Random rng = new Random();
+
+        rng.nextBytes(privateKey);
+        return new KeyPair(privateKey);
+    }
+
+
+    public static void deleteFolder(String path){
+        File file = new File(path);
+        if (file.exists()) {
+            for (File subFile : file.listFiles()) {
+                subFile.delete();
+            }
+            file.delete();
+        }
+    }
 }
