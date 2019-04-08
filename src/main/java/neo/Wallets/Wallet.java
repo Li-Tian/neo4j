@@ -52,7 +52,7 @@ import neo.vm.VMState;
  * @version V1.0
  * @Title: Wallet
  * @Package neo.Wallets
- * @Description: (用一句话描述该文件做什么)
+ * @Description: 钱包基类
  * @date Created in 11:17 2019/3/14
  */
 public abstract class Wallet implements IDisposable, EventHandler.Listener<WalletTransactionEventArgs> {
@@ -262,7 +262,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         if (nep2 == null) throw new NullPointerException("nep2");
         if (passphrase == null) throw new NullPointerException("passphrase");//nameof
         byte[] data = Helper.base58CheckDecode(nep2);
-        if (data.length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
+        if (data.length != 39 || (data[0]&0xFF) != 0x01 || (data[1]&0xFF) != 0x42 || (data[2]&0xFF)
+                !=0xe0)//0xe0
             throw new FormatException();
         byte[] addresshash = new byte[4];
         System.arraycopy(data, 3, addresshash, 0, 4);
@@ -282,7 +283,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         byte[] encryptedkey = new byte[32];
         System.arraycopy(data, 7, encryptedkey, 0, 32);
         byte[] prikey = Wallet.XOR(Helper.aes256Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
-        ECPoint pubkey = (ECPoint) ECC.Secp256r1.getG().multiply(new BigInteger(prikey));
+        ECPoint pubkey = new ECPoint(ECC.Secp256r1.getG().multiply(new BigInteger(prikey)).normalize());
         UInt160 script_hash = neo.smartcontract.Helper.toScriptHash(Contract
                 .createSignatureRedeemScript(pubkey));
         String address = script_hash.toAddress();
@@ -291,8 +292,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
 /*            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).SequenceEqual
                     (addresshash))*/
             byte[] tempArray = new byte[4];
-            System.arraycopy(tempArray, 0, Helper.sha256(Helper.sha256(address.getBytes("ascii"))),
-                    0, 4);
+            System.arraycopy(Helper.sha256(Helper.sha256(address.getBytes("ascii"))),
+                    0,tempArray, 0,  4);
             if (!Arrays.equals(tempArray, addresshash))
                 throw new FormatException();
         } catch (UnsupportedEncodingException e) {
@@ -310,7 +311,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         if (nep2 == null) throw new NullPointerException("nep2");
         if (passphrase == null) throw new NullPointerException("passphrase");//nameof
         byte[] data = Helper.base58CheckDecode(nep2);
-        if (data.length != 39 || data[0] != 0x01 || data[1] != 0x42 || data[2] != 0xe0)
+        if (data.length != 39 || (data[0]&0xff) != 0x01 || (data[1]&0xff) != 0x42 || (data[2]&0xff)
+                != 0xe0)
             throw new FormatException();
         byte[] addresshash = new byte[4];
         System.arraycopy(data, 3, addresshash, 0, 4);
@@ -330,7 +332,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         byte[] encryptedkey = new byte[32];
         System.arraycopy(data, 7, encryptedkey, 0, 32);
         byte[] prikey = Wallet.XOR(Helper.aes256Decrypt(encryptedkey, derivedhalf2), derivedhalf1);
-        ECPoint pubkey = (ECPoint) ECC.Secp256r1.getG().multiply(new BigInteger(prikey));
+        ECPoint pubkey = new ECPoint(ECC.Secp256r1.getG().multiply(new BigInteger(prikey)).normalize());
         UInt160 script_hash = neo.smartcontract.Helper.toScriptHash(Contract
                 .createSignatureRedeemScript(pubkey));
         String address = script_hash.toAddress();
@@ -339,8 +341,8 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
 /*            if (!Encoding.ASCII.GetBytes(address).Sha256().Sha256().Take(4).SequenceEqual
                     (addresshash))*/
             byte[] tempArray = new byte[4];
-            System.arraycopy(tempArray, 0, Helper.sha256(Helper.sha256(address.getBytes("ascii"))),
-                    0, 4);
+            System.arraycopy(Helper.sha256(Helper.sha256(address.getBytes("ascii"))),
+                    0,tempArray, 0,4);
             if (!Arrays.equals(tempArray, addresshash))
                 throw new FormatException();
         } catch (UnsupportedEncodingException e) {
@@ -357,7 +359,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
             throw new IllegalArgumentException();
         }
         byte[] data = neo.cryptography.Helper.base58CheckDecode(wif);
-        if (data.length != 34 || data[0] != 0x80 || data[33] != 0x01)
+        if (data.length != 34 || (data[0]&0xff) != 0x80 || (data[33]&0xff) != 0x01)
             throw new FormatException();
         byte[] privateKey = new byte[32];
         System.arraycopy(data, 1, privateKey, 0, privateKey.length);
@@ -1006,7 +1008,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         //LINQ START
         byte[] temp = new byte[x.length];
         for (int i = 0; i < x.length; i++) {
-            temp[i] = (byte) (x[i] ^ y[i]);
+            temp[i] = (byte) ((x[i]&0xff) ^ (y[i]&0xff));
         }
         //return x.Zip(y, (a, b) => (byte)(a ^ b)).ToArray();
         return temp;

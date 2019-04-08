@@ -74,6 +74,8 @@ public class WalletIndexer implements IDisposable {
         }
     }
 
+    public WalletIndexer(){}
+
     public WalletIndexer(String path) {
         DBFactory factory = new JniDBFactory();
         Options tempOptions = new Options();

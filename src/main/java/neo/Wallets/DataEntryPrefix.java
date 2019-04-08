@@ -5,10 +5,11 @@ package neo.Wallets;
  * @version V1.0
  * @Title: DataEntryPrefix
  * @Package neo.Wallets
- * @Description: (用一句话描述该文件做什么)
+ * @Description: 数据库前缀索引
  * @date Created in 13:44 2019/3/14
  */
 public class DataEntryPrefix {
+
     public final static byte ST_Coin = 0x44;
 
     public final static byte ST_Transaction = 0x48;

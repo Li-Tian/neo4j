@@ -67,7 +67,7 @@ public class Version {
         if (value.split("\\.").length < 2) { // 转义
             throw new IllegalArgumentException("非法参数格式");
         }
-        if (!Arrays.asList(value.split(".")).stream().allMatch(p -> {
+        if (!Arrays.asList(value.split("\\.")).stream().allMatch(p -> {
             Pattern pattern = Pattern.compile("[0-9]*");
             Matcher isNum = pattern.matcher(p);
             if (!isNum.matches()) {
@@ -104,16 +104,16 @@ public class Version {
     public static Version tryParse(String value, Version tDefault) {
         try {
             return parse(value);
-        } catch (Exception e) {
+        }catch (Exception e){
             return tDefault;
         }
     }
 
-    public int compareTo(Version oth) {
-        if (oth == null) {
+    public int compareTo(Version oth){
+        if (oth==null){
             throw new NullPointerException("参数不能为空");
         }
-        if (this == oth) {
+        if (this==oth){
             return 0;
         }
         int[] thisArray = {major, minor, build, revision};
