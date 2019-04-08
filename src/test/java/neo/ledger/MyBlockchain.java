@@ -35,6 +35,13 @@ public class MyBlockchain extends Blockchain {
         initData();
     }
 
+    @Override
+    public UInt256 getBlockHash(Uint index) {
+        if (myheaderIndex.size() <= index.intValue()) {
+            return null;
+        }
+        return myheaderIndex.get(index.intValue());
+    }
 
     public static Props props(NeoSystem system, Store store, ActorRef actorRef) {
         TR.enter();

@@ -34,6 +34,10 @@ public class VersionTest {
 
         Assert.assertEquals(0, version.compareTo(a));
 
+        byte[] values = BitConverter.hexToBytes("02000000090000000200000000000000");
+        version = new Version(values);
+
+        Assert.assertEquals("2.9.2.0", version.toString());
     }
 
     @Test

@@ -1,9 +1,6 @@
 package neo.Wallets.SQLite;
 
-import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.List;
-import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,13 +39,13 @@ public class Version {
     public Version(byte[] buffer) {
         byte[] temarray = new byte[4];
         System.arraycopy(buffer, 0, temarray, 0, 4);
-        this.major = new BigInteger(temarray).intValue();
+        this.major = BitConverter.toInt(temarray);
         System.arraycopy(buffer, 4, temarray, 0, 4);
-        this.minor = new BigInteger(buffer).intValue();
+        this.minor =  BitConverter.toInt(temarray);
         System.arraycopy(buffer, 8, temarray, 0, 4);
-        this.build = new BigInteger(temarray).intValue();
+        this.build =  BitConverter.toInt(temarray);
         System.arraycopy(buffer, 12, temarray, 0, 4);
-        this.revision = new BigInteger(temarray).intValue();
+        this.revision =  BitConverter.toInt(temarray);
         this.value = buffer;
     }
 
@@ -104,16 +101,16 @@ public class Version {
     public static Version tryParse(String value, Version tDefault) {
         try {
             return parse(value);
-        }catch (Exception e){
+        } catch (Exception e) {
             return tDefault;
         }
     }
 
-    public int compareTo(Version oth){
-        if (oth==null){
+    public int compareTo(Version oth) {
+        if (oth == null) {
             throw new NullPointerException("参数不能为空");
         }
-        if (this==oth){
+        if (this == oth) {
             return 0;
         }
         int[] thisArray = {major, minor, build, revision};

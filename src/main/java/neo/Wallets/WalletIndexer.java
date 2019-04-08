@@ -41,6 +41,7 @@ import neo.network.p2p.payloads.EnrollmentTransaction;
 import neo.network.p2p.payloads.RegisterTransaction;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionOutput;
+import neo.network.p2p.payloads.Witness;
 import neo.persistence.leveldb.DBHelper;
 import neo.smartcontract.EventHandler;
 
@@ -105,6 +106,9 @@ public class WalletIndexer implements IDisposable {
 
             DBHelper.findForEach(db, DataEntryPrefix.IX_Group, (keyBytes, accountIdBytes) -> {
                 byte[] accountBytes = DBHelper.get(db, DataEntryPrefix.IX_Accounts, accountIdBytes);
+                if (accountBytes == null || accountBytes.length == 0) {
+                    return;
+                }
                 UInt160[] accounts = SerializeHelper.asAsSerializableArray(accountBytes, UInt160[]::new, UInt160::new);
                 Uint height = BitConverter.toUint(BitConverter.subBytes(keyBytes, 1));
                 indexes.put(height, new HashSet<>(Arrays.asList(accounts)));
@@ -207,7 +211,8 @@ public class WalletIndexer implements IDisposable {
                     CoinReference reference = new CoinReference();
                     reference.prevHash = tx.hash();
                     reference.prevIndex = new Ushort(index);
-                    Coin coin = null;
+
+                    Coin coin;
                     if ((coin = coins_tracked.getOrDefault(reference, null)) != null) {
                         coin.state = coin.state.OR(CoinState.Confirmed);
                     } else {
@@ -218,17 +223,17 @@ public class WalletIndexer implements IDisposable {
                         coin.state = CoinState.Confirmed;
                         coins_tracked.put(reference, coin);
                     }
-                    byte[] value = BitConverter.merge(SerializeHelper.toBytes(output), new byte[]{coin.state.value()});
+                    byte[] value = BitConverter.merge(SerializeHelper.toBytes(output), coin.state.value());
                     DBHelper.batchPut(batch, DataEntryPrefix.ST_Coin, SerializeHelper.toBytes(reference), value);
                     accounts_changed.add(output.scriptHash);
                 }
             }
             for (CoinReference input : tx.inputs) {
-                Coin coin = null;
+                Coin coin;
                 if ((coin = coins_tracked.getOrDefault(input, null)) != null) {
                     if (coin.output.assetId.equals(Blockchain.GoverningToken.hash())) {
                         coin.state = coin.state.OR(CoinState.Spent).OR(CoinState.Confirmed);
-                        byte[] value = BitConverter.merge(SerializeHelper.toBytes(coin.output), new byte[]{coin.state.value()});
+                        byte[] value = BitConverter.merge(SerializeHelper.toBytes(coin.output), coin.state.value());
                         DBHelper.batchPut(batch, DataEntryPrefix.ST_Coin, SerializeHelper.toBytes(input), value);
                     } else {
                         accounts_tracked.get(coin.output.scriptHash).remove(input);
@@ -246,7 +251,7 @@ public class WalletIndexer implements IDisposable {
 
             } else if (tx instanceof neo.network.p2p.payloads.ClaimTransaction) {
                 for (CoinReference claim : ((ClaimTransaction) tx).claims) {
-                    Coin coin = null;
+                    Coin coin;
                     if ((coin = coins_tracked.getOrDefault(claim, null)) != null) {
                         accounts_tracked.get(coin.output.scriptHash).remove(claim);
                         coins_tracked.remove(claim);
@@ -255,16 +260,21 @@ public class WalletIndexer implements IDisposable {
                     }
                 }
             } else if (tx instanceof neo.network.p2p.payloads.EnrollmentTransaction) {
-                if (accounts_tracked.containsKey(((EnrollmentTransaction) tx).getScriptHash()))
-                    accounts_changed.add(((EnrollmentTransaction) tx).getScriptHash());
+                EnrollmentTransaction enrollTx = (EnrollmentTransaction) tx;
+                if (accounts_tracked.containsKey(enrollTx.getScriptHash())) {
+                    accounts_changed.add(enrollTx.getScriptHash());
+                }
             } else if (tx instanceof neo.network.p2p.payloads.RegisterTransaction) {
-                if (accounts_tracked.containsKey(((RegisterTransaction) tx).getOwnerScriptHash()))
-                    accounts_changed.add(((RegisterTransaction) tx).getOwnerScriptHash());
+                RegisterTransaction registerTx = (RegisterTransaction) tx;
+                if (accounts_tracked.containsKey(registerTx.getOwnerScriptHash())) {
+                    accounts_changed.add(registerTx.getOwnerScriptHash());
+                }
             } else {
-                for (UInt160 hash : Arrays.asList(tx.witnesses).stream().map(p -> p
-                        .scriptHash()).collect(Collectors.toList()))
-                    if (accounts_tracked.containsKey(hash))
+                Arrays.asList(tx.witnesses).stream().map(Witness::scriptHash).forEach(hash -> {
+                    if (accounts_tracked.containsKey(hash)) {
                         accounts_changed.add(hash);
+                    }
+                });
             }
             if (accounts_changed.size() > 0) {
                 for (UInt160 account : accounts_changed) {
@@ -278,7 +288,7 @@ public class WalletIndexer implements IDisposable {
         return change_set.toArray(new AbstractMap.SimpleEntry[0]);
     }
 
-    private void processBlocks() {
+    protected void processBlocks() {
         while (!disposed) {
             while (!disposed) {
                 Block block;
@@ -289,8 +299,12 @@ public class WalletIndexer implements IDisposable {
                     //uint height = indexes.Keys.Min();
                     Uint height = indexes.keySet().stream().min(Uint::compareTo).get();
                     //LINQ END
+
                     block = Blockchain.singleton().getStore().getBlock(height);
-                    if (block == null) break;
+                    if (block == null) {
+                        break;
+                    }
+
                     WriteBatch batch = db.createWriteBatch();
                     HashSet<UInt160> accounts = indexes.get(height);
                     change_set = processBlock(block, accounts, batch);
@@ -299,9 +313,9 @@ public class WalletIndexer implements IDisposable {
 
                     indexes.remove(height);
                     DBHelper.batchDelete(batch, DataEntryPrefix.IX_Group, height.toBytes());
-                    height.add(Uint.ONE);
-                    HashSet<UInt160> accounts_next = null;
+                    height = height.add(Uint.ONE);
 
+                    HashSet<UInt160> accounts_next;
                     if ((accounts_next = indexes.getOrDefault(height, null)) != null) {
                         accounts_next.addAll(accounts);
                         groupId = DBHelper.get(db, DataEntryPrefix.IX_Group, height.toBytes());
@@ -319,12 +333,13 @@ public class WalletIndexer implements IDisposable {
                     ));
                 }
             }
-            for (int i = 0; i < 20 && !disposed; i++)
+            for (int i = 0; i < 20 && !disposed; i++) {
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
         }
     }
 
@@ -340,7 +355,7 @@ public class WalletIndexer implements IDisposable {
             }
             indexes.clear();
             if (accounts_tracked.size() > 0) {
-                indexes.put(Uint.ZERO, new HashSet<UInt160>(accounts_tracked.keySet()));
+                indexes.put(Uint.ZERO, new HashSet<>(accounts_tracked.keySet()));
 
                 byte[] groupId = getGroupId();
                 DBHelper.batchPut(batch, DataEntryPrefix.IX_Group, BitConverter.getBytes(Uint.ZERO), groupId);
@@ -348,8 +363,9 @@ public class WalletIndexer implements IDisposable {
                 Set<UInt160> accountKeySet = accounts_tracked.keySet();
                 byte[] value = SerializeHelper.toBytes(accountKeySet.toArray(new UInt160[0]));
                 DBHelper.batchPut(batch, DataEntryPrefix.IX_Accounts, groupId, value);
-                for (HashSet<CoinReference> coins : accounts_tracked.values())
+                for (HashSet<CoinReference> coins : accounts_tracked.values()) {
                     coins.clear();
+                }
             }
             for (CoinReference reference : coins_tracked.keySet()) {
                 DBHelper.batchDelete(batch, DataEntryPrefix.ST_Coin, SerializeHelper.toBytes(reference));

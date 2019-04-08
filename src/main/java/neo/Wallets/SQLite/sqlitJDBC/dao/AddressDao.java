@@ -35,7 +35,7 @@ public class AddressDao {
 
     public int deleteTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="DROP TABLE Address;";
+        String sql="DROP TABLE IF EXISTS Address;";
         return jt.update(sql,null);
     }
 

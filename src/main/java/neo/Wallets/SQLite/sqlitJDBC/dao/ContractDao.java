@@ -39,7 +39,7 @@ public class ContractDao {
 
     public int deleteTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="DROP TABLE Contract;";
+        String sql="DROP TABLE IF EXISTS  Contract;";
         return jt.update(sql,null);
     }
 

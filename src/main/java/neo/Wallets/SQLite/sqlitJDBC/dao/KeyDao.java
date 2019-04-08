@@ -35,7 +35,7 @@ public class KeyDao {
 
     public int deleteTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="DROP TABLE Key;";
+        String sql="DROP TABLE IF EXISTS Key;";
         return jt.update(sql,null);
     }
 
