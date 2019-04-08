@@ -6,8 +6,9 @@ import java.util.HashSet;
 
 import akka.actor.ActorRef;
 import neo.UInt256;
-import neo.log.notr.TR;
 import neo.network.p2p.payloads.VersionPayload;
+
+import neo.log.notr.TR;
 
 /**
  * Task session, store each remote node's task. It has two main task list, the `tasks` is the

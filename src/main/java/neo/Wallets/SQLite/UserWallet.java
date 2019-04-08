@@ -1,9 +1,6 @@
 package neo.Wallets.SQLite;
 
-import org.bouncycastle.crypto.CryptoException;
-
 import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -22,7 +19,6 @@ import neo.UInt256;
 import neo.Wallets.Coin;
 import neo.Wallets.KeyPair;
 import neo.Wallets.SQLite.sqlitJDBC.DataAccessException;
-import neo.Wallets.TransferOutput;
 import neo.Wallets.Wallet;
 import neo.Wallets.WalletAccount;
 import neo.Wallets.WalletIndexer;
@@ -40,9 +36,6 @@ import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.smartcontract.ContractParameterType;
 import neo.smartcontract.EventHandler;
-
-import static neo.network.p2p.payloads.TransactionType.ClaimTransaction;
-import static org.bouncycastle.asn1.x500.style.RFC4519Style.o;
 
 /**
  * @author doubi.liu

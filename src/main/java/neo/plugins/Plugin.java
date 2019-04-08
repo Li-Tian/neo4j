@@ -1,16 +1,10 @@
 package neo.plugins;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.FileSystems;
@@ -44,9 +38,10 @@ public abstract class Plugin {
     private static final ArrayList<IMemoryPoolTxObserverPlugin> txObserverPlugins = new ArrayList<IMemoryPoolTxObserverPlugin>();
     private static final HashMap<WatchKey, Path> keys = new HashMap<WatchKey, Path>();
 
-    private static final String pluginsPath = System.getProperty("user.dir") + "/Plugins";
+    private static final String pluginsPath = Paths.get(System.getProperty("user.dir")).resolve("Plugins").toString();
     private static WatchService configWatcher = null;
     private boolean hasBeenInitialized = false;
+    private Thread fileListener = null;
 
     private static AtomicInteger suspend = new AtomicInteger(0);
 
@@ -141,7 +136,7 @@ public abstract class Plugin {
                 }
                 configWatcher = FileSystems.getDefault().newWatchService();
                 registerAll(toWatch);
-                Thread thread = new Thread() {
+                fileListener = new Thread() {
                     public void run() {
                         try {
                             WatchKey key = configWatcher.take();
@@ -181,7 +176,7 @@ public abstract class Plugin {
                         }
                     }
                 };
-                thread.start();
+                fileListener.start();
                 hasBeenInitialized = true;
             } catch (IOException e) {
                 TR.error(e);
@@ -225,7 +220,7 @@ public abstract class Plugin {
 
     protected Config getConfiguration() {
         TR.enter();
-        Config config = ConfigFactory.load("protocol.json").getConfig("PluginConfiguration");
+        Config config = ConfigFactory.parseFile(new File(configFile())).getConfig("PluginConfiguration");
         return TR.exit(config);
     }
 
@@ -299,7 +294,14 @@ public abstract class Plugin {
     }
 
     protected static void suspendNodeStartup() {
+        TR.enter();
         suspend.incrementAndGet();
         system.suspendNodeStartup();
+        TR.exit();
+    }
+
+    protected Thread getFileListener() {
+        TR.enter();
+        return TR.exit(fileListener);
     }
 }

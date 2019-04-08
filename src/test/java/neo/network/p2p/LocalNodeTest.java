@@ -41,7 +41,7 @@ public class LocalNodeTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(LocalNodeTest.class.getSimpleName());
 
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
@@ -60,7 +60,7 @@ public class LocalNodeTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(LocalNodeTest.class.getSimpleName());
     }
 
     @Test

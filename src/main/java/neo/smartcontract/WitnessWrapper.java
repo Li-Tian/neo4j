@@ -39,14 +39,15 @@ public class WitnessWrapper {
                     wrappers[i].VerificationScript = snapshot.Contracts[hashes[i]].Script;
         }*/
 
-        if (Arrays.asList(wrappers).stream().anyMatch(p -> p.verificationScript.length == 0)) {
-            UInt160[] hashes = verifiable.getScriptHashesForVerifying(snapshot);
-            for (int i = 0; i < wrappers.length; i++) {
-                if (wrappers[i].verificationScript.length == 0) {
-                    wrappers[i].verificationScript = snapshot.getContracts().get(hashes[i]).script;
-                }
+//       TODO   comment by luc 2019/4/2
+//        if (Arrays.asList(wrappers).stream().anyMatch(p -> p.verificationScript.length == 0)) {
+        UInt160[] hashes = verifiable.getScriptHashesForVerifying(snapshot);
+        for (int i = 0; i < wrappers.length; i++) {
+            if (wrappers[i].verificationScript.length == 0) {
+                wrappers[i].verificationScript = snapshot.getContracts().get(hashes[i]).script;
             }
         }
+//        }
         //LINQ END
         return wrappers;
     }

@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorSystem;
@@ -34,6 +36,8 @@ import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
+import neo.csharp.Ushort;
+import neo.exception.AggregateException;
 import neo.exception.InvalidOperationException;
 import neo.io.SerializeHelper;
 import neo.io.actors.Idle;
@@ -46,30 +50,41 @@ import neo.network.p2p.LocalNode;
 import neo.network.p2p.TaskManager;
 import neo.network.p2p.payloads.AssetType;
 import neo.network.p2p.payloads.Block;
+import neo.network.p2p.payloads.ClaimTransaction;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.ConsensusPayload;
+import neo.network.p2p.payloads.EnrollmentTransaction;
 import neo.network.p2p.payloads.Header;
+import neo.network.p2p.payloads.InvocationTransaction;
 import neo.network.p2p.payloads.IssueTransaction;
 import neo.network.p2p.payloads.MinerTransaction;
+import neo.network.p2p.payloads.PublishTransaction;
 import neo.network.p2p.payloads.RegisterTransaction;
 import neo.network.p2p.payloads.StateDescriptor;
+import neo.network.p2p.payloads.StateTransaction;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionOutput;
+import neo.network.p2p.payloads.TransactionResult;
 import neo.network.p2p.payloads.TransactionType;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.Snapshot;
 import neo.persistence.Store;
+import neo.plugins.IPersistencePlugin;
 import neo.plugins.Plugin;
+import neo.smartcontract.ApplicationEngine;
 import neo.smartcontract.Contract;
+import neo.smartcontract.NotifyEventArgs;
+import neo.smartcontract.TriggerType;
 import neo.vm.OpCode;
+import neo.vm.StackItem;
 
 /**
  * The core Actor of blockChain
  */
 public class Blockchain extends AbstractActor {
 
-    public class Register {
+    public static class Register {
     }
 
     public class ApplicationExecuted {
@@ -598,7 +613,7 @@ public class Blockchain extends AbstractActor {
     }
 
     private void persist(Block block) {
-        /*TR.enter();
+        TR.enter();
         Snapshot snapshot = getSnapshot();
         ArrayList<ApplicationExecuted> all_application_executed = new ArrayList<ApplicationExecuted>();
         snapshot.setPersistingBlock(block);
@@ -749,7 +764,7 @@ public class Blockchain extends AbstractActor {
                         vmState = engine.state;
                         gasConsumed = engine.getGasConsumed();
                         stack = items.toArray(new StackItem[items.size()]);
-                        notifications = engine.getService().notifications.toArray();
+                        notifications = engine.getService().getNotifications().toArray(new NotifyEventArgs[engine.getService().getNotifications().size()]);
                     }
                 });
             }
@@ -795,39 +810,7 @@ public class Blockchain extends AbstractActor {
         }
         updateCurrentSnapshot();
         onPersistCompleted(block);
-        TR.exit();*/
-
-
-        // TODO 待移除，等上面代码完成ok，移除下面代码，目前是方便测试
-        Snapshot snapshot = getSnapshot();
-        if (block.index.intValue() == headerIndex.size()) {
-            headerIndex.add(block.hash());
-            snapshot.getHeaderHashIndex().getAndChange().hash = block.hash();
-            snapshot.getHeaderHashIndex().getAndChange().index = block.index;
-        }
-        snapshot.setPersistingBlock(block);
-        snapshot.getBlocks().add(block.hash(), new BlockState() {
-            {
-                systemFeeAmount = snapshot.getSysFeeAmount(block.prevHash) + Fixed8.toLong(Helper.sum(Arrays.asList(block.transactions), p -> p.getSystemFee()));
-                trimmedBlock = block.trim();
-            }
-        });
-
-        for (Transaction tx : block.transactions) {
-            snapshot.getTransactions().add(tx.hash(), new TransactionState() {
-                {
-                    blockIndex = block.index;
-                    transaction = tx;
-                }
-            });
-        }
-
-        snapshot.getBlockHashIndex().getAndChange().hash = block.hash();
-        snapshot.getBlockHashIndex().getAndChange().index = block.index;
-
-        snapshot.commit();
-        updateCurrentSnapshot();
-        onPersistCompleted(block);
+        TR.exit();
     }
 
     @Override

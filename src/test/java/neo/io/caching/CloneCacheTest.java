@@ -7,21 +7,15 @@ import java.util.Collection;
 import java.util.Map;
 
 import neo.UInt256;
+import neo.csharp.BitConverter;
 import neo.exception.KeyNotFoundException;
 
 public class CloneCacheTest {
 
-    private UInt256 u1 = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01");
-    private UInt256 u2 = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02");
-    private UInt256 u3 = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff03");
-    private UInt256 u4 = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff04");
-    private UInt256 u5 = UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff05");
-
-    private TransactionDemo t1 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff01"));
-    private TransactionDemo t2 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff02"));
-    private TransactionDemo t3 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff03"));
-    private TransactionDemo t4 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff04"));
-    private TransactionDemo t5 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff00ff05"));
+    private TransactionDemo t1 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff001f00ff00ff00ff00ff00ff00"));
+    private TransactionDemo t2 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff002f00ff00ff00ff00ff00ff00"));
+    private TransactionDemo t3 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff003f00ff00ff00ff00ff00ff00"));
+    private TransactionDemo t4 = new TransactionDemo(UInt256.parse("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff004f00ff00ff00ff00ff00ff00"));
 
 
     @Test()
@@ -50,7 +44,6 @@ public class CloneCacheTest {
     @Test
     public void commit() {
         DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
-//        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(DataCacheTest);
         TestDataCache.add(t1.hash(), t1);
         TestDataCache.add(t2.hash(), t2);
         TestDataCache.add(t3.hash(), t3);
@@ -71,7 +64,6 @@ public class CloneCacheTest {
     @Test(expected = KeyNotFoundException.class)
     public void delete() {
         DataCacheTest<UInt256, TransactionDemo> TestDataCache = new DataCacheTest<>();
-//        CloneCache<UInt256, TransactionDemo> cloneCache = new CloneCache<UInt256, TransactionDemo>(DataCacheTest);
         TestDataCache.add(t1.hash(), t1);
         TestDataCache.add(t2.hash(), t2);
 
@@ -115,7 +107,8 @@ public class CloneCacheTest {
         cloneCache.add(t3.hash(), t3);
         cloneCache.add(t4.hash(), t4);
 
-        Collection<Map.Entry<UInt256, TransactionDemo>> collection = cloneCache.find("0xa400ff00ff00ff00ff00ff00ff00ff00ff00ff00".getBytes());
+        byte[] prefix = BitConverter.reverse(BitConverter.hexToBytes("0x00ff00ff00ff00ff00ff00"));
+        Collection<Map.Entry<UInt256, TransactionDemo>> collection = cloneCache.find(prefix);
         Assert.assertEquals(4, collection.size());
     }
 

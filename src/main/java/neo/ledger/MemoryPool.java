@@ -272,10 +272,10 @@ public class MemoryPool {
                                              ConcurrentSkipListSet<PoolItem> unverifiedTxSorted,
                                              Out<ConcurrentSkipListSet<PoolItem>> sortedPool) {
         TR.enter();
-        PoolItem minItem = unverifiedTxSorted.first();
+        PoolItem minItem = unverifiedTxSorted.isEmpty() ? null : unverifiedTxSorted.first();
         sortedPool.set(minItem != null ? unverifiedTxSorted : null);
 
-        PoolItem verifiedMin = verifiedTxSorted.first();
+        PoolItem verifiedMin = verifiedTxSorted.isEmpty() ? null : verifiedTxSorted.first();
         if (verifiedMin == null) {
             return TR.exit(minItem);
         }
@@ -380,7 +380,7 @@ public class MemoryPool {
         _unsortedTransactions.remove(hash);
         ConcurrentSkipListSet<PoolItem> pool = item.get().tx.isLowPriority()
                 ? _sortedLowPrioTransactions : _sortedHighPrioTransactions;
-        pool.remove(item);
+        pool.remove(item.get());
         return TR.exit(true);
     }
 
@@ -394,7 +394,7 @@ public class MemoryPool {
         _unverifiedTransactions.remove(hash);
         ConcurrentSkipListSet<PoolItem> pool = item.get().tx.isLowPriority()
                 ? _unverifiedSortedLowPriorityTransactions : _unverifiedSortedHighPriorityTransactions;
-        pool.remove(item);
+        pool.remove(item.get());
         return TR.exit(true);
     }
 
@@ -466,7 +466,7 @@ public class MemoryPool {
         ArrayList<PoolItem> invalidItems = new ArrayList<PoolItem>();
 
         // Since unverifiedSortedTxPool is ordered in an ascending manner, we take from the end.
-        for (PoolItem item : Arrays.copyOf(unverifiedSortedTxPool.descendingSet().toArray(new PoolItem[unverifiedSortedTxPool.size()]), count)) {
+        for (PoolItem item : Arrays.copyOf(unverifiedSortedTxPool.descendingSet().toArray(new PoolItem[unverifiedSortedTxPool.size()]), Math.min(unverifiedSortedTxPool.size(), count))) {
             ArrayList<Transaction> transactions = new ArrayList<Transaction>();
             _unsortedTransactions.forEach((p, q) -> transactions.add(q.tx));
             if (item.tx.verify(snapshot, transactions)) {

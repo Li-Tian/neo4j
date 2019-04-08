@@ -28,12 +28,12 @@ public class StateDescriptorTest extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(StateDescriptorTest.class.getSimpleName());
     }
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractBlockchainTest.tearDown();
+        AbstractBlockchainTest.tearDown(StateDescriptorTest.class.getSimpleName());
     }
 
     @Test

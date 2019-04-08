@@ -66,7 +66,7 @@ public class RemoteNodeTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(RemoteNodeTest.class.getSimpleName());
 
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
@@ -85,7 +85,7 @@ public class RemoteNodeTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(RemoteNodeTest.class.getSimpleName());
     }
 
     @Test

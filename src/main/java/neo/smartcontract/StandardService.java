@@ -141,7 +141,7 @@ public class StandardService implements IInteropService, IDisposable {
         try {
             hash = (method.length == 4)
                     ? BitConverter.toUint(method)
-                    : Helper.toInteropMethodHash(new String(method,"ascii"));
+                    : Helper.toInteropMethodHash(new String(method, "ascii"));
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -296,11 +296,10 @@ public class StandardService implements IInteropService, IDisposable {
                 } else {
                     writer.writeByte(StackItemType.Array.getStackItemType());
                 }
-                writer.writeInt(((Array) item).getCount());
+                writer.writeVarInt(((Array) item).getCount());
                 for (int i = ((Array) item).getCount() - 1; i >= 0; i--) {
                     unserialized.push(((Array) item).getArrayItem(i));
                 }
-                break;
             } else if (item instanceof neo.vm.Types.Map) {
                 //LINQ START
 /*                if (serialized.Any(p = > ReferenceEquals(p, map))){
@@ -313,7 +312,7 @@ public class StandardService implements IInteropService, IDisposable {
                 //LINQ END
                 serialized.add(item);
                 writer.writeByte(StackItemType.Map.getStackItemType());
-                writer.writeInt(((neo.vm.Types.Map) item).getCount());
+                writer.writeVarInt(((neo.vm.Types.Map) item).getCount());
                 //// TODO: 2019/3/27
                 //不清楚为何map要reserve
                 for (Map.Entry<StackItem, StackItem> pair : ((neo.vm.Types.Map) item)) {
@@ -330,8 +329,8 @@ public class StandardService implements IInteropService, IDisposable {
     }
 
     protected boolean runtimeSerialize(ExecutionEngine engine) {
-        ByteArrayOutputStream ms=new ByteArrayOutputStream();
-        BinaryWriter writer = new BinaryWriter(new ByteArrayOutputStream());
+        ByteArrayOutputStream ms = new ByteArrayOutputStream();
+        BinaryWriter writer = new BinaryWriter(ms);
         {
             try {
                 SerializeStackItem(engine.getCurrentContext().evaluationStack.pop(), writer);
@@ -339,6 +338,7 @@ public class StandardService implements IInteropService, IDisposable {
                 return false;
             }
             writer.flush();
+
             if (ms.size() > ApplicationEngine.MaxItemSize.intValue())
                 return false;
             engine.getCurrentContext().evaluationStack.push(StackItem.getStackItem(ms.toByteArray()));

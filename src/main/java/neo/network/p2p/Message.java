@@ -10,6 +10,7 @@ import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 import neo.exception.FormatException;
 import neo.io.SerializeHelper;
+
 import neo.log.notr.TR;
 
 /**

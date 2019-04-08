@@ -17,7 +17,6 @@ import neo.NeoSystem;
 import neo.UInt256;
 import neo.cryptography.BloomFilter;
 import neo.cryptography.Helper;
-import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.exception.ProtocolViolationException;
 import neo.io.SerializeHelper;
@@ -25,7 +24,6 @@ import neo.io.actors.PriorityMailbox;
 import neo.io.caching.DataCache;
 import neo.ledger.BlockState;
 import neo.ledger.Blockchain;
-import neo.log.tr.TR;
 import neo.network.p2p.payloads.AddrPayload;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.ConsensusPayload;
@@ -43,6 +41,8 @@ import neo.network.p2p.payloads.NetworkAddressWithTime;
 import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.VersionPayload;
 import neo.persistence.Snapshot;
+
+import neo.log.notr.TR;
 
 import static neo.network.p2p.payloads.InventoryType.Block;
 

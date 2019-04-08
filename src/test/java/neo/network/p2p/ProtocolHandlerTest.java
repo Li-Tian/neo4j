@@ -157,7 +157,7 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        AbstractLeveldbTest.setUp();
+        AbstractLeveldbTest.setUp(ProtocolHandlerTest.class.getSimpleName());
 
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
@@ -176,7 +176,7 @@ public class ProtocolHandlerTest extends AbstractLeveldbTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown();
+        AbstractLeveldbTest.tearDown(ProtocolHandlerTest.class.getSimpleName());
     }
 
     @Test

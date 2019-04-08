@@ -29,14 +29,12 @@ public class InvocationTransactionTest extends AbstractBlockchainTest {
 
     @BeforeClass
     public static void setUp() throws IOException {
-        TR.debug("----  InvocationTransactionTest setUp......");
-        AbstractBlockchainTest.setUp();
+        AbstractBlockchainTest.setUp(InvocationTransactionTest.class.getSimpleName());
     }
 
     @AfterClass
     public static void tearDown() throws IOException {
-        TR.debug("----  InvocationTransactionTest tearDown......");
-        AbstractBlockchainTest.tearDown();
+        AbstractBlockchainTest.tearDown(InvocationTransactionTest.class.getSimpleName());
     }
 
     @Test

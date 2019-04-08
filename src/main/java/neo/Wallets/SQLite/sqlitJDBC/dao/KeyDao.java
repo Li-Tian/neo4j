@@ -25,7 +25,7 @@ public class KeyDao {
 
     public int createTable(Connection conn) throws DataAccessException {
         JdbcTemplate jt=new JdbcTemplate(conn);
-        String sql="CREATE TABLE \"Key\" (\n" +
+        String sql="CREATE TABLE IF NOT EXISTS \"Key\" (\n" +
                 "  \"Name\" VarChar NOT NULL,\n" +
                 "  \"Value\" VarBinary NOT NULL,\n" +
                 "  CONSTRAINT \"PK_Key\" PRIMARY KEY (\"Name\")\n" +
@@ -86,7 +86,7 @@ public class KeyDao {
         }, new RowCallBackHandler() {
             @Override
             public void processRow(ResultSet rs) throws SQLException {
-                if(rs.next()){
+                while(rs.next()){
                     Key tempKey=new Key();
                     tempKey.setName(rs.getString(1));
                     tempKey.setValue(rs.getBytes(2));

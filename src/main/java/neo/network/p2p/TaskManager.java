@@ -23,11 +23,12 @@ import neo.UInt256;
 import neo.csharp.Uint;
 import neo.io.actors.PriorityMailbox;
 import neo.ledger.Blockchain;
-import neo.log.tr.TR;
 import neo.network.p2p.payloads.GetBlocksPayload;
 import neo.network.p2p.payloads.InvPayload;
 import neo.network.p2p.payloads.InventoryType;
 import neo.network.p2p.payloads.VersionPayload;
+
+import neo.log.notr.TR;
 
 /**
  * Task manager, it has two main functions: 1) sync header and block with all the connected peers.

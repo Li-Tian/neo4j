@@ -9,11 +9,16 @@ import neo.persistence.leveldb.LevelDBStore;
 
 public class AbstractLeveldbTest {
 
-    protected final static String LEVELDB_TEST_PATH = "Chain_test";
     protected static LevelDBStore store;
 
-    public static void setUp() throws IOException {
-        File file = new File(LEVELDB_TEST_PATH);
+    /**
+     * init leveldb
+     *
+     * @param leveldbName leveldb file name
+     */
+    public static void setUp(String leveldbName) throws IOException {
+        String leveldbPath = AbstractLeveldbTest.class.getClassLoader().getResource("").getPath() + leveldbName + "_leveldb";
+        File file = new File(leveldbPath);
         if (file.exists()) {
             for (File subFile : file.listFiles()) {
                 subFile.delete();
@@ -21,13 +26,21 @@ public class AbstractLeveldbTest {
             file.delete();
         }
 
-        store = new LevelDBStore(LEVELDB_TEST_PATH);
+        store = new LevelDBStore(leveldbPath);
     }
 
-    public static void tearDown() throws IOException {
+
+    /**
+     * tear down levedb
+     *
+     * @param leveldbName leveldb file name
+     */
+    public static void tearDown(String leveldbName) throws IOException {
+        String leveldbPath = AbstractLeveldbTest.class.getClassLoader().getResource("").getPath() + leveldbName + "_leveldb";
         store.close();
+
         // free leveldb file
-        File file = new File(LEVELDB_TEST_PATH);
+        File file = new File(leveldbPath);
         if (file.exists()) {
             for (File subFile : file.listFiles()) {
                 subFile.delete();
@@ -35,6 +48,5 @@ public class AbstractLeveldbTest {
             file.delete();
         }
     }
-
 
 }
