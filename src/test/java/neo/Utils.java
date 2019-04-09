@@ -35,12 +35,19 @@ public class Utils {
     }
 
 
-    public static void deleteFolder(String path){
+    public static void deleteFolder(String path) {
         File file = new File(path);
         if (file.exists()) {
             for (File subFile : file.listFiles()) {
                 subFile.delete();
             }
+            file.delete();
+        }
+    }
+
+    public static void deleteFile(String path) {
+        File file = new File(path);
+        if (file.exists()) {
             file.delete();
         }
     }
