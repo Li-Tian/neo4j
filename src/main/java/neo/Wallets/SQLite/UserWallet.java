@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import neo.Fixed8;
+import neo.TimeProvider;
 import neo.UInt160;
 import neo.UInt256;
 import neo.Wallets.Coin;
@@ -24,7 +25,6 @@ import neo.Wallets.WalletAccount;
 import neo.Wallets.WalletIndexer;
 import neo.Wallets.WalletTransactionEventArgs;
 import neo.cryptography.Helper;
-import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.Ushort;
 import neo.io.SerializeHelper;
@@ -145,25 +145,25 @@ public class UserWallet extends Wallet {
                     //LINQ START
 /*                  Account db_account = ctx.accounts.FirstOrDefault(p -> p.publicKeyHash
                         .SequenceEqual(account.Key.PublicKeyHash.ToArray()));*/
-                    Account db_account = ctx.firstOrDefaultAccount(account.getKey()
-                            .getPublicKeyHash().toArray());
+                    byte[] publicKeyHash = account.getKey().getPublicKeyHash().toArray();
+                    Account db_account = ctx.firstOrDefaultAccount(publicKeyHash);
+
                     //LINQ END
                     if (db_account == null) {
-                        Account tempAccount = new Account(encryptedPrivateKey, account.getKey().getPublicKeyHash()
-                                .toArray());
+                        Account tempAccount = new Account(encryptedPrivateKey, account.getKey().getPublicKeyHash().toArray());
                         db_account = ctx.insertAccount(tempAccount);
                     } else {
                         db_account.privateKeyEncrypted = encryptedPrivateKey;
                         ctx.updateAccount(db_account);
-
                     }
                 }
                 if (account.contract != null) {
                     //LINQ START
 /*                Contract db_contract = ctx.contracts.FirstOrDefault(p = > p.ScriptHash.SequenceEqual
                         (account.contract.scriptHash.ToArray()))*/
-                    Contract db_contract = ctx.firstOrDefaultContract(account.contract.scriptHash
-                            ().toArray());
+                    byte[] scriptHash = account.contract.scriptHash().toArray();
+                    Contract db_contract = ctx.firstOrDefaultContract(scriptHash);
+
                     //LINQ END
                     if (db_contract != null) {
                         db_contract.publicKeyHash = account.key.getPublicKeyHash().toArray();
@@ -175,6 +175,7 @@ public class UserWallet extends Wallet {
                         tempContract.setScriptHash(account.contract.scriptHash().toArray());
                         tempContract.setPublicKeyHash(account.getKey().getPublicKeyHash().toArray());
                         ctx.insertContract(tempContract);
+                        // TODO account.key = null  throw null exception
                     }
                 }
 
@@ -220,13 +221,12 @@ public class UserWallet extends Wallet {
         tempEvent.transaction = tx;
         Set<UInt160> tempSet = Arrays.asList(tx.witnesses).stream().map(p -> p.scriptHash())
                 .collect(Collectors.toSet());
-        tempSet.addAll(Arrays.asList(tx.outputs).stream().map(q -> q
-                .scriptHash).collect(Collectors.toSet()));
+        tempSet.addAll(Arrays.asList(tx.outputs).stream().map(q -> q.scriptHash).collect(Collectors.toSet()));
         tempEvent.relatedAccounts = tempSet.stream().filter(p -> contains(p)).toArray(UInt160[]::new);
         tempEvent.height = null;
-        tempEvent.time = Uint.parseUint(String.valueOf(Calendar.getInstance()
-                .getTimeInMillis() / 1000));
+        tempEvent.time = Uint.parseUint(String.valueOf(Calendar.getInstance().getTimeInMillis() / 1000));
         walletTransaction.invoke(this, tempEvent);
+
 /*        walletTransaction.invoke(this, new WalletTransactionEventArgs
         {
             Transaction = tx,
@@ -297,12 +297,14 @@ public class UserWallet extends Wallet {
         VerificationContract contract = new VerificationContract();
         contract.script = neo.smartcontract.Contract.createSignatureRedeemScript(key.publicKey);
         contract.parameterList = new ContractParameterType[]{ContractParameterType.Signature};
+
         UserWalletAccount account = new UserWalletAccount(contract.scriptHash());
         account.key = key;
         account.contract = contract;
         addAccount(account, false);
         return account;
     }
+
 
     @Override
     public WalletAccount createAccount(neo.smartcontract.Contract contract, KeyPair key) {
@@ -313,14 +315,18 @@ public class UserWallet extends Wallet {
             verification_contract.parameterList = contract.parameterList;
         }
         UserWalletAccount account = new UserWalletAccount(verification_contract.scriptHash());
+        account.key = key;
         account.contract = verification_contract;
         addAccount(account, false);
         return account;
     }
 
+    /**
+     * TODO This method cannot be used, it will throws KeyPair NullPointerException
+     */
+    @Deprecated
     @Override
     public WalletAccount createAccount(neo.smartcontract.Contract contract) {
-        KeyPair key = null;
         VerificationContract verification_contract = (VerificationContract) contract;
         if (verification_contract == null) {
             verification_contract = new VerificationContract();
@@ -329,10 +335,15 @@ public class UserWallet extends Wallet {
         }
         UserWalletAccount account = new UserWalletAccount(verification_contract.scriptHash());
         account.contract = verification_contract;
+        account.key = null;
         addAccount(account, false);
         return account;
     }
 
+    /**
+     * TODO This method cannot be used, it will throws KeyPair NullPointerException
+     */
+    @Deprecated
     @Override
     public WalletAccount createAccount(UInt160 scriptHash) {
         UserWalletAccount account = new UserWalletAccount(scriptHash);
@@ -420,7 +431,7 @@ public class UserWallet extends Wallet {
         indexer.walletTransaction.removeListener(this);
     }
 
-    private byte[] encryptPrivateKey(byte[] decryptedPrivateKey) {
+    public byte[] encryptPrivateKey(byte[] decryptedPrivateKey) {
         return Helper.aesEncrypt(decryptedPrivateKey, masterKey, iv);
     }
 
@@ -429,9 +440,12 @@ public class UserWallet extends Wallet {
 
         //LINQ START
         //return FindUnspentCoins(FindUnspentCoins(from).ToArray().Where(p => GetAccount(p.Output.ScriptHash).Contract.Script.IsSignatureContract()), asset_id, amount) ?? base.FindUnspentCoins(asset_id, amount, from);
-        Coin[] tempArray = findUnspentCoins(StreamSupport.stream(findUnspentCoins(from).spliterator(), false)
-                .filter(p -> neo.smartcontract.Helper.isSignatureContract(getAccount(p.output.scriptHash).contract
-                        .script)).collect(Collectors.toList()), asset_id, amount);
+        Iterable<Coin> iterable = StreamSupport.stream(findUnspentCoins(from).spliterator(), false)
+                .filter(p -> neo.smartcontract.Helper.isSignatureContract(getAccount(p.output.scriptHash).contract.script))
+                .collect(Collectors.toList());
+
+        Coin[] tempArray = findUnspentCoins(iterable, asset_id, amount);
+
         return tempArray != null ? tempArray : super.findUnspentCoins(asset_id, amount, from);
         //LINQ END
     }
@@ -470,32 +484,23 @@ public class UserWallet extends Wallet {
             //inputs = new HashSet<CoinReference>(unconfirmed.values().SelectMany(p = > p.Inputs));
             //claims = new HashSet<CoinReference>(unconfirmed.values().OfType < ClaimTransaction > ()
             //        .SelectMany(p -> p.claims));
-
- /*           coins_unconfirmed = unconfirmed.values().Select(tx -> tx.outputs.Select((o, i) = >
-                    new Coin
-            {
-                Reference = new CoinReference
-                {
+            /* coins_unconfirmed = unconfirmed.values().Select(tx -> tx.outputs.Select((o, i) = >
+                    new Coin{
+                Reference = new CoinReference{
                     PrevHash = tx.Hash,
-                            PrevIndex = (ushort) i
+                    PrevIndex = (ushort) i
                 },
                 Output = o,
-                        State = CoinState.Unconfirmed
-            })).SelectMany(p = > p).ToArray();*/
+                State = CoinState.Unconfirmed
+            })).SelectMany(p = > p).ToArray();  */
 
-            inputs = new HashSet<CoinReference>(unconfirmed.values().stream().flatMap(p -> Arrays
-                    .asList(p.inputs).stream()).collect(Collectors.toSet()));
-            claims = new HashSet<CoinReference>(unconfirmed.values().stream().filter(
-                    p -> {
-                        if (p instanceof neo.network.p2p.payloads.ClaimTransaction) {
-                            return true;
-                        } else {
-                            return false;
-                        }
-                    }
-            ).flatMap(q -> Arrays.asList(((ClaimTransaction) q).claims).stream()).collect(Collectors
-                    .toSet()));
-
+            inputs = new HashSet<>(unconfirmed.values().stream()
+                    .flatMap(p -> Arrays.asList(p.inputs).stream())
+                    .collect(Collectors.toSet()));
+            claims = new HashSet<>(unconfirmed.values().stream()
+                    .filter(p -> (p instanceof neo.network.p2p.payloads.ClaimTransaction))
+                    .flatMap(q -> Arrays.asList(((ClaimTransaction) q).claims).stream())
+                    .collect(Collectors.toSet()));
 
             coins_unconfirmed = unconfirmed.values().stream().map(p -> {
                 TransactionOutput[] transactionOutputArray = p.outputs;
@@ -510,7 +515,6 @@ public class UserWallet extends Wallet {
                     coinlist.add(tempCoin);
                 }
                 return coinlist;
-
             }).flatMap(q -> q.stream()).toArray(Coin[]::new);
         }
         //LINQ END
@@ -520,7 +524,7 @@ public class UserWallet extends Wallet {
                     Coin tempCoin = new Coin();
                     tempCoin.reference = coin.reference;
                     tempCoin.output = coin.output;
-                    tempCoin.state = new CoinState((byte) (coin.state.value() | CoinState.Spent.value()));
+                    tempCoin.state = coin.state.OR(CoinState.Spent);
                     resultSet.add(tempCoin);
                 }
                 continue;
@@ -530,7 +534,7 @@ public class UserWallet extends Wallet {
             resultSet.add(coin);
         }
         HashSet<UInt160> accounts_set = new HashSet<>();
-        accounts_set.addAll(StreamSupport.stream(accounts.spliterator(), false).collect(Collectors.toSet()));
+        accounts.forEach(p -> accounts_set.add(p));
         for (Coin coin : coins_unconfirmed) {
             if (accounts_set.contains(coin.output.scriptHash))
                 resultSet.add(coin);

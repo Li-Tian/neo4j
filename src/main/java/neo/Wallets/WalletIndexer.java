@@ -74,7 +74,8 @@ public class WalletIndexer implements IDisposable {
         }
     }
 
-    public WalletIndexer(){}
+    public WalletIndexer() {
+    }
 
     public WalletIndexer(String path) {
         DBFactory factory = new JniDBFactory();
@@ -402,7 +403,7 @@ public class WalletIndexer implements IDisposable {
                 }
                 byte[] value = SerializeHelper.toBytes(index.toArray(new UInt160[0]));
                 DBHelper.batchPut(batch, DataEntryPrefix.IX_Accounts, groupId, value);
-                db.write(batch, new WriteOptions());
+                db.write(batch);
             }
         }
     }
