@@ -696,7 +696,6 @@ public class ApplicationEngine extends ExecutionEngine {
 
     public static ApplicationEngine run(byte[] script, Snapshot snapshot, IScriptContainer
             container, Block persistingBlock, boolean testMode, Fixed8 extraGAS) {
-        extraGAS = null;
         if (persistingBlock == null) {
             if (snapshot.getPersistingBlock() == null) {
                 snapshot.setPersistingBlock(new Block());
@@ -735,11 +734,11 @@ public class ApplicationEngine extends ExecutionEngine {
         IScriptContainer container = null;
         Block persistingBlock = null;
         boolean testMode = false;
-        Fixed8 extraGAS = null;
+        Fixed8 extraGAS = new Fixed8();
 
         if (persistingBlock == null) {
             if (snapshot.getPersistingBlock() == null) {
-                snapshot.setPersistingBlock(new Block());
+
 
                 Block tempBlock = new Block();
                 tempBlock.version = Uint.ZERO;
@@ -756,6 +755,7 @@ public class ApplicationEngine extends ExecutionEngine {
                 tempwitness.verificationScript = new byte[0];
                 tempBlock.witness = tempwitness;
                 tempBlock.transactions = new Transaction[0];
+                snapshot.setPersistingBlock(tempBlock);
 
             } else {
                 snapshot.setPersistingBlock(snapshot.getPersistingBlock());
@@ -765,14 +765,13 @@ public class ApplicationEngine extends ExecutionEngine {
         }
         ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, container, snapshot, extraGAS, testMode);
         engine.loadScript(script);
-        engine.execute();
+        engine.execute2();
         return engine;
     }
 
 
     public static ApplicationEngine run(byte[] script, IScriptContainer container, Block
             persistingBlock, boolean testMode, Fixed8 extraGAS) {
-        extraGAS = null;//default(Fixed8);
         Snapshot snapshot = Blockchain.singleton().getStore().getSnapshot();
         return run(script, snapshot, container, persistingBlock, testMode, extraGAS);
     }
@@ -781,7 +780,7 @@ public class ApplicationEngine extends ExecutionEngine {
         IScriptContainer container = null;
         Block persistingBlock = null;
         boolean testMode = false;
-        Fixed8 extraGAS = null;
+        Fixed8 extraGAS = new Fixed8();
         Snapshot snapshot = Blockchain.singleton().getStore().getSnapshot();
         return run(script, snapshot, container, persistingBlock, testMode, extraGAS);
     }

@@ -6,8 +6,7 @@ import java.io.File;
 import java.util.Random;
 import java.util.function.Supplier;
 
-import neo.Wallets.KeyPair;
-import neo.Wallets.WalletAccount;
+import neo.wallets.KeyPair;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;

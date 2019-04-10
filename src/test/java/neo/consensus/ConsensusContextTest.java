@@ -18,10 +18,8 @@ import neo.MyNeoSystem;
 import neo.NeoSystem;
 import neo.UInt160;
 import neo.UInt256;
-import neo.Wallets.SQLite.Account;
-import neo.Wallets.WalletAccount;
+import neo.wallets.WalletAccount;
 import neo.cryptography.ecc.ECPoint;
-import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.exception.FormatException;
@@ -45,10 +43,7 @@ import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractBlockchainTest;
 import neo.persistence.AbstractLeveldbTest;
 import neo.persistence.Snapshot;
-import neo.smartcontract.Contract;
 import neo.vm.OpCode;
-
-import static org.junit.Assert.*;
 
 public class ConsensusContextTest extends AbstractBlockchainTest {
 

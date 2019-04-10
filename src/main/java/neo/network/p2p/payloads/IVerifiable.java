@@ -4,7 +4,7 @@ import java.io.ByteArrayOutputStream;
 
 import neo.Fixed8;
 import neo.UInt160;
-import neo.Wallets.KeyPair;
+import neo.wallets.KeyPair;
 import neo.cryptography.Crypto;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;

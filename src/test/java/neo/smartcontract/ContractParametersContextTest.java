@@ -13,7 +13,7 @@ import neo.Fixed8;
 import neo.MyNeoSystem;
 import neo.NeoSystem;
 import neo.UInt160;
-import neo.Wallets.KeyPair;
+import neo.wallets.KeyPair;
 import neo.consensus.MyWallet;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
@@ -99,7 +99,7 @@ public class ContractParametersContextTest extends AbstractLeveldbTest {
         Contract contract = Contract.createMultiSigContract(1, new ECPoint[]{pubKey});
         ContractParametersContext context = new ContractParametersContext(transaction);
         wallet.sign(context);
-        byte[] signature = neo.Wallets.Helper.sign(context.verifiable,key);
+        byte[] signature = neo.wallets.Helper.sign(context.verifiable,key);
         boolean success = context.addSignature(wallet.getAccount(pubKey).contract, key.publicKey, signature);
         Assert.assertEquals(true, success);
 

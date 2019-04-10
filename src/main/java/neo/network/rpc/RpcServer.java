@@ -37,9 +37,9 @@ import neo.NeoSystem;
 import neo.UInt160;
 import neo.UInt256;
 import neo.UIntBase;
-import neo.Wallets.AssetDescriptor;
-import neo.Wallets.NEP6.NEP6Wallet;
-import neo.Wallets.TransferOutput;
+import neo.wallets.AssetDescriptor;
+import neo.wallets.NEP6.NEP6Wallet;
+import neo.wallets.TransferOutput;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.Out;
@@ -70,9 +70,9 @@ import neo.plugins.IRpcPlugin;
 import neo.plugins.Plugin;
 import neo.smartcontract.ContractParameter;
 import neo.smartcontract.ContractParametersContext;
-import neo.Wallets.Coin;
-import neo.Wallets.Wallet;
-import neo.Wallets.WalletAccount;
+import neo.wallets.Coin;
+import neo.wallets.Wallet;
+import neo.wallets.WalletAccount;
 import neo.smartcontract.ApplicationEngine;
 import neo.vm.ScriptBuilder;
 import scala.concurrent.Await;
@@ -140,7 +140,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
             JsonArray array = new JsonArray();
             int resultStackSize = engine.resultStack.getCount();
             for (int i = 0; i < resultStackSize; i++) {
-                array.add(neo.VM.Helper.toParameter(engine.resultStack.peek(i)).toJson());
+                array.add(neo.vm.Helper.toParameter(engine.resultStack.peek(i)).toJson());
             }
             json.add("stack", array);
         } catch (InvalidOperationException e) {
@@ -216,12 +216,12 @@ public class RpcServer extends HttpServlet implements IDisposable {
                     TR.exit();
                     throw new RpcException(-400, "Access denied");
                 } else {
-                    UInt160 scriptHash = neo.Wallets.Helper.toScriptHash(_params.get(0).getAsString());
+                    UInt160 scriptHash = neo.wallets.Helper.toScriptHash(_params.get(0).getAsString());
                     WalletAccount account = wallet.getAccount(scriptHash);
                     return TR.exit(account.getKey().export());
                 }
             case "getaccountstate": {
-                UInt160 script_hash = neo.Wallets.Helper.toScriptHash(_params.get(0).getAsString());
+                UInt160 script_hash = neo.wallets.Helper.toScriptHash(_params.get(0).getAsString());
                 AccountState account = Blockchain.singleton().getStore().getAccounts().tryGet(script_hash);
                 if (account == null) {
                     account = new AccountState(script_hash);
@@ -511,7 +511,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                 _params.get(1).getAsJsonArray().forEach(p -> parameters.add(ContractParameter.fromJson(p.getAsJsonObject())));
                 byte[] script;
                 ScriptBuilder sb = new ScriptBuilder();
-                script = neo.VM.Helper.emitAppCall(sb, script_hash, parameters.toArray(new ContractParameter[parameters.size()])).toArray();
+                script = neo.vm.Helper.emitAppCall(sb, script_hash, parameters.toArray(new ContractParameter[parameters.size()])).toArray();
                 return TR.exit(getInvokeResult(script));
             }
             case "invokefunction": {
@@ -523,7 +523,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                 }
                 byte[] script;
                 ScriptBuilder sb = new ScriptBuilder();
-                script = neo.VM.Helper.emitAppCall(sb, script_hash, operation, args.toArray(new ContractParameter[args.size()])).toArray();
+                script = neo.vm.Helper.emitAppCall(sb, script_hash, operation, args.toArray(new ContractParameter[args.size()])).toArray();
                 return TR.exit(getInvokeResult(script));
             }
             case "invokescript": {
@@ -553,8 +553,8 @@ public class RpcServer extends HttpServlet implements IDisposable {
                 } else {
                     UIntBase assetId = UIntBase.parse(_params.get(0).getAsString());
                     AssetDescriptor descriptor = new AssetDescriptor(assetId);
-                    UInt160 from = neo.Wallets.Helper.toScriptHash(_params.get(1).getAsString());
-                    UInt160 to = neo.Wallets.Helper.toScriptHash(_params.get(2).getAsString());
+                    UInt160 from = neo.wallets.Helper.toScriptHash(_params.get(1).getAsString());
+                    UInt160 to = neo.wallets.Helper.toScriptHash(_params.get(2).getAsString());
                     BigDecimal value = BigDecimal.valueOf(_params.get(3).getAsDouble());
                     value.setScale(descriptor.decimals);
                     if (value.signum() <= 0) {
@@ -566,7 +566,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                         TR.exit();
                         throw new RpcException(-32602, "Invalid params");
                     }
-                    UInt160 change_address = _params.size() >= 6 ? neo.Wallets.Helper.toScriptHash(_params.get(5).getAsString()) : null;
+                    UInt160 change_address = _params.size() >= 6 ? neo.wallets.Helper.toScriptHash(_params.get(5).getAsString()) : null;
                     Transaction tx = wallet.makeTransaction(null, Arrays.asList(new TransferOutput[]
                             {
                                     new TransferOutput(assetId, value, to)
@@ -607,7 +607,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                         AssetDescriptor descriptor = new AssetDescriptor(asset_id);
                         outputs[i] = new TransferOutput(asset_id,
                                 BigDecimal.valueOf(object.get("value").getAsInt(), descriptor.decimals),
-                                neo.Wallets.Helper.toScriptHash(object.get("address").getAsString()));
+                                neo.wallets.Helper.toScriptHash(object.get("address").getAsString()));
                         if (outputs[i].value.signum() <= 0) {
                             TR.exit();
                             throw new RpcException(-32602, "Invalid params");
@@ -618,7 +618,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                         TR.exit();
                         throw new RpcException(-32602, "Invalid params");
                     }
-                    UInt160 change_address = _params.size() >= 3 ? neo.Wallets.Helper.toScriptHash(_params.get(2).getAsString()) : null;
+                    UInt160 change_address = _params.size() >= 3 ? neo.wallets.Helper.toScriptHash(_params.get(2).getAsString()) : null;
                     Transaction tx = wallet.makeTransaction(null, Arrays.asList(outputs), null, change_address, fee);
                     if (tx == null) {
                         TR.exit();
@@ -656,7 +656,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                 } else {
                     UIntBase assetId = UIntBase.parse(_params.get(0).getAsString());
                     AssetDescriptor descriptor = new AssetDescriptor(assetId);
-                    UInt160 scriptHash = neo.Wallets.Helper.toScriptHash(_params.get(1).getAsString());
+                    UInt160 scriptHash = neo.wallets.Helper.toScriptHash(_params.get(1).getAsString());
                     BigDecimal value = BigDecimal.valueOf(_params.get(2).getAsDouble());
                     value.setScale(descriptor.decimals);
                     if (value.signum() <= 0) {
@@ -668,7 +668,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                         TR.exit();
                         throw new RpcException(-32602, "Invalid params");
                     }
-                    UInt160 change_address = _params.size() >= 5 ? neo.Wallets.Helper.toScriptHash(_params.get(4).getAsString()) : null;
+                    UInt160 change_address = _params.size() >= 5 ? neo.wallets.Helper.toScriptHash(_params.get(4).getAsString()) : null;
                     Transaction tx = wallet.makeTransaction(null, Arrays.asList(new TransferOutput[]
                             {new TransferOutput(assetId, value, scriptHash)}), null, change_address, fee);
                     if (tx == null) {
@@ -704,7 +704,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
                 JsonObject json = new JsonObject();
                 UInt160 scriptHash;
                 try {
-                    scriptHash = neo.Wallets.Helper.toScriptHash(_params.get(0).getAsString());
+                    scriptHash = neo.wallets.Helper.toScriptHash(_params.get(0).getAsString());
                 } catch (Exception e) {
                     scriptHash = null;
                 }

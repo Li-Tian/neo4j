@@ -20,7 +20,6 @@ import neo.csharp.io.BinaryWriter;
 import neo.exception.FormatException;
 import neo.exception.InvalidOperationException;
 import neo.network.p2p.payloads.Witness;
-import neo.smartcontract.Helper;
 import neo.UInt160;
 import neo.cryptography.ecc.ECC;
 import neo.cryptography.ecc.ECPoint;
@@ -326,7 +325,7 @@ public class ContractParametersContext {
             List<ContractParameter> reversedArray = Arrays.asList(item.parameters);
             Collections.reverse(reversedArray);
             for (ContractParameter parameter : reversedArray.toArray(new ContractParameter[reversedArray.size()])) {
-                neo.VM.Helper.emitPush(sb, parameter);
+                neo.vm.Helper.emitPush(sb, parameter);
             }
             witnesses[i] = new Witness();
             witnesses[i].invocationScript = sb.toArray();

@@ -6,7 +6,7 @@ import java.net.InetSocketAddress;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import neo.Wallets.Wallet;
+import neo.wallets.Wallet;
 import neo.consensus.ConsensusService;
 import neo.ledger.Blockchain;
 import neo.log.tr.TR;
