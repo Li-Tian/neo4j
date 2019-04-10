@@ -3,6 +3,8 @@ package neo;
 import java.util.Calendar;
 import java.util.Date;
 
+import neo.csharp.Uint;
+
 public class TimeProvider {
     private static final TimeProvider Default = new TimeProvider();
     private static TimeProvider current = Default;
@@ -23,6 +25,10 @@ public class TimeProvider {
         int dstoff = cal.get(Calendar.DST_OFFSET);
         cal.add(Calendar.MILLISECOND, -(offset + dstoff));
         return cal.getTime();
+    }
+
+    public Uint getNow() {
+        return new Uint(Long.toString(System.currentTimeMillis() / 1000));
     }
 
     public static void resetToDefault() {

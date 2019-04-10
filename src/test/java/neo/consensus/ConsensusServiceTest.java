@@ -98,7 +98,7 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         snapshot = Blockchain.singleton().getSnapshot();
         int i = 0;
         for (WalletAccount account : wallet.getAccounts()) {
-            Fixed8 myVote =  Fixed8.fromDecimal(BigDecimal.valueOf(100000 - i * 100));
+            Fixed8 myVote = Fixed8.fromDecimal(BigDecimal.valueOf(100000 - i * 100));
             ValidatorState validatorState = new ValidatorState() {{
                 publicKey = account.getKey().publicKey;
                 registered = true;
@@ -302,17 +302,17 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
 
         // test ConsensusPayload event: case 1: ChangeView,  2, PrepareRequest, 3. PrepareResponse
         // case 1: ChangeView msg
-        ChangeView changeView = new ChangeView(){{
-            viewNumber  = 0x00;
+        ChangeView changeView = new ChangeView() {{
+            viewNumber = 0x00;
             newViewNumber = 0x01;
         }};
-       final byte[] tmp = SerializeHelper.toBytes(changeView);
-        ConsensusPayload consensusPayload = new ConsensusPayload(){{
+        final byte[] tmp = SerializeHelper.toBytes(changeView);
+        ConsensusPayload consensusPayload = new ConsensusPayload() {{
             version = ConsensusContext.VERSION;
-            validatorIndex = new Ushort((context.myIndex +1)% context.validators.length);
+            validatorIndex = new Ushort((context.myIndex + 1) % context.validators.length);
             prevHash = context.prevHash;
             blockIndex = context.blockIndex;
-           data = tmp;
+            data = tmp;
         }};
         neoSystem.consensus.tell(consensusPayload, testKit.testActor());
         testKit.expectNoMessage();
@@ -321,44 +321,44 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         // case 2: PrepareRequest (from Primary node)
         // 确定出 Primary
         context.reset();
-        if (context.primaryIndex.intValue() == context.myIndex){
+        if (context.primaryIndex.intValue() == context.myIndex) {
             context.state = context.state.or(ConsensusState.Primary);
-        }else{
+        } else {
             context.state = context.state.or(ConsensusState.Backup);
         }
 
         ECPoint primaryPoint = context.validators[context.primaryIndex.intValue()];
         KeyPair primaryKeyPair = null;
-        for (WalletAccount account: wallet.getAccounts()){
-            if (account.getKey().publicKey.compareTo(primaryPoint) == 0){
+        for (WalletAccount account : wallet.getAccounts()) {
+            if (account.getKey().publicKey.compareTo(primaryPoint) == 0) {
                 primaryKeyPair = account.getKey();
                 break;
             }
         }
 
-        MinerTransaction mx1 = new MinerTransaction(){{
+        MinerTransaction mx1 = new MinerTransaction() {{
             nonce = getNonce().uintValue();
         }};
-        ContractTransaction tx1 = new ContractTransaction(){{
+        ContractTransaction tx1 = new ContractTransaction() {{
             attributes = new TransactionAttribute[]{
-                new TransactionAttribute(){{
-                    usage = TransactionAttributeUsage.Remark1;
-                    data = "test 123".getBytes();
-                }}
-            } ;
+                    new TransactionAttribute() {{
+                        usage = TransactionAttributeUsage.Remark1;
+                        data = "test 123".getBytes();
+                    }}
+            };
         }};
 
-        PrepareRequest prepareRequest = new PrepareRequest(){{
+        PrepareRequest prepareRequest = new PrepareRequest() {{
             nonce = getNonce();
             nextConsensus = block3.nextConsensus;
             transactionHashes = new UInt256[]{mx1.hash(), tx1.hash()};
             minerTransaction = mx1;
         }};
 
-        Block proposalBlock = new Block(){{
+        Block proposalBlock = new Block() {{
             version = ConsensusContext.VERSION;
             prevHash = context.prevHash;
-            timestamp =new Uint((int) TimeProvider.current().utcNow().getTime());
+            timestamp = TimeProvider.current().getNow();
             index = new Uint(4);
             consensusData = prepareRequest.nonce;
             nextConsensus = context.nextConsensus;
@@ -366,8 +366,8 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         }};
         proposalBlock.transactions = new Transaction[]{mx1, tx1};
         proposalBlock.rebuildMerkleRoot();
-        prepareRequest.signature  = IVerifiable.sign(proposalBlock, primaryKeyPair);
-        consensusPayload = new ConsensusPayload(){{
+        prepareRequest.signature = IVerifiable.sign(proposalBlock, primaryKeyPair);
+        consensusPayload = new ConsensusPayload() {{
             version = ConsensusContext.VERSION;
             prevHash = context.prevHash;
             validatorIndex = new Ushort(context.primaryIndex.intValue());
@@ -386,20 +386,19 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         Assert.assertEquals(tx1.hash(), restartTasks.payload.hashes[0]);
 
 
-
         // case 3: PrepareResponse
         // 寻找一个 backup进行签名
 
-         primaryPoint = context.validators[context.primaryIndex.intValue()];
+        primaryPoint = context.validators[context.primaryIndex.intValue()];
         ECPoint myPoint = context.validators[context.myIndex];
         int backupIndex = 0;
         KeyPair backupKeyPair = null;
-        for (WalletAccount account: wallet.getAccounts()){
+        for (WalletAccount account : wallet.getAccounts()) {
             ECPoint publicKey = account.getKey().publicKey;
-            if (publicKey.compareTo(primaryPoint) != 0 && publicKey.compareTo(myPoint) != 0){
+            if (publicKey.compareTo(primaryPoint) != 0 && publicKey.compareTo(myPoint) != 0) {
                 backupKeyPair = account.getKey();
-                for (int i = 0; i < context.validators.length;i++){
-                    if (publicKey.compareTo(context.validators[i]) == 0){
+                for (int i = 0; i < context.validators.length; i++) {
+                    if (publicKey.compareTo(context.validators[i]) == 0) {
                         backupIndex = i;
                         break;
                     }
@@ -411,8 +410,8 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         PrepareResponse prepareResponse = new PrepareResponse();
         prepareResponse.signature = IVerifiable.sign(proposalBlock, backupKeyPair);
 
-        final  int backUpIdx = backupIndex;
-        consensusPayload = new ConsensusPayload(){{
+        final int backUpIdx = backupIndex;
+        consensusPayload = new ConsensusPayload() {{
             prevHash = context.prevHash;
             version = ConsensusContext.VERSION;
             validatorIndex = new Ushort(backUpIdx);
@@ -427,7 +426,7 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
 
 
         // test Timer event
-        ConsensusService.Timer timer = new ConsensusService.Timer(){{
+        ConsensusService.Timer timer = new ConsensusService.Timer() {{
             height = context.blockIndex;
             viewNumber = context.viewNumber;
         }};
@@ -435,11 +434,11 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         sendDirectly = testKit.expectMsgClass(LocalNode.SendDirectly.class);
         payload = (ConsensusPayload) sendDirectly.inventory;
         changeView = SerializeHelper.parse(ChangeView::new, payload.data);
-        Assert.assertEquals(context.viewNumber , changeView.viewNumber);
+        Assert.assertEquals(context.viewNumber, changeView.viewNumber);
         Assert.assertEquals(context.viewNumber + 1, changeView.newViewNumber);
     }
 
-    private static Ulong getNonce(){
+    private static Ulong getNonce() {
         byte[] myNonce = new byte[Ulong.BYTES];
         SecureRandom rand = new SecureRandom();
         rand.nextBytes(myNonce);
