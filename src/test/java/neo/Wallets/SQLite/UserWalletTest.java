@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,6 +24,9 @@ import neo.Wallets.WalletAccount;
 import neo.Wallets.WalletIndexer;
 import neo.Wallets.WalletIndexerTest;
 import neo.Wallets.WalletTransactionEventArgs;
+import neo.cryptography.ecc.ECC;
+import neo.cryptography.ecc.ECPoint;
+import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.ledger.Blockchain;
 import neo.network.p2p.payloads.ContractTransaction;
@@ -142,8 +146,6 @@ public class UserWalletTest extends AbstractBlockchainTest {
 
     @Test
     public void changePassword() {
-//        byte[] publicKeys = userWallet.getPrivateKeyFromNEP2("6PYRRzERjWWPCqwCCt8C86YMzawGkaTqrQ8wWeD7AUjMW1EBQccie15jUF", "1234567890");
-
         Assert.assertEquals(true, userWallet.changePassword("123456", "1345"));
         Assert.assertEquals(false, userWallet.verifyPassword("123456"));
         Assert.assertEquals(true, userWallet.changePassword("1345", "123456"));
