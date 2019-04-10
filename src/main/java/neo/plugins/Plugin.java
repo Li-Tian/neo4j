@@ -45,7 +45,7 @@ public abstract class Plugin {
 
     private static AtomicInteger suspend = new AtomicInteger(0);
 
-    private static NeoSystem system;
+    protected static NeoSystem system;
 
     protected void setSystem(NeoSystem inputSystem) {
         TR.enter();
