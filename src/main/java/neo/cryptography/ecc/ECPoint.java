@@ -3,7 +3,8 @@ package neo.cryptography.ecc;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 
-import neo.Helper;
+import java.math.BigInteger;
+
 import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -103,11 +104,10 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
         return TR.exit(getXCoord().toBigInteger().hashCode() + getYCoord().toBigInteger().hashCode());
     }
 
-    //TODO
-    /*public static ECPoint parse(String value, ECCurve curve) {
+    public static ECPoint parse(String value, ECCurve curve) {
         TR.enter();
-        return TR.exit(new ECPoint(curve.decodePoint(Helper.HexToBytes(value))));
-    }*/
+        return TR.exit(new ECPoint(curve.decodePoint(BitConverter.hexToBytes(value))));
+    }
 
     @Override
     public void serialize(BinaryWriter writer) {
@@ -132,18 +132,11 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
      */
     @Override
     public String toString() {
-        return BitConverter.toHexString(getEncoded(true));
+        TR.enter();
+        return TR.exit(BitConverter.toHexString(getEncoded(true)));
     }
 
-    //TODO
-    /*@Override
-    public String toString() {
-        TR.enter();
-        return TR.exit(Helper.ToHexString(getEncoded(true)));
-    }*/
-
-    //TODO
-    /*public static boolean tryParse(String value, ECCurve curve, ECPoint out_point) {
+    public static boolean tryParse(String value, ECCurve curve, ECPoint out_point) {
         TR.enter();
         try {
             ECPoint point = parse(value, curve);
@@ -153,5 +146,10 @@ public class ECPoint extends org.bouncycastle.math.ec.ECPoint.Fp implements Comp
         } catch (FormatException e) {
             return TR.exit(false);
         }
-    }*/
+    }
+
+    public ECPoint multiply (byte[] key) {
+        TR.enter();
+        return TR.exit(new ECPoint(multiply(new BigInteger(1, key)).normalize()));
+    }
 }

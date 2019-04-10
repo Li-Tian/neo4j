@@ -1,14 +1,11 @@
 package neo.cryptography.ecc;
 
-import org.bouncycastle.math.ec.ECFieldElement;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
 
-import neo.Fixed8;
 import neo.csharp.BitConverter;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
@@ -64,5 +61,13 @@ public class ECPointTest {
         String pubKey = "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c";
         ECPoint point = ECPoint.fromBytes(BitConverter.hexToBytes(pubKey), ECC.Secp256r1.getCurve());
         Assert.assertEquals(pubKey, point.toString());
+    }
+
+    @Test
+    public void multiply() {
+        String prikeyString = "dcc816fd420d9023b46f7ecba9713886e22722272d79867d15324d22ee716502";
+        byte[] prikey = BitConverter.hexToBytes(prikeyString);
+        ECPoint pubkey = new ECPoint(ECC.Secp256r1.getG()).multiply(prikey);
+        Assert.assertEquals(true, pubkey.toString().equals("03943930a90fcf8616da21eca2a127151efdcbcb47a41a73a9fd3c474a90ba46a6"));
     }
 }
