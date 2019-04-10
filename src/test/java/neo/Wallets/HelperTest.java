@@ -89,7 +89,7 @@ public class HelperTest {
     @Test
     public void toAddress() throws Exception {
         UInt160 uInt160=Helper.toScriptHash("AZnqQgpVvFKJF6gxComwDTUqZzWg8vyv12");
-        Assert.assertEquals("AZnqQgpVvFKJF6gxComwDTUqZzWg8vyv12",uInt160.toAddress());
+        Assert.assertEquals("AZnqQgpVvFKJF6gxComwDTUqZzWg8vyv12",Helper.toAddress(uInt160));
     }
 
     @Test

@@ -22,7 +22,7 @@ public class NEP6Account extends WalletAccount {
     //NEP6类型钱包
     private NEP6Wallet wallet;
     //NEP-2格式密钥
-    private String nep2key;
+    public String nep2key;
     //密钥对
     private KeyPair key;
     //扩展

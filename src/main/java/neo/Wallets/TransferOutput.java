@@ -52,7 +52,6 @@ public class TransferOutput {
     /**
       * @Author:doubi.liu
       * @description:构造函数
-      * @param null
       * @date:2019/4/3
     */
     public TransferOutput(UIntBase assetId, BigDecimal value, UInt160 scriptHash) {
