@@ -19,14 +19,10 @@ import neo.Utils;
 import neo.Wallets.Coin;
 import neo.Wallets.KeyPair;
 import neo.Wallets.SQLite.sqlitJDBC.DataAccessException;
-import neo.Wallets.Wallet;
 import neo.Wallets.WalletAccount;
 import neo.Wallets.WalletIndexer;
 import neo.Wallets.WalletIndexerTest;
 import neo.Wallets.WalletTransactionEventArgs;
-import neo.cryptography.Helper;
-import neo.cryptography.ecc.ECC;
-import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.ledger.Blockchain;
 import neo.network.p2p.payloads.ContractTransaction;
@@ -35,8 +31,6 @@ import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractBlockchainTest;
 import neo.smartcontract.ContractParameterType;
 import neo.smartcontract.EventHandler;
-
-import static org.junit.Assert.*;
 
 public class UserWalletTest extends AbstractBlockchainTest {
 
@@ -132,7 +126,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         eventHandler.addListener(listener);
 
         userWallet.applyTransaction(tx);
-        eventHandler.removeListener(listener);
+        eventHandler.clear();
 
         // clear tx
         WalletTransactionEventArgs eventArgs = new WalletTransactionEventArgs();
@@ -643,7 +637,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
 
         }};
         userWallet.doWork(null, eventArgs);
-        eventHandler.removeListener(listener);
+        eventHandler.clear();
 
         // clear data
         userWallet.deleteAccount(walletAccount1.scriptHash);
