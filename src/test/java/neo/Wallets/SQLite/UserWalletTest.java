@@ -90,6 +90,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         WalletAccount walletAccount1 = userWallet.createAccount(keyPair1.privateKey);
 
         KeyPair keyPair2 = Utils.getRandomKeyPair();
+        UInt160 hash2 = UInt160.parseToScriptHash(neo.smartcontract.Contract.createSignatureRedeemScript(keyPair2.publicKey));
 
         KeyPair keyPair3 = Utils.getRandomKeyPair();
         WalletAccount walletAccount3 = userWallet.createAccount(keyPair3.privateKey);
@@ -104,7 +105,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
                     new TransactionOutput() {{
                         assetId = Blockchain.UtilityToken.hash();
                         value = Fixed8.fromDecimal(BigDecimal.valueOf(1000));
-                        scriptHash = UInt160.parseToScriptHash(neo.smartcontract.Contract.createSignatureRedeemScript(keyPair2.publicKey));
+                        scriptHash = hash2;
                     }}
             };
             witnesses = new Witness[]{
@@ -120,8 +121,10 @@ public class UserWalletTest extends AbstractBlockchainTest {
             Assert.assertEquals(tx.hash(), eventArgs.transaction.hash());
 
             Assert.assertEquals(2, eventArgs.relatedAccounts.length);
-            Assert.assertEquals(walletAccount1.scriptHash, eventArgs.relatedAccounts[0]);
-            Assert.assertEquals(walletAccount3.scriptHash, eventArgs.relatedAccounts[1]);
+            Assert.assertEquals(true, eventArgs.relatedAccounts[0].equals(walletAccount1.scriptHash)
+            || eventArgs.relatedAccounts[0].equals(walletAccount3.scriptHash));
+            Assert.assertEquals(true, eventArgs.relatedAccounts[1].equals(walletAccount1.scriptHash)
+                    || eventArgs.relatedAccounts[1].equals(walletAccount3.scriptHash));
         };
         eventHandler.addListener(listener);
 
@@ -134,8 +137,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         eventArgs.transaction = tx;
         userWallet.doWork(null, eventArgs);
 
-        userWallet.deleteAccount(walletAccount1.scriptHash);
-        userWallet.deleteAccount(walletAccount3.scriptHash);
+        clearAllAccount();
     }
 
     @Test
@@ -162,9 +164,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         Assert.assertEquals(false, userWallet.contains(hash2));
         Assert.assertEquals(true, userWallet.contains(walletAccount3.scriptHash));
 
-        userWallet.deleteAccount(UInt160.parseToScriptHash(neo.smartcontract.Contract.createSignatureRedeemScript(keyPair1.publicKey)));
-        userWallet.deleteAccount(UInt160.parseToScriptHash(neo.smartcontract.Contract.createSignatureRedeemScript(keyPair3.publicKey)));
-
+        clearAllAccount();
     }
 
 
@@ -196,7 +196,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         Assert.assertNotNull(address);
 
         // clear data
-        userWallet.deleteAccount(UInt160.parseToScriptHash(neo.smartcontract.Contract.createSignatureRedeemScript(keyPair1.publicKey)));
+        clearAllAccount();
     }
 
     @Test
@@ -232,7 +232,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         Assert.assertNotNull(address);
 
         // clear data
-        userWallet.deleteAccount(verification_contract.scriptHash());
+        clearAllAccount();
     }
 
     @Test
@@ -299,7 +299,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         Assert.assertNull(address);
 
         // clear data
-        userWallet.deleteAccount(walletAccount.scriptHash);
+        clearAllAccount();
     }
 
     @Test
@@ -350,9 +350,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         eventArgs.transaction = tx;
         userWallet.doWork(null, eventArgs);
 
-        userWallet.deleteAccount(walletAccount1.scriptHash);
-        userWallet.deleteAccount(walletAccount2.scriptHash);
-        userWallet.deleteAccount(walletAccount3.scriptHash);
+        clearAllAccount();
     }
 
     @Test
@@ -369,13 +367,11 @@ public class UserWalletTest extends AbstractBlockchainTest {
         Assert.assertNull(tmp);
 
         // clear data
-        userWallet.deleteAccount(walletAccount1.scriptHash);
+        clearAllAccount();
     }
 
     @Test
     public void getAccounts() {
-        Assert.assertFalse(userWallet.getAccounts().iterator().hasNext());
-
         KeyPair keyPair1 = Utils.getRandomKeyPair();
         WalletAccount walletAccount1 = userWallet.createAccount(keyPair1.privateKey);
 
@@ -398,9 +394,13 @@ public class UserWalletTest extends AbstractBlockchainTest {
         }
 
         // clear data
-        userWallet.deleteAccount(walletAccount1.scriptHash);
-        userWallet.deleteAccount(walletAccount2.scriptHash);
-        userWallet.deleteAccount(walletAccount3.scriptHash);
+        clearAllAccount();
+    }
+
+    private void clearAllAccount() {
+        for (WalletAccount account : userWallet.getAccounts()) {
+            userWallet.deleteAccount(account.scriptHash);
+        }
     }
 
     @Test
@@ -463,9 +463,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         eventArgs.transaction = tx;
         userWallet.doWork(null, eventArgs);
 
-        userWallet.deleteAccount(walletAccount1.scriptHash);
-        userWallet.deleteAccount(walletAccount2.scriptHash);
-        userWallet.deleteAccount(walletAccount3.scriptHash);
+        clearAllAccount();
     }
 
     @Test
@@ -524,9 +522,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         eventArgs.transaction = tx;
         userWallet.doWork(null, eventArgs);
 
-        userWallet.deleteAccount(walletAccount1.scriptHash);
-        userWallet.deleteAccount(walletAccount2.scriptHash);
-        userWallet.deleteAccount(walletAccount3.scriptHash);
+        clearAllAccount();
     }
 
     @Test
@@ -578,9 +574,7 @@ public class UserWalletTest extends AbstractBlockchainTest {
         eventArgs.transaction = tx;
         userWallet.doWork(null, eventArgs);
 
-        userWallet.deleteAccount(walletAccount1.scriptHash);
-        userWallet.deleteAccount(walletAccount2.scriptHash);
-        userWallet.deleteAccount(walletAccount3.scriptHash);
+        clearAllAccount();
     }
 
     @Test
@@ -624,8 +618,10 @@ public class UserWalletTest extends AbstractBlockchainTest {
         EventHandler.Listener<WalletTransactionEventArgs> listener = (sender, eventArgs) -> {
             Assert.assertEquals(tx.hash(), eventArgs.transaction.hash());
             Assert.assertEquals(2, eventArgs.relatedAccounts.length);
-            Assert.assertEquals(walletAccount1.scriptHash, eventArgs.relatedAccounts[0]);
-            Assert.assertEquals(walletAccount3.scriptHash, eventArgs.relatedAccounts[1]);
+            Assert.assertEquals(true, eventArgs.relatedAccounts[0].equals(walletAccount1.scriptHash) ||
+                    eventArgs.relatedAccounts[0].equals(walletAccount3.scriptHash));
+            Assert.assertEquals(true, eventArgs.relatedAccounts[1].equals(walletAccount1.scriptHash) ||
+                    eventArgs.relatedAccounts[1].equals(walletAccount3.scriptHash));
         };
         eventHandler.addListener(listener);
 
@@ -640,7 +636,6 @@ public class UserWalletTest extends AbstractBlockchainTest {
         eventHandler.clear();
 
         // clear data
-        userWallet.deleteAccount(walletAccount1.scriptHash);
-        userWallet.deleteAccount(walletAccount3.scriptHash);
+        clearAllAccount();
     }
 }
