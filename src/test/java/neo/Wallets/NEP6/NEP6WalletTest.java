@@ -6,16 +6,23 @@ import com.google.gson.JsonParser;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import akka.testkit.TestActorRef;
+import akka.testkit.TestKit;
 import neo.Fixed8;
+import neo.MyNeoSystem;
 import neo.ProtocolSettings;
 import neo.UInt160;
 import neo.UInt256;
@@ -24,11 +31,17 @@ import neo.Wallets.KeyPair;
 import neo.Wallets.WalletAccount;
 import neo.Wallets.WalletIndexer;
 import neo.Wallets.WalletTransactionEventArgs;
+import neo.consensus.ConsensusContextTest;
 import neo.csharp.Uint;
 import neo.ledger.Blockchain;
+import neo.ledger.MyBlockchain2;
 import neo.log.notr.TR;
+import neo.network.p2p.MyLocalNode;
+import neo.network.p2p.TaskManager;
 import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.TransactionOutput;
+import neo.persistence.AbstractBlockchainTest;
+import neo.persistence.AbstractLeveldbTest;
 import neo.smartcontract.Helper;
 
 import static org.junit.Assert.*;
@@ -41,7 +54,7 @@ import static org.junit.Assert.*;
  * @Description: (用一句话描述该文件做什么)
  * @date Created in 15:41 2019/4/2
  */
-public class NEP6WalletTest {
+public class NEP6WalletTest extends AbstractBlockchainTest {
     @Test
     public void getWalletTransaction() throws Exception {
          NEP6Wallet wallet=new NEP6Wallet();
@@ -63,7 +76,7 @@ public class NEP6WalletTest {
     class UserWalletIndexer extends WalletIndexer{
 
         public UserWalletIndexer() {
-            super();
+            //super();
         }
 
         @Override
@@ -105,6 +118,7 @@ public class NEP6WalletTest {
         TR.fixMe(url.getPath());
         UserWalletIndexer indexer=new UserWalletIndexer();
         NEP6Wallet wallet=new NEP6Wallet(indexer,url.getPath(),"aa");
+        wallet.unlock("1234567890");
         Assert.assertEquals(Uint.ONE,wallet.getWalletHeight());
 
     }
@@ -245,7 +259,14 @@ public class NEP6WalletTest {
 
     @Test
     public void getCoinsInternal() throws Exception {
-
+        URL url=NEP6WalletTest.class.getClassLoader().getResource("testaddress1.json");
+        TR.fixMe(url.getPath());
+        UserWalletIndexer indexer=new UserWalletIndexer();
+        NEP6Wallet wallet=new NEP6Wallet(indexer,url.getPath(),"aa");
+        Assert.assertEquals(0,StreamSupport.stream(wallet.getCoinsInternal(new ArrayList<UInt160>())
+                        .spliterator()
+                ,false)
+                .collect(Collectors.toList()).size());
     }
 
     @Test
@@ -301,9 +322,33 @@ public class NEP6WalletTest {
         wallet.lock();
     }
 
+    @BeforeClass
+    public static void setUp() throws IOException {
+        AbstractBlockchainTest.setUp(NEP6WalletTest.class.getSimpleName());
+    }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        AbstractLeveldbTest.tearDown(NEP6WalletTest.class.getSimpleName());
+    }
+
     @Test
     public void migrate() throws Exception {
-      //// TODO: 2019/4/3 等userwallet测试好在做
+        neoSystem = new MyNeoSystem(store, self -> {
+            testKit = new TestKit(self.actorSystem);
+
+            // Synchronous Unit Testing with TestActorRef
+            self.blockchain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
+            self.localNode = TestActorRef.create(self.actorSystem, MyLocalNode.props(self, testKit.testActor()));
+            self.taskManager = TestActorRef.create(self.actorSystem, TaskManager.props(self));
+            self.consensus = null;
+        });
+        UserWalletIndexer indexer=new UserWalletIndexer();
+        URL url=NEP6WalletTest.class.getClassLoader().getResource("test5.db3");
+        URL url2=NEP6WalletTest.class.getClassLoader().getResource("");
+        NEP6Wallet.migrate(indexer,url2.getPath()+"test5address.json",
+                url.getPath(),"1234567890");
+
     }
 
     @Test
@@ -352,5 +397,7 @@ public class NEP6WalletTest {
                 UInt160[]{UInt160.Zero},new Uint(0),new Uint(0));
         wallet.doWork(this,eventArgs);
     }
+
+
 
 }

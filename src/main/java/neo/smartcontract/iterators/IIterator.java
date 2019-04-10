@@ -8,7 +8,7 @@ import neo.vm.StackItem;
  * @version V1.0
  * @Title: IIterator
  * @Package neo.smartcontract.iterators
- * @Description: (用一句话描述该文件做什么)
+ * @Description: 迭代器接口
  * @date Created in 15:56 2019/3/12
  */
 public interface IIterator extends IEnumerator{

@@ -34,6 +34,8 @@ public class NEP6Contract extends Contract {
     public NEP6Contract() {
     }
 
+
+
     /**
      * @param json 对象
      * @Author:doubi.liu
