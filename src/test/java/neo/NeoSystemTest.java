@@ -1,45 +1,30 @@
 package neo;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Map;
 
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
 import neo.consensus.MyWallet;
-import neo.ledger.BlockChainTest;
-import neo.ledger.Blockchain;
 import neo.ledger.MyBlockchain2;
 import neo.ledger.MyConsensusService;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.MyTaskManager;
 import neo.network.p2p.Peer;
 import neo.persistence.AbstractLeveldbTest;
-import neo.wallets.WalletAccount;
 
 public class NeoSystemTest extends AbstractLeveldbTest {
     private static TestKit testKit;
     @BeforeClass
     public static void setup () {
         try {
-            AbstractLeveldbTest.setUp(BlockChainTest.class.getSimpleName());
+            AbstractLeveldbTest.setUp(NeoSystemTest.class.getSimpleName());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
