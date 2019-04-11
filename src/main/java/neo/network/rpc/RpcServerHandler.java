@@ -56,6 +56,7 @@ public class RpcServerHandler extends HttpServlet {
             return;
         }
         resp.setContentType("application/json-rpc");
+        resp.setCharacterEncoding("utf-8");
         resp.getWriter().write(response.toString());
         TR.exit();
     }
