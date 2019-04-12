@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -20,7 +21,9 @@ import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import neo.NeoSystem;
 import neo.log.notr.TR;
@@ -42,6 +45,8 @@ public abstract class Plugin {
     private static WatchService configWatcher = null;
     private boolean hasBeenInitialized = false;
     private Thread fileListener = null;
+    private boolean keepListening = true;
+    private static ConcurrentHashMap<Class, ReentrantReadWriteLock> lockMap = new ConcurrentHashMap<Class, ReentrantReadWriteLock>();
 
     private static AtomicInteger suspend = new AtomicInteger(0);
 
@@ -140,7 +145,7 @@ public abstract class Plugin {
                     public void run() {
                         try {
                             WatchKey key = configWatcher.take();
-                            while (key != null) {
+                            while (key != null && keepListening) {
                                 Path dir = keys.get(key);
                                 for (WatchEvent event : key.pollEvents()) {
                                     WatchEvent.Kind kind = event.kind();
@@ -173,6 +178,7 @@ public abstract class Plugin {
                         } catch (InterruptedException e) {
                             TR.error(e);
                             throw new RuntimeException(e);
+                        } catch (ClosedWatchServiceException e) {
                         }
                     }
                 };
@@ -184,6 +190,7 @@ public abstract class Plugin {
             }
         }
         plugins.add(this);
+        lockMap.put(this.getClass(), new ReentrantReadWriteLock());
         if (this instanceof ILogPlugin) loggers.add((ILogPlugin) this);
         if (this instanceof IPolicyPlugin) policies.add((IPolicyPlugin) this);
         if (this instanceof IRpcPlugin) rpcPlugins.add((IRpcPlugin) this);
@@ -220,7 +227,9 @@ public abstract class Plugin {
 
     protected Config getConfiguration() {
         TR.enter();
+        lockMap.get(this.getClass()).readLock().lock();
         Config config = ConfigFactory.parseFile(new File(configFile())).getConfig("PluginConfiguration");
+        lockMap.get(this.getClass()).readLock().unlock();
         return TR.exit(config);
     }
 
@@ -300,8 +309,17 @@ public abstract class Plugin {
         TR.exit();
     }
 
-    protected Thread getFileListener() {
-        TR.enter();
-        return TR.exit(fileListener);
+    protected void stopFileListener() {
+        try {
+            TR.enter();
+            keepListening = false;
+            configWatcher.close();
+            keys.clear();
+            fileListener.interrupt();
+            TR.exit();
+        } catch (IOException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
     }
 }
