@@ -6,6 +6,7 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -13,7 +14,6 @@ import org.junit.Test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -21,39 +21,29 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 
-import neo.Fixed8;
 import neo.NeoSystem;
-import neo.NeoSystemTest;
 import neo.UInt160;
 import neo.UInt256;
 import neo.consensus.MyWallet;
-import neo.cryptography.ecc.ECC;
-import neo.cryptography.ecc.ECPoint;
-import neo.io.caching.DataCache;
-import neo.ledger.AccountState;
-import neo.ledger.Blockchain;
-import neo.ledger.ContractState;
 import neo.network.p2p.LocalNode;
 import neo.network.p2p.payloads.AssetType;
-import neo.network.p2p.payloads.CoinReference;
-import neo.network.p2p.payloads.RegisterTransaction;
-import neo.network.p2p.payloads.TransactionAttribute;
-import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.TransactionType;
-import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractLeveldbTest;
-import neo.vm.OpCode;
 import neo.wallets.WalletAccount;
-import scala.Int;
 
 public class RpcServerTest extends AbstractLeveldbTest {
     @BeforeClass
     public static void setup() {
         try {
-            AbstractLeveldbTest.setUp(NeoSystemTest.class.getSimpleName());
+            AbstractLeveldbTest.setUp(RpcServerTest.class.getSimpleName());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @AfterClass
+    public static void tearDown() throws IOException {
+        AbstractLeveldbTest.tearDown(RpcServerTest.class.getSimpleName());
     }
 
     @Test
@@ -276,7 +266,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
         Assert.assertEquals(3, ((JsonObject)result).size());
         Assert.assertEquals(0, ((JsonObject)result).get("port").getAsInt());
         Assert.assertEquals(LocalNode.NONCE.intValue(), ((JsonObject)result).get("nonce").getAsInt());
-        Assert.assertEquals(true, ((JsonObject)result).get("useragent").getAsString().equals("/neo-java:/2.9.1"));
+        Assert.assertEquals(true, ((JsonObject)result).get("useragent").getAsString().equals("/neo-java:/2.9.2"));
 
         //getwalletheight
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getwalletheight&params=[]&id=1");
@@ -299,6 +289,8 @@ public class RpcServerTest extends AbstractLeveldbTest {
 
         //TODO
         //sendfrom
+
+
         //sendrawtransaction
         //sendtoaddress
         //sendmany
