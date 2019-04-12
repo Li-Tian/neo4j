@@ -74,7 +74,7 @@ public class LocalNode extends Peer {
     /**
      * User agent as the description for the local node
      */
-    public static final String USER_AGENT = String.format("/neo-java:/2.9.1");
+    public static final String USER_AGENT = String.format("/neo-java:/2.9.2");
 
 
     protected static LocalNode singleton;

@@ -1,6 +1,7 @@
 package neo.network.p2p.payloads;
 
 
+import neo.csharp.BitConverter;
 import neo.csharp.common.ByteEnum;
 
 /**
@@ -21,7 +22,7 @@ public enum InventoryType implements ByteEnum {
     /**
      * Consensus data
      */
-    Consensus((byte) 0x03);
+    Consensus((byte) 0xe0);
 
     private byte value;
 

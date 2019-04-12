@@ -1,4 +1,4 @@
-package neo.Wallets.SQLite;
+package neo.wallets.SQLite;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -17,16 +16,6 @@ import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
 import neo.Utils;
-import neo.Wallets.Coin;
-import neo.Wallets.KeyPair;
-import neo.Wallets.SQLite.sqlitJDBC.DataAccessException;
-import neo.Wallets.WalletAccount;
-import neo.Wallets.WalletIndexer;
-import neo.Wallets.WalletIndexerTest;
-import neo.Wallets.WalletTransactionEventArgs;
-import neo.cryptography.ecc.ECC;
-import neo.cryptography.ecc.ECPoint;
-import neo.csharp.BitConverter;
 import neo.csharp.Uint;
 import neo.ledger.Blockchain;
 import neo.network.p2p.payloads.ContractTransaction;
@@ -35,6 +24,13 @@ import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractBlockchainTest;
 import neo.smartcontract.ContractParameterType;
 import neo.smartcontract.EventHandler;
+import neo.wallets.Coin;
+import neo.wallets.KeyPair;
+import neo.wallets.SQLite.sqlitJDBC.DataAccessException;
+import neo.wallets.WalletAccount;
+import neo.wallets.WalletIndexer;
+import neo.wallets.WalletIndexerTest;
+import neo.wallets.WalletTransactionEventArgs;
 
 public class UserWalletTest extends AbstractBlockchainTest {
 
