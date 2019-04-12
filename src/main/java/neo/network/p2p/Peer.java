@@ -332,7 +332,7 @@ public abstract class Peer extends AbstractActor {
                 && connectedPeers.size() >= maxConnections
                 && !trustedIpAddresses.contains(remote.getAddress())) {
             // C# Sender.Tell(Tcp.Abort.Instance);
-            sender().tell(TcpMessage.abort(), getSelf());
+            sender().tell(TcpMessage.abort(), self());
             return;
         }
         InetAddress address = remote.getAddress();
@@ -342,7 +342,7 @@ public abstract class Peer extends AbstractActor {
         } else {
             connectedAddresses.put(address, count + 1);
             String actorName = String.format("connection_%s", GUID.newGuid());
-            Props protocolProps = protocolProps(self(), remote, local);
+            Props protocolProps = protocolProps(sender(), remote, local);
             ActorRef connection = context().actorOf(protocolProps, actorName);
 
             context().watch(connection);

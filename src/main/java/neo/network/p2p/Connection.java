@@ -12,6 +12,7 @@ import akka.japi.pf.ReceiveBuilder;
 import akka.util.ByteString;
 
 import neo.log.notr.TR;
+import scala.Console;
 
 /**
  * An abstract class that describes a connection established between the local node and the remote
@@ -55,7 +56,7 @@ public abstract class Connection extends AbstractActor {
         this.local = local;
         this.timer = context().system().scheduler().scheduleOnce(
                 Duration.ofSeconds(10),
-                getSelf(),
+                self(),
                 Timer.Instance,
                 context().system().dispatcher(),
                 ActorRef.noSender());
@@ -108,12 +109,13 @@ public abstract class Connection extends AbstractActor {
      */
     private void onReceived(ByteString data) {
         TR.enter();
+
         if (!timer.isCancelled()) {
             timer.cancel();
         }
         timer = context().system().scheduler().scheduleOnce(
                 Duration.ofMinutes(1),
-                getSelf(),
+                self(),
                 Timer.Instance,
                 context().system().dispatcher(),
                 ActorRef.noSender());
@@ -122,6 +124,7 @@ public abstract class Connection extends AbstractActor {
             onData(data);
         } catch (Exception e) {
             // just catch the error ad log
+            e.printStackTrace();
             TR.error(e);
             disconnect(true);
         }
