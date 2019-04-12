@@ -97,4 +97,11 @@ public class HelperTest {
         Assert.assertEquals(Integer.valueOf(4), item[0]);
     }
 
+    @Test
+    public void javaCSharpClassNameConversion () {
+        Assert.assertEquals(true, Helper.toCSharpClassName("neo.network.p2p.payloads.ContractTransaction")
+                .equals("Neo.Network.P2P.Payloads.ContractTransaction"));
+        Assert.assertEquals(true, Helper.toJavaClassName("Neo.Network.P2P.Payloads.ContractTransaction")
+                .equals("neo.network.p2p.payloads.ContractTransaction"));
+    }
 }

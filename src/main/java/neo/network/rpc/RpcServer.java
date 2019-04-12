@@ -433,11 +433,11 @@ public class RpcServer implements IDisposable {
             }
             case "getstorage": {
                 UInt160 script_hash = UInt160.parse(_params.get(0).getAsString());
-                byte[] key = BitConverter.hexToBytes(_params.get(1).getAsString());
+                byte[] inputKey = BitConverter.hexToBytes(_params.get(1).getAsString());
                 StorageItem item = Blockchain.singleton().getStore().getStorages().tryGet(new StorageKey() {
                     {
                         scriptHash = script_hash;
-                        key = key;
+                        key = inputKey;
                     }
                 });
                 if (item == null) {

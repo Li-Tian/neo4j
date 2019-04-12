@@ -272,7 +272,7 @@ public class ContractParametersContext {
         TR.enter();
         IVerifiable verifiable;
         try {
-            verifiable = (IVerifiable) Class.forName(json.get("type").getAsString()).newInstance();
+            verifiable = (IVerifiable) Class.forName(neo.Helper.toJavaClassName(json.get("type").getAsString())).newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             TR.error(e);
             throw new RuntimeException(e);
@@ -345,7 +345,7 @@ public class ContractParametersContext {
     public JsonObject toJson() {
         TR.enter();
         JsonObject json = new JsonObject();
-        json.addProperty("type", verifiable.getClass().getName());
+        json.addProperty("type", neo.Helper.toCSharpClassName(verifiable.getClass().getName()));
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         BinaryWriter writer = new BinaryWriter(byteArrayOutputStream);
         verifiable.serializeUnsigned(writer);
