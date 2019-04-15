@@ -1,6 +1,8 @@
 package neo.network.p2p.payloads;
 
 
+import java.util.HashMap;
+
 import neo.csharp.common.ByteEnum;
 
 /**
@@ -71,6 +73,15 @@ public enum TransactionType implements ByteEnum {
         return this.value;
     }
 
+
+    private static final HashMap<Byte, TransactionType> map = new HashMap<>();
+
+    static {
+        for (TransactionType type : TransactionType.values()) {
+            map.put(type.value, type);
+        }
+    }
+
     /**
      * Parse TransactionType from byte value
      *
@@ -79,6 +90,9 @@ public enum TransactionType implements ByteEnum {
      * @throws IllegalArgumentException if the type is not exist, throw this exception
      */
     public static TransactionType parse(byte type) {
-        return ByteEnum.parse(TransactionType.values(), type);
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
     }
 }

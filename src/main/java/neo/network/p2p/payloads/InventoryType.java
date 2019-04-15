@@ -1,8 +1,11 @@
 package neo.network.p2p.payloads;
 
 
+import java.util.HashMap;
+
 import neo.csharp.BitConverter;
 import neo.csharp.common.ByteEnum;
+import neo.smartcontract.ContractParameterType;
 
 /**
  * The type of inventory
@@ -38,6 +41,14 @@ public enum InventoryType implements ByteEnum {
         return this.value;
     }
 
+    private static final HashMap<Byte, InventoryType> map = new HashMap<>();
+
+    static {
+        for (InventoryType type : InventoryType.values()) {
+            map.put(type.value, type);
+        }
+    }
+
     /**
      * parse type from value
      *
@@ -46,6 +57,10 @@ public enum InventoryType implements ByteEnum {
      * @throws IllegalArgumentException throws this exception when the type is not exist.
      */
     public static InventoryType parse(byte type) {
-        return ByteEnum.parse(InventoryType.values(), type);
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
     }
+
 }

@@ -1,0 +1,85 @@
+{
+  "hash": "0xecbb575b78dcc89b19a9db5611d09e628f6c4748",
+  "entrypoint": "Main",
+  "functions": [{
+    "name": "Name",
+    "parameters": [],
+    "returntype": "String"
+  },
+    {
+      "name": "Symbol",
+      "parameters": [],
+      "returntype": "String"
+    },
+    {
+      "name": "Decimals",
+      "parameters": [],
+      "returntype": "Integer"
+    },
+    {
+      "name": "TotalSupply",
+      "parameters": [],
+      "returntype": "Integer"
+    },
+    {
+      "name": "Main",
+      "parameters": [{
+        "name": "operation",
+        "type": "String"
+      },
+        {
+          "name": "args",
+          "type": "Array"
+        }
+      ],
+      "returntype": "ByteArray"
+    },
+    {
+      "name": "BalanceOf",
+      "parameters": [{
+        "name": "account",
+        "type": "ByteArray"
+      }],
+      "returntype": "Integer"
+    },
+    {
+      "name": "Transfer",
+      "parameters": [{
+        "name": "from",
+        "type": "ByteArray"
+      },
+        {
+          "name": "to",
+          "type": "ByteArray"
+        },
+        {
+          "name": "amount",
+          "type": "Integer"
+        }
+      ],
+      "returntype": "Boolean"
+    },
+    {
+      "name": "Deploy",
+      "parameters": [],
+      "returntype": "Boolean"
+    }
+  ],
+  "events": [{
+    "name": "transfer",
+    "parameters": [{
+      "name": "arg1",
+      "type": "ByteArray"
+    },
+      {
+        "name": "arg2",
+        "type": "ByteArray"
+      },
+      {
+        "name": "arg3",
+        "type": "Integer"
+      }
+    ],
+    "returntype": "Void"
+  }]
+}

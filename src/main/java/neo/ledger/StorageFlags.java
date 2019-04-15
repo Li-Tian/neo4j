@@ -1,6 +1,8 @@
 package neo.ledger;
 
 
+import java.util.HashMap;
+
 import neo.csharp.common.ByteEnum;
 
 /**
@@ -29,6 +31,14 @@ public enum StorageFlags implements ByteEnum {
         return value;
     }
 
+    private static final HashMap<Byte, StorageFlags> map = new HashMap<>();
+
+    static {
+        for (StorageFlags type : StorageFlags.values()) {
+            map.put(type.value, type);
+        }
+    }
+
     /**
      * 从byte中解析类型
      *
@@ -37,7 +47,10 @@ public enum StorageFlags implements ByteEnum {
      * @throws IllegalArgumentException 当类型不存在时，抛出该异常
      */
     public static StorageFlags parse(byte type) {
-        return ByteEnum.parse(StorageFlags.values(), type);
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
     }
 
 

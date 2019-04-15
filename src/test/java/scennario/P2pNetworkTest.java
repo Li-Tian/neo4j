@@ -53,7 +53,7 @@ import neo.network.p2p.payloads.VersionPayload;
  * <---- getheaders --- ----- headers ----->
  * </code>
  */
-public class ScenarioP2pTest {
+public class P2pNetworkTest {
 
     private static ActorSystem actorSystem = ActorSystem.create("test");
 

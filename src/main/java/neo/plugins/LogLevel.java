@@ -1,5 +1,7 @@
 package neo.plugins;
 
+import java.util.HashMap;
+
 import neo.csharp.common.ByteEnum;
 
 public enum LogLevel implements ByteEnum {
@@ -23,9 +25,22 @@ public enum LogLevel implements ByteEnum {
         return value;
     }
 
-    public static LogLevel parse(byte type) {
-        return ByteEnum.parse(LogLevel.values(), type);
+
+    private static final HashMap<Byte, LogLevel> map = new HashMap<>();
+
+    static {
+        for (LogLevel type : LogLevel.values()) {
+            map.put(type.value, type);
+        }
     }
+
+    public static LogLevel parse(byte type) {
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
+    }
+
 
     public static byte[] toBytes(LogLevel[] types) {
         return ByteEnum.toBytes(types);

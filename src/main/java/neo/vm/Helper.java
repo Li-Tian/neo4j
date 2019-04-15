@@ -13,6 +13,7 @@ import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
+import neo.csharp.common.ByteEnum;
 import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.log.notr.TR;
@@ -36,11 +37,11 @@ import neo.vm.Types.Map;
 public class Helper {
 
     /**
-      * @Author:doubi.liu
-      * @description:一次构建多个OpCode
-      * @param ops OpCode集合
-      * @date:2019/4/4
-    */
+     * @param ops OpCode集合
+     * @Author:doubi.liu
+     * @description:一次构建多个OpCode
+     * @date:2019/4/4
+     */
     public static ScriptBuilder emit(ScriptBuilder sb, OpCode... ops) {
         for (OpCode op : ops) {
             sb.emit(op);
@@ -181,6 +182,10 @@ public class Helper {
             sb.emitPush(new BigInteger(String.valueOf((Long) obj)));
         } else if (obj instanceof Ulong) {
             sb.emitPush(new BigInteger(String.valueOf(((Ulong) obj).intValue())));
+        } else if (obj instanceof ByteEnum) {
+            // TODO add by luc
+            ByteEnum byteEnum = (ByteEnum) obj;
+            sb.emitPush(new BigInteger(String.valueOf(byteEnum.value())));
         } else if (obj instanceof Enum) {
             sb.emitPush(new BigInteger(String.valueOf(((Enum) obj).ordinal())));
             TR.fixMe("Enum类型数据是否能转换正常未经验证");
@@ -190,11 +195,20 @@ public class Helper {
         return sb;
     }
 
-    public static ScriptBuilder emitSysCall(ScriptBuilder sb, String api, Object[] args) {
+//  @modify by luchuan 2019.4.15 -------------------------------------------------------------------
+//    public static ScriptBuilder emitSysCall(ScriptBuilder sb, String api, Object[] args) {
+//        for (int i = args.length - 1; i >= 0; i--)
+//            emitPush(sb, args[i]);
+//        return sb.emitSysCall(api);
+//    }
+
+    // add by luchuan
+    public static ScriptBuilder emitSysCall(ScriptBuilder sb, String api, Object... args) {
         for (int i = args.length - 1; i >= 0; i--)
             emitPush(sb, args[i]);
         return sb.emitSysCall(api);
     }
+    // @end modify ---------------------------------------------------------------------------------
 
     public static ContractParameter toParameter(StackItem item) {
         return toParameter(item, null);
