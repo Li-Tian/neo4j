@@ -42,6 +42,7 @@ public class ApplicationEngineTest extends AbstractBlockchainTest {
 
     @Test
     public void getGasConsumed() throws Exception {
+        String t="";
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 
