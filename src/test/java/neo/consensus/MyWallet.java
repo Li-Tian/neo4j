@@ -1,6 +1,7 @@
 package neo.consensus;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Random;
 
 import neo.UInt160;
@@ -73,7 +74,7 @@ public class MyWallet extends Wallet {
 
     @Override
     public Uint getWalletHeight() {
-        return null;
+        return Uint.ZERO;
     }
 
     @Override
@@ -137,7 +138,7 @@ public class MyWallet extends Wallet {
 
     @Override
     public Iterable<Coin> getCoins(Iterable<UInt160> accounts) {
-        return null;
+        return new HashSet<Coin>();
     }
 
     @Override

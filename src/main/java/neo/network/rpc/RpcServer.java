@@ -3,16 +3,11 @@ package neo.network.rpc;
 import static akka.pattern.Patterns.ask;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
-import org.bouncycastle.util.encoders.Base64;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -24,8 +19,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -37,6 +30,7 @@ import neo.NeoSystem;
 import neo.UInt160;
 import neo.UInt256;
 import neo.UIntBase;
+import neo.csharp.common.IDisposable;
 import neo.wallets.AssetDescriptor;
 import neo.wallets.NEP6.NEP6Wallet;
 import neo.wallets.TransferOutput;
@@ -45,7 +39,6 @@ import neo.csharp.BitConverter;
 import neo.csharp.Out;
 import neo.csharp.Uint;
 import neo.csharp.Ushort;
-import neo.csharp.common.IDisposable;
 import neo.exception.InvalidOperationException;
 import neo.exception.RpcException;
 import neo.io.SerializeHelper;
@@ -79,10 +72,10 @@ import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
 
-public class RpcServer extends HttpServlet implements IDisposable {
+public class RpcServer implements IDisposable {
     public Wallet wallet;
-
     private Server host;
+    private Thread rpcThread = null;
     private Fixed8 maxGasInvoke;
     private final NeoSystem system;
 
@@ -94,7 +87,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
         TR.exit();
     }
 
-    private static JsonObject createErrorResponse(int id, int code, String message, Object data) {
+    protected static JsonObject createErrorResponse(int id, int code, String message, Object data) {
         TR.enter();
         JsonObject response = createResponse(id);
         response.add("error", new JsonObject());
@@ -118,14 +111,6 @@ public class RpcServer extends HttpServlet implements IDisposable {
         response.addProperty("jsonrpc", "2.0");
         response.addProperty("id", id);
         return TR.exit(response);
-    }
-
-    public void dispose() {
-        TR.enter();
-        if (host != null) {
-            host = null;
-        }
-        TR.exit();
     }
 
     private JsonObject getInvokeResult(byte[] script) {
@@ -448,11 +433,11 @@ public class RpcServer extends HttpServlet implements IDisposable {
             }
             case "getstorage": {
                 UInt160 script_hash = UInt160.parse(_params.get(0).getAsString());
-                byte[] key = BitConverter.hexToBytes(_params.get(1).getAsString());
+                byte[] inputKey = BitConverter.hexToBytes(_params.get(1).getAsString());
                 StorageItem item = Blockchain.singleton().getStore().getStorages().tryGet(new StorageKey() {
                     {
                         scriptHash = script_hash;
-                        key = key;
+                        key = inputKey;
                     }
                 });
                 if (item == null) {
@@ -718,7 +703,7 @@ public class RpcServer extends HttpServlet implements IDisposable {
         }
     }
 
-    private JsonObject processRequest(HttpServletRequest req, HttpServletResponse resp, JsonObject request) {
+    protected JsonObject processRequest(HttpServletRequest req, HttpServletResponse resp, JsonObject request) {
         TR.enter();
         if (!request.has("id")) {
             return TR.exit(null);
@@ -766,91 +751,30 @@ public class RpcServer extends HttpServlet implements IDisposable {
     public void start(InetSocketAddress bindAddress, String sslCert, String password, String[] trustedAuthorities) {
         //TODO: SSL Certificate verification
         TR.enter();
-        try {
-            host = new Server(bindAddress);
-            ServletContextHandler context = new ServletContextHandler(host, "/");
-            context.addServlet(RpcServer.class, "/RpcServer");
-            host.setHandler(context);
-            host.start();
-            host.join();
-            TR.exit();
-        } catch (Exception e) {
-            TR.error(e);
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        TR.enter();
-        JsonObject request = null;
-        String jsonrpc = req.getParameter("jsonrpc");
-        String id = req.getParameter("id");
-        String method = req.getParameter("method");
-        String _params = req.getParameter("params");
-        if (!(id == null || id.isEmpty()) && !(method == null || method.isEmpty()) && !(_params == null || _params.isEmpty())) {
-            _params = new String(Base64.decode(_params), "utf-8");
-            request = new JsonObject();
-            if (!(jsonrpc == null || jsonrpc.isEmpty())) {
-                request.addProperty("jsonrpc", jsonrpc);
+        host = new Server(bindAddress);
+        ServletContextHandler context = new ServletContextHandler(host, "/");
+        host.setHandler(context);
+        context.addServlet(RpcServerHandler.class, "");
+        rpcThread = new Thread() {
+            public void run() {
+                try {
+                    host.start();
+                    host.join();
+                } catch (Exception e) {
+                    TR.error(e);
+                    throw new RuntimeException(e);
+                }
             }
-            request.addProperty("id", id);
-            request.addProperty("method", method);
-            request.add("params", new JsonParser().parse(_params).getAsJsonArray());
-        }
-        JsonObject response;
-        if (request == null) {
-            response = createErrorResponse(0, -32700, "Parse error", null);
-        } else {
-            response = processRequest(req, resp, request);
-        }
-        if (response == null) {
-            TR.exit();
-            return;
-        }
-        resp.setContentType("application/json-rpc");
-        resp.getWriter().write(response.toString());
+        };
+        rpcThread.start();
         TR.exit();
     }
 
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    public void dispose() {
         TR.enter();
-        JsonElement request = null;
-        BufferedReader br = req.getReader();
-        String str, wholeStr = "";
-        while ((str = br.readLine()) != null) {
-            wholeStr += str;
+        if (host != null) {
+            host = null;
         }
-        request = new JsonParser().parse(wholeStr);
-        JsonElement response = null;
-        if (request == null) {
-            response = createErrorResponse(0, -32700, "Parse error", null);
-        } else if (request.isJsonArray()) {
-            JsonArray array = request.getAsJsonArray();
-            if (array.size() == 0) {
-                response = createErrorResponse(0, -32600, "Invalid Request", null);
-            } else {
-                response = new JsonArray();
-                JsonArray array2 = response.getAsJsonArray();
-                array.forEach(p -> {
-                    if (p.isJsonObject()) {
-                        JsonObject q = processRequest(req, resp, p.getAsJsonObject());
-                        if (q != null) {
-                            array2.add(q);
-                        }
-                    }
-                });
-            }
-        } else if (request.isJsonObject()) {
-            response = processRequest(req, resp, request.getAsJsonObject());
-        }
-        if (response == null) {
-            TR.exit();
-            return;
-        }
-        resp.setContentType("application/json-rpc");
-        resp.getWriter().write(response.toString());
         TR.exit();
     }
 }

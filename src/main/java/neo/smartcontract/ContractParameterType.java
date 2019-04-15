@@ -1,6 +1,8 @@
 package neo.smartcontract;
 
 
+import java.util.HashMap;
+
 import neo.csharp.common.ByteEnum;
 
 /**
@@ -83,6 +85,15 @@ public enum ContractParameterType implements ByteEnum {
         return value;
     }
 
+
+    private static final HashMap<Byte, ContractParameterType> map = new HashMap<>();
+
+    static {
+        for (ContractParameterType type : ContractParameterType.values()) {
+            map.put(type.value, type);
+        }
+    }
+
     /**
      * 从byte值中，解析出对应的类型
      *
@@ -91,7 +102,10 @@ public enum ContractParameterType implements ByteEnum {
      * @throws IllegalArgumentException 不存在的类型，当type值不存在时
      */
     public static ContractParameterType parse(byte type) {
-        return ByteEnum.parse(ContractParameterType.values(), type);
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
     }
 
     /**

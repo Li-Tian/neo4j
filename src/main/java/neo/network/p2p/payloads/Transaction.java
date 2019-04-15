@@ -845,7 +845,7 @@ public abstract class Transaction implements IInventory {
 
         JsonArray scriptsArray = new JsonArray(inputs.length);
         Arrays.stream(inputs).map(p -> p.toJson()).forEach(p -> scriptsArray.add(p));
-        json.add("vin", scriptsArray);
+        json.add("scripts", scriptsArray);
         return TR.exit(json);
     }
 }

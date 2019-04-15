@@ -38,4 +38,12 @@ public class ContractPropertyState extends ByteFlag {
         super(value);
     }
 
+
+    /**
+     * 逻辑或操作
+     */
+    public ContractPropertyState or(ContractPropertyState state) {
+        return new ContractPropertyState((byte) (this.value | state.value));
+    }
+
 }

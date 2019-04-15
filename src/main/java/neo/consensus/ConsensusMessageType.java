@@ -1,5 +1,7 @@
 package neo.consensus;
 
+import java.util.HashMap;
+
 import neo.csharp.common.ByteEnum;
 
 /**
@@ -38,6 +40,15 @@ public enum ConsensusMessageType implements ByteEnum {
         return value;
     }
 
+
+    private static final HashMap<Byte, ConsensusMessageType> map = new HashMap<>();
+
+    static {
+        for (ConsensusMessageType type : ConsensusMessageType.values()) {
+            map.put(type.value, type);
+        }
+    }
+
     /**
      * parse ConsensusMessageType by the value of type
      *
@@ -45,7 +56,10 @@ public enum ConsensusMessageType implements ByteEnum {
      * @return ConsensusMessageType
      */
     public static ConsensusMessageType parse(byte type) {
-        return ByteEnum.parse(ConsensusMessageType.values(), type);
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
     }
 
 }

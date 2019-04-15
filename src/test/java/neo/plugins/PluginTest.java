@@ -152,30 +152,19 @@ public class PluginTest extends AbstractLeveldbTest {
         if (file.exists()) {
             for (File subFile : file.listFiles()) {
                 for (File subFile2 : subFile.listFiles()) {
-                    subFile2.delete();
+                    System.out.println(subFile2.toString() + " deleted: " + subFile2.delete());
                 }
-                subFile.delete();
+                System.out.println(subFile.toString() + " deleted: " + subFile.delete());
             }
-            file.delete();
+            System.out.println(file.toString() + " deleted: " + file.delete());
         }
     }
 
     @Test
-    public void nameTest() {
-        MyPlugin plugin = new MyPlugin();
-        Assert.assertEquals("MyPlugin", plugin.name());
-    }
-
-    @Test
-    public void configFileTest() {
-        MyPlugin plugin = new MyPlugin();
-        Assert.assertEquals(pluginsPath + "\\" + plugin.name() + "\\config.json", plugin.configFile());
-    }
-
-    @Test
     public void PluginTest() {
+        MyPlugin plugin = null;
         try {
-            MyPlugin plugin = new MyPlugin();
+            plugin = new MyPlugin();
             Thread.sleep(1000);
             File file = new File(Paths.get(pluginsPath).resolve("MyPlugin").toString());
             if (!file.exists()) {
@@ -183,9 +172,6 @@ public class PluginTest extends AbstractLeveldbTest {
             }
             Thread.sleep(1000);
             file = new File(file.toPath().resolve("config.json").toString());
-            if (!file.exists()) {
-                file.createNewFile();
-            }
             FileWriter fw = new FileWriter(file.getAbsoluteFile());
             BufferedWriter bw = new BufferedWriter(fw);
             bw.write("{\n" +
@@ -196,68 +182,41 @@ public class PluginTest extends AbstractLeveldbTest {
             bw.flush();
             bw.close();
             while(plugin.maxOnImportHeight == 0);
-            plugin.getFileListener().stop();
-        } catch (Exception e){
-        }
-    }
 
-    @Test
-    public void checkPolicyTest() {
-        MyPlugin plugin = new MyPlugin();
-        Assert.assertEquals(true, MyPlugin.checkPolicy(new ClaimTransaction()));
-    }
+            //nameTest
+            Assert.assertEquals("MyPlugin", plugin.name());
 
-    @Test
-    public void getConfigurationTest() {
-        try {
-            MyPlugin plugin = new MyPlugin();
-            File file = new File(plugin.configFile());
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-            FileWriter fw = new FileWriter(file.getAbsoluteFile());
-            BufferedWriter bw = new BufferedWriter(fw);
-            bw.write("{\n" +
-                    "  \"PluginConfiguration\": {\n" +
-                    "    \"MaxOnImportHeight\": 100\n" +
-                    "  }\n" +
-                    "}");
-            bw.flush();
-            bw.close();
+            //configFileTest
+            Assert.assertEquals(pluginsPath + "\\" + plugin.name() + "\\config.json", plugin.configFile());
+
+            //checkPolicyTest
+            Assert.assertEquals(true, MyPlugin.checkPolicy(new ClaimTransaction()));
+
+            //getConfigurationTest
             Config config = plugin.getConfiguration();
             Assert.assertEquals(100, config.getInt("MaxOnImportHeight"));
-        } catch (IOException e) {
+
+            //loadPluginsTest
+            MyPlugin.loadPlugins(neoSystem);
+
+            //pluginLogTest
+            plugin.pluginLog("message1", null);
+            plugin.pluginLog("message2", LogLevel.Warning);
+            Assert.assertEquals(true, plugin.verifyLog("message1", null));
+            Assert.assertEquals(true, plugin.verifyLog("message2", LogLevel.Warning));
+
+            //sendMessageTest
+            Assert.assertEquals(true, MyPlugin.sendMessage("message"));
+
+            //resumeNodeTest
+            plugin.setSystem(neoSystem);
+            MyPlugin.suspendNodeStartup();
+            neoSystem.startNode(10, 5, 100);
+            MyPlugin.resumeNodeStartup();
+            testKit.expectMsgClass(Peer.Start.class);
+        } catch (Exception e){
+        } finally {
+            plugin.stopFileListener();
         }
-    }
-
-    @Test
-    public void loadPluginsTest () {
-        MyPlugin plugin = new MyPlugin();
-        MyPlugin.loadPlugins(neoSystem);
-    }
-
-    @Test
-    public void pluginLogTest() {
-        MyPlugin plugin = new MyPlugin();
-        plugin.pluginLog("message1", null);
-        plugin.pluginLog("message2", LogLevel.Warning);
-        Assert.assertEquals(true, plugin.verifyLog("message1", null));
-        Assert.assertEquals(true, plugin.verifyLog("message2", LogLevel.Warning));
-    }
-
-    @Test
-    public void resumeNodeTest () {
-        MyPlugin plugin = new MyPlugin();
-        plugin.setSystem(neoSystem);
-        MyPlugin.suspendNodeStartup();
-        neoSystem.startNode(10, 5, 100);
-        MyPlugin.resumeNodeStartup();
-        testKit.expectMsgClass(Peer.Start.class);
-    }
-
-    @Test
-    public void sendMessageTest () {
-        MyPlugin plugin = new MyPlugin();
-        Assert.assertEquals(true, MyPlugin.sendMessage("message"));
     }
 }

@@ -49,7 +49,7 @@ public class ContractParameter {
                 this.value = new byte[0];
                 break;
             case PublicKey:
-                this.value = ECC.Secp256r1.getG();
+                this.value = new ECPoint(ECC.Secp256r1.getG());
                 break;
             case String:
                 this.value = "";

@@ -1,7 +1,10 @@
 package neo.network.p2p.payloads;
 
 
+import java.util.HashMap;
+
 import neo.csharp.common.ByteEnum;
+import neo.ledger.RelayResultReason;
 
 /**
  * StateTransaction type
@@ -32,6 +35,13 @@ public enum StateType implements ByteEnum {
         return this.value;
     }
 
+    private static final HashMap<Byte, StateType> map = new HashMap<>();
+
+    static {
+        for (StateType type : StateType.values()) {
+            map.put(type.value, type);
+        }
+    }
 
     /**
      * parse StateType from type's value
@@ -41,6 +51,9 @@ public enum StateType implements ByteEnum {
      * @throws IllegalArgumentException throws this exception when the type is not exist.
      */
     public static StateType parse(byte type) {
-        return ByteEnum.parse(StateType.values(), type);
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
     }
 }

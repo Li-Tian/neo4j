@@ -409,13 +409,13 @@ public class RemoteNode extends Connection {
     @Override
     public SupervisorStrategy supervisorStrategy() {
         TR.enter();
-
-        return new OneForOneStrategy(10,
+        return TR.exit(new OneForOneStrategy(10,
                 Duration.ofMinutes(1),
-                param -> {
+                error -> {
+                    TR.error(error);
                     disconnect(true);
                     return TR.exit(SupervisorStrategy.stop());
-                });
+                }));
     }
 
 

@@ -27,15 +27,15 @@ public class NeoSystem {
     public ActorSystem actorSystem = ActorSystem.create(NeoSystem.class.getSimpleName(),
             ConfigFactory.load("akka.conf"));
 
-    public ActorRef blockchain;
+    public ActorRef blockchain = null;
 
-    public ActorRef localNode;
+    public ActorRef localNode = null;
 
-    public ActorRef taskManager;
+    public ActorRef taskManager = null;
 
-    public ActorRef consensus;
+    public ActorRef consensus = null;
 
-    public RpcServer rpcServer;
+    public static RpcServer rpcServer = null;
 
     public NeoSystem(Store store) {
         TR.enter();
@@ -44,10 +44,12 @@ public class NeoSystem {
     }
 
     public void init(Store store) {
+        TR.enter();
         blockchain = actorSystem.actorOf(Blockchain.props(this, store));
         localNode = actorSystem.actorOf(LocalNode.props(this));
         taskManager = actorSystem.actorOf(TaskManager.props(this));
         Plugin.loadPlugins(this);
+        TR.exit();
     }
 
     public void dispose() {
@@ -96,8 +98,13 @@ public class NeoSystem {
     public void startRpc(InetSocketAddress bindAddress, Wallet wallet, String sslCert, String password,
                          String[] trustedAuthorities, Fixed8 maxGasInvoke)
     {
+        TR.enter();
+        if (maxGasInvoke == null) {
+            maxGasInvoke = Fixed8.ZERO;
+        }
         rpcServer = new RpcServer(this, wallet, maxGasInvoke);
         rpcServer.start(bindAddress, sslCert, password, trustedAuthorities);
+        TR.exit();
     }
 
     public void suspendNodeStartup() {

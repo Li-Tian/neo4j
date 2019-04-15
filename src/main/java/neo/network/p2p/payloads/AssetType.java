@@ -1,6 +1,8 @@
 package neo.network.p2p.payloads;
 
 
+import java.util.HashMap;
+
 import neo.csharp.common.ByteEnum;
 
 /**
@@ -66,6 +68,13 @@ public enum AssetType implements ByteEnum {
         return this.value;
     }
 
+    private static final HashMap<Byte, AssetType> map = new HashMap<>();
+
+    static {
+        for (AssetType type : AssetType.values()) {
+            map.put(type.value, type);
+        }
+    }
 
     /**
      * parse AssetTye from byte value
@@ -75,7 +84,10 @@ public enum AssetType implements ByteEnum {
      * @throws IllegalArgumentException throw it if the type not exist.
      */
     public static AssetType parse(byte type) {
-        return ByteEnum.parse(AssetType.values(), type);
+        if (map.containsKey(type)) {
+            return map.get(type);
+        }
+        throw new IllegalArgumentException();
     }
 
 }

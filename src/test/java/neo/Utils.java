@@ -1,8 +1,15 @@
 package neo;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Random;
 import java.util.function.Supplier;
 
@@ -49,5 +56,25 @@ public class Utils {
         if (file.exists()) {
             file.delete();
         }
+    }
+
+    public static byte[] readContentFromFile(String path) throws IOException {
+        File file = new File(path);
+        long fileSize = file.length();
+        FileInputStream input = new FileInputStream(file);
+        byte[] buffer = new byte[(int) fileSize];
+
+        int offset = 0;
+        int numRead = 0;
+        while (offset < buffer.length
+                && (numRead = input.read(buffer, offset, buffer.length - offset)) >= 0) {
+            offset += numRead;
+        }
+
+        if (offset != buffer.length) {
+            throw new IOException("Could not completely read file " + file.getName());
+        }
+        input.close();
+        return buffer;
     }
 }

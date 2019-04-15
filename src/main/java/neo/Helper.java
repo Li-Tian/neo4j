@@ -394,4 +394,73 @@ public class Helper {
         }
         return TR.exit(set);
     }
+
+    /**
+     * 将Java类名转成相应C#类名
+     *
+     * @param javaClassName 待转化的Java类名
+     * @return String
+     */
+    public static String toCSharpClassName(String javaClassName) {
+        TR.enter();
+        if (javaClassName == null) {
+            return TR.exit(null);
+        }
+        if (javaClassName.trim().length() == 0) {
+            return TR.exit(javaClassName);
+        }
+        String[] splittedJavaClassName = javaClassName.split("\\.");
+        StringBuffer cSharpClassNameBuffer = new StringBuffer();
+        for (int i = 0; i < splittedJavaClassName.length - 1; i++) {
+            if (splittedJavaClassName[i].length() != 0) {
+                switch (splittedJavaClassName[i].toLowerCase()) {
+                    case "ecc":
+                    case "io":
+                    case "p2p":
+                    case "rpc":
+                    case "vm":
+                    case "nep6":
+                        cSharpClassNameBuffer.append(splittedJavaClassName[i].trim().toUpperCase());
+                        break;
+                    case "smartcontract":
+                        cSharpClassNameBuffer.append("SmartContract");
+                        break;
+                    case "leveldb":
+                        cSharpClassNameBuffer.append("LevelDB");
+                        break;
+                    case "sqlite":
+                        cSharpClassNameBuffer.append("SQLite");
+                        break;
+                    default:
+                        cSharpClassNameBuffer.append(splittedJavaClassName[i].substring(0,1).toUpperCase());
+                        cSharpClassNameBuffer.append(splittedJavaClassName[i].substring(1).toLowerCase());
+                }
+            }
+            cSharpClassNameBuffer.append(".");
+        }
+        cSharpClassNameBuffer.append(splittedJavaClassName[splittedJavaClassName.length - 1]);
+        return TR.exit(cSharpClassNameBuffer.toString());
+    }
+
+    /**
+     * 将Java类名转成相应C#类名
+     *
+     * @param cSharpClassName 待转化的Java类名
+     * @return String
+     */
+
+    public static String toJavaClassName(String cSharpClassName) {
+        TR.enter();
+        if (cSharpClassName == null) {
+            return TR.exit(null);
+        }
+        if (cSharpClassName.trim().length() == 0) {
+            return TR.exit(cSharpClassName);
+        }
+        int lastPointIndex = cSharpClassName.lastIndexOf('.');
+        if (lastPointIndex < 0) {
+            return cSharpClassName;
+        }
+        return TR.exit(cSharpClassName.substring(0, lastPointIndex).toLowerCase().concat(cSharpClassName.substring(lastPointIndex)));
+    }
 }

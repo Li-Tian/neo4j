@@ -7,7 +7,7 @@ public class InventoryTypeTest {
 
     @Test
     public void value() {
-        Assert.assertEquals(0x03, InventoryType.Consensus.value());
+        Assert.assertEquals((byte) 0xe0, InventoryType.Consensus.value());
     }
 
     @Test(expected = IllegalArgumentException.class)

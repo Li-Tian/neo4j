@@ -121,8 +121,7 @@ public class VersionPayload implements ISerializable {
         VersionPayload payload = new VersionPayload();
         payload.version = LocalNode.ProtocolVersion;
         payload.services = NetworkAddressWithTime.NODE_NETWORK;
-        //  DateTime.Now.ToTimestamp(),
-        payload.timestamp = new Uint(Long.valueOf(TimeProvider.current().utcNow().getTime()).intValue());
+        payload.timestamp = TimeProvider.current().getNow();
         payload.port = new Ushort(port);
         payload.nonce = nonce;
         payload.userAgent = userAgent;

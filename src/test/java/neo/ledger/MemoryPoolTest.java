@@ -5,6 +5,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,6 +32,7 @@ import neo.plugins.MyPlugin;
 public class MemoryPoolTest extends AbstractLeveldbTest {
     private static NeoSystem neoSystem;
     private static TestKit testKit;
+    private static final String pluginsPath = System.getProperty("user.dir") + "\\Plugins";
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -44,6 +46,18 @@ public class MemoryPoolTest extends AbstractLeveldbTest {
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
             self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self, testKit.testActor()));
         });
+
+        File file = new File(pluginsPath);
+        if (file.exists()) {
+            for (File subFile : file.listFiles()) {
+                for (File subFile2 : subFile.listFiles()) {
+                    subFile2.delete();
+                }
+                subFile.delete();
+            }
+            file.delete();
+        }
+        file.mkdir();
     }
 
     @AfterClass
