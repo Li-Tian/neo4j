@@ -47,7 +47,7 @@ public class AssetDescriptorTest extends AbstractBlockchainTest {
             self.taskManager = TestActorRef.create(self.actorSystem, TaskManager.props(self));
             self.consensus = null;
         });
-        AssetDescriptor assetDescriptor=new AssetDescriptor(Blockchain.GoverningToken.admin);
+        AssetDescriptor assetDescriptor=new AssetDescriptor(Blockchain.GoverningToken.hash());
         assetDescriptor.assetName="aaa";
         Assert.assertEquals("aaa",assetDescriptor.toString());
     }
