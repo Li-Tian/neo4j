@@ -71,6 +71,7 @@ import neo.vm.ScriptBuilder;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
 
 public class RpcServer implements IDisposable {
     public Wallet wallet;
@@ -627,8 +628,8 @@ public class RpcServer implements IDisposable {
             case "sendrawtransaction": {
                 try {
                     Transaction tx = Transaction.deserializeFrom(BitConverter.hexToBytes(_params.get(0).getAsString()));
-                    Future<Object> future = ask(system.blockchain, tx, new Timeout(null));
-                    return TR.exit(getRelayResult((RelayResultReason) Await.result(future, Duration.create(10, TimeUnit.SECONDS))));
+                    Future<Object> future = ask(system.blockchain, tx, new Timeout(FiniteDuration.apply(60, TimeUnit.SECONDS)));
+                    return TR.exit(getRelayResult((RelayResultReason) Await.result(future, Duration.create(60, TimeUnit.SECONDS))));
                 } catch (Exception e) {
                     TR.error(e);
                     throw new RuntimeException(e);

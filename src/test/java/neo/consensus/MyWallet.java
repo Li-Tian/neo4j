@@ -12,7 +12,6 @@ import neo.csharp.Ushort;
 import neo.ledger.Blockchain;
 import neo.ledger.CoinState;
 import neo.ledger.TransactionState;
-import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.TransactionOutput;
