@@ -413,6 +413,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
             for (AbstractMap.SimpleEntry<UInt256, Fixed8> f : e.getValue()) {
                 Fixed8.add(temp, f.getValue());
             }
+            pay_total.put(e.getKey(),new AbstractMap.SimpleEntry<UInt256, Fixed8>(e.getKey(),temp));
         }
 
         //LINQ END
