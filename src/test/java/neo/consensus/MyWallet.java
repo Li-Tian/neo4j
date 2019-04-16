@@ -1,11 +1,22 @@
 package neo.consensus;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
 
+import neo.Fixed8;
 import neo.UInt160;
 import neo.UInt256;
+import neo.csharp.Ushort;
+import neo.ledger.Blockchain;
+import neo.ledger.CoinState;
+import neo.ledger.TransactionState;
+import neo.network.p2p.payloads.Block;
+import neo.network.p2p.payloads.CoinReference;
+import neo.network.p2p.payloads.MinerTransaction;
+import neo.network.p2p.payloads.TransactionOutput;
+import neo.persistence.Snapshot;
 import neo.wallets.Coin;
 import neo.wallets.KeyPair;
 import neo.wallets.SQLite.UserWalletAccount;
@@ -23,6 +34,7 @@ import neo.smartcontract.EventHandler;
 public class MyWallet extends Wallet {
 
     private HashMap<UInt160, UserWalletAccount> accounts = new HashMap<>();
+    MinerTransaction minerTransaction;
 
     public MyWallet() {
         byte[] privateKey = new byte[32];
@@ -55,6 +67,25 @@ public class MyWallet extends Wallet {
         privateKey = new byte[32];
         rng.nextBytes(privateKey);
         createAccount(privateKey);
+    }
+
+    public void initTransaction (UInt160 address) {
+        Snapshot snapshot = Blockchain.singleton().getSnapshot();
+        minerTransaction = new MinerTransaction() {{
+            outputs = new TransactionOutput[]{
+                    new TransactionOutput() {{
+                        assetId = Blockchain.UtilityToken.hash();
+                        value = Fixed8.fromDecimal(BigDecimal.valueOf(1000));
+                        scriptHash = address;
+                    }}
+            };
+        }};
+        TransactionState txState = new TransactionState() {{
+            blockIndex = new Uint(1);
+            transaction = minerTransaction;
+        }};
+        snapshot.getTransactions().add(minerTransaction.hash(), txState);
+        snapshot.commit();
     }
 
     @Override
@@ -138,7 +169,26 @@ public class MyWallet extends Wallet {
 
     @Override
     public Iterable<Coin> getCoins(Iterable<UInt160> accounts) {
-        return new HashSet<Coin>();
+        HashSet <Coin> coins = new HashSet<Coin>();
+        coins.add(new Coin() {
+            {
+                reference = new CoinReference() {
+                    {
+                        prevHash = minerTransaction.hash();
+                        prevIndex = Ushort.ZERO;
+                    }
+                };
+                output = new TransactionOutput() {
+                    {
+                        assetId = UInt256.parse("c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b");
+                        value = Fixed8.fromDecimal(new BigDecimal(100));
+                        scriptHash = new UInt160();
+                    }
+                };
+                state = CoinState.Confirmed;
+            };
+        });
+        return coins;
     }
 
     @Override

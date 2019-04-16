@@ -2,10 +2,13 @@ package neo;
 
 import com.typesafe.config.ConfigFactory;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import inet.ipaddr.IPAddress;
 import neo.wallets.Wallet;
 import neo.consensus.ConsensusService;
 import neo.ledger.Blockchain;
@@ -95,16 +98,22 @@ public class NeoSystem {
         TR.exit();
     }
 
-    public void startRpc(InetSocketAddress bindAddress, Wallet wallet, String sslCert, String password,
+    public void startRpc(IPAddress bindAddress, int port, Wallet wallet, String sslCert, String password,
                          String[] trustedAuthorities, Fixed8 maxGasInvoke)
     {
-        TR.enter();
-        if (maxGasInvoke == null) {
-            maxGasInvoke = Fixed8.ZERO;
+        try {
+            TR.enter();
+            if (maxGasInvoke == null) {
+                maxGasInvoke = Fixed8.ZERO;
+            }
+            rpcServer = new RpcServer(this, wallet, maxGasInvoke);
+            InetSocketAddress socketAddress = new InetSocketAddress(InetAddress.getByName(bindAddress.toFullString()), port);
+            rpcServer.start(socketAddress, sslCert, password, trustedAuthorities);
+            TR.exit();
+        } catch (UnknownHostException e) {
+            TR.error(e);
+            throw new RuntimeException(e);
         }
-        rpcServer = new RpcServer(this, wallet, maxGasInvoke);
-        rpcServer.start(bindAddress, sslCert, password, trustedAuthorities);
-        TR.exit();
     }
 
     public void suspendNodeStartup() {

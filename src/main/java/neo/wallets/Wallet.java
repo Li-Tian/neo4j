@@ -139,7 +139,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
         //Coin[] unspents_asset = unspents.Where(p => p.Output.AssetId == asset_id).ToArray();
         //Fixed8 sum = unspents_asset.Sum(p => p.Output.Value);
         Coin[] unspents_asset = StreamSupport.stream(unspents.spliterator(), false).filter(p -> p
-                .output.assetId == asset_id).toArray(Coin[]::new);
+                .output.assetId.equals(asset_id)).toArray(Coin[]::new);
         Fixed8 sum = Arrays.asList(unspents_asset).stream().map(p -> p.output.value).reduce(neo
                 .Fixed8.ZERO, neo.Fixed8::add);
         //LINQ END

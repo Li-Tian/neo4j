@@ -11,6 +11,7 @@ import java.net.UnknownHostException;
 
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
+import inet.ipaddr.IPAddressString;
 import neo.consensus.MyWallet;
 import neo.ledger.MyBlockchain2;
 import neo.ledger.MyConsensusService;
@@ -31,13 +32,12 @@ public class NeoSystemTest extends AbstractLeveldbTest {
     }
 
     @Test
-    public void test () throws UnknownHostException {
+    public void test () {
         NeoSystem system = new NeoSystem(store);
         MyWallet wallet = new MyWallet();
         system.startConsensus(wallet);
         Assert.assertEquals(true, system.consensus != null);
-        InetSocketAddress socketAddress = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 8080);
-        system.startRpc(socketAddress, wallet, "", "", new String[]{}, null);
+        system.startRpc(new IPAddressString("127.0.0.1").getAddress(), 8080, wallet, "", "", new String[]{}, null);
         Assert.assertEquals(true, system.rpcServer != null);
 
         system = new MyNeoSystem(store, self -> {
