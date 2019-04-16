@@ -411,7 +411,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                 .entrySet()) {
             Fixed8 temp = Fixed8.ZERO;
             for (AbstractMap.SimpleEntry<UInt256, Fixed8> f : e.getValue()) {
-                Fixed8.add(temp, f.getValue());
+                temp = Fixed8.add(temp, f.getValue());
             }
             pay_total.put(e.getKey(),new AbstractMap.SimpleEntry<UInt256, Fixed8>(e.getKey(),temp));
         }
@@ -441,7 +441,7 @@ public abstract class Wallet implements IDisposable, EventHandler.Listener<Walle
                         }));
         //LINQ START
         //if (pay_coins.Any(p => p.Value.Unspents == null)) return null;
-        if (pay_coins.entrySet().stream().anyMatch(p -> p.getValue() == null)) {
+        if (pay_coins.values().stream().anyMatch(p -> p.getValue() == null)) {
             return null;
         }
         //LINQ END
