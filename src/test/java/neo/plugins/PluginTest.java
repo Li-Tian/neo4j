@@ -160,7 +160,7 @@ public class PluginTest extends AbstractLeveldbTest {
         }
     }
 
-    /*@Test
+    @Test
     public void PluginTest() {
         MyPlugin plugin = null;
         try {
@@ -218,5 +218,5 @@ public class PluginTest extends AbstractLeveldbTest {
         } finally {
             plugin.stopFileListener();
         }
-    }*/
+    }
 }

@@ -314,8 +314,18 @@ public abstract class Plugin {
             TR.enter();
             keepListening = false;
             configWatcher.close();
+            configWatcher = null;
             keys.clear();
+            plugins.clear();
+            lockMap.clear();
+            loggers.clear();
+            policies.clear();
+            rpcPlugins.clear();
+            persistencePlugins.clear();
+            txObserverPlugins.clear();
             fileListener.interrupt();
+            fileListener = null;
+            hasBeenInitialized = false;
             TR.exit();
         } catch (IOException e) {
             TR.error(e);
