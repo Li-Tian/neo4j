@@ -66,7 +66,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
         system.rpcServer.dispose();
     }
 
-    /*@Test
+    @Test
     public void test() {
         system = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
@@ -477,5 +477,5 @@ public class RpcServerTest extends AbstractLeveldbTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }*/
+    }
 }

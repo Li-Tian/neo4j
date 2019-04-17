@@ -35,7 +35,7 @@ public class NeoSystemTest extends AbstractLeveldbTest {
     }
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown(RpcServerTest.class.getSimpleName());
+        AbstractLeveldbTest.tearDown(NeoSystemTest.class.getSimpleName());
         system.rpcServer.dispose();
     }
 

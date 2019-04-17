@@ -67,7 +67,6 @@ public class MemoryPoolTest extends AbstractLeveldbTest {
 
     @Test
     public void memoryPoolTest() {
-        MyPlugin plugin = new MyPlugin();
         MemoryPool memoryPool = new MemoryPool(neoSystem, 10);
 
         ConsensusServiceTest.MyContractTransaction[] contractTransactions = new ConsensusServiceTest.MyContractTransaction[11];

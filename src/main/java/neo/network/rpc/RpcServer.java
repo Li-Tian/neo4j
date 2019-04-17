@@ -5,9 +5,12 @@ import static akka.pattern.Patterns.ask;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 
+import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -76,7 +79,7 @@ import scala.concurrent.duration.FiniteDuration;
 public class RpcServer implements IDisposable {
     public Wallet wallet;
     private Server host;
-    private Thread rpcThread = null;
+    private ServletContextHandler context;
     private Fixed8 maxGasInvoke;
     private final NeoSystem system;
 
@@ -753,31 +756,31 @@ public class RpcServer implements IDisposable {
         //TODO: SSL Certificate verification
         TR.enter();
         host = new Server(bindAddress);
-        ServletContextHandler context = new ServletContextHandler(host, "/");
+        host.setStopAtShutdown(true);
+        context = new ServletContextHandler(host, "/");
         host.setHandler(context);
         context.addServlet(RpcServerHandler.class, "");
-        rpcThread = new Thread() {
-            public void run() {
-                try {
-                    host.start();
-                    host.join();
-                } catch (Exception e) {
-                    TR.error(e);
-                    throw new RuntimeException(e);
-                }
-            }
-        };
-        rpcThread.start();
+        try {
+            host.start();
+        } catch (Exception e) {
+            TR.error(e);
+            throw new RuntimeException(e);
+        }
         TR.exit();
     }
 
     public void dispose() {
-        TR.enter();
-        if (host != null) {
-            host = null;
+        try {
+            TR.enter();
+            if (host != null) {
+                context.stop();
+                host.stop();
+                host = null;
+            }
+        } catch (Exception e) {
+            TR.error(e);
+            throw new RuntimeException(e);
         }
-        rpcThread.interrupt();
-        rpcThread = null;
         TR.exit();
     }
 }
