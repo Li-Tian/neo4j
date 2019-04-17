@@ -1,4 +1,4 @@
-package scennario;
+package scenario;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -9,7 +9,6 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;

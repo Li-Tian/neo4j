@@ -6,8 +6,7 @@ import org.junit.Test;
 import java.util.Objects;
 
 import neo.Utils;
-
-import static org.junit.Assert.*;
+import neo.csharp.common.ByteFlag;
 
 public class ByteFlagTest {
 

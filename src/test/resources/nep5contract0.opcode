@@ -1,0 +1,818 @@
+#1249 bytes
+5c PUSH12  # The number 12 is pushed onto the stack.
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+51 PUSH1  # The number 1 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+61 NOP  # Does nothing.
+68 SYSCALL 0475c893e3 # u
+60 PUSH16  # The number 16 is pushed onto the stack.
+90 ABS  # The input is made positive.
+7c SWAP  # The top two items on the stack are swapped.
+90 ABS  # The input is made positive.
+7c SWAP  # The top two items on the stack are swapped.
+9e NUMNOTEQUAL  # Returns 1 if the numbers are not equal, 0 otherwise.
+63 JMPIF f201 # 498
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+06 PUSHBYTES6 6465706c6f79 # deploy
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 0d00 # 13
+61 NOP  # Does nothing.
+e0 CALL_I 5403 # ret 1 param 0 jump_offset 852
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+0b PUSHBYTES11 746f74616c537570706c79 # totalSupply
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 0d00 # 13
+61 NOP  # Does nothing.
+e0 CALL_I ee01 # ret 1 param 0 jump_offset 494
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+04 PUSHBYTES4 6e616d65 # name
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 0d00 # 13
+61 NOP  # Does nothing.
+e0 CALL_I b001 # ret 1 param 0 jump_offset 432
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+06 PUSHBYTES6 73796d626f6c # symbol
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 0d00 # 13
+61 NOP  # Does nothing.
+e0 CALL_I ad01 # ret 1 param 0 jump_offset 429
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+08 PUSHBYTES8 646563696d616c73 # decimals
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 0d00 # 13
+61 NOP  # Does nothing.
+e0 CALL_I 9e01 # ret 1 param 0 jump_offset 414
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+05 PUSHBYTES5 6f776e6572 # owner
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 1d00 # 29
+61 NOP  # Does nothing.
+14 PUSHBYTES20 8d3fcf1352ae46a93732b85f8331051ccd4de0a8 # ?RF72_1M
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+08 PUSHBYTES8 7472616e73666572 # transfer
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 3c00 # 60
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+c0 ARRAYSIZE  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+9c NUMEQUAL  # Returns 1 if the numbers are equal, 0 otherwise.
+63 JMPIF 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+e0 CALL_I 6501 # ret 1 param 3 jump_offset 357
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+09 PUSHBYTES9 62616c616e63654f66 # balanceOf
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 2000 # 32
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+c0 ARRAYSIZE  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+9c NUMEQUAL  # Returns 1 if the numbers are equal, 0 otherwise.
+63 JMPIF 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+e0 CALL_I 1701 # ret 1 param 1 jump_offset 279
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+07 PUSHBYTES7 6d696772617465 # migrate
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT b000 # 176
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+c0 ARRAYSIZE  #
+59 PUSH9  # The number 9 is pushed onto the stack.
+9c NUMEQUAL  # Returns 1 if the numbers are equal, 0 otherwise.
+63 JMPIF 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+54 PUSH4  # The number 4 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+55 PUSH5  # The number 5 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+56 PUSH6  # The number 6 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+54 PUSH4  # The number 4 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+57 PUSH7  # The number 7 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+55 PUSH5  # The number 5 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+58 PUSH8  # The number 8 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+56 PUSH6  # The number 6 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+59 PUSH9  # The number 9 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+57 PUSH7  # The number 7 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+5a PUSH10  # The number 10 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+58 PUSH8  # The number 8 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+5b PUSH11  # The number 11 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+54 PUSH4  # The number 4 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+55 PUSH5  # The number 5 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+56 PUSH6  # The number 6 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+57 PUSH7  # The number 7 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+58 PUSH8  # The number 8 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+59 PUSH9  # The number 9 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+5a PUSH10  # The number 10 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+5b PUSH11  # The number 11 is pushed onto the stack.
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+58 PUSH8  # The number 8 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+51 PUSH1  # The number 1 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+5a PUSH10  # The number 10 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+51 PUSH1  # The number 1 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+57 PUSH7  # The number 7 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+52 PUSH2  # The number 2 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+59 PUSH9  # The number 9 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+56 PUSH6  # The number 6 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+53 PUSH3  # The number 3 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+58 PUSH8  # The number 8 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+53 PUSH3  # The number 3 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+55 PUSH5  # The number 5 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+54 PUSH4  # The number 4 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+57 PUSH7  # The number 7 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+54 PUSH4  # The number 4 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+e0 CALL_I 4f02 # ret 1 param 9 jump_offset 591
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+06 PUSHBYTES6 64656c657465 # delete
+87 EQUAL  # Returns 1 if the inputs are exactly equal, 0 otherwise.
+64 JMPIFNOT 0d00 # 13
+61 NOP  # Does nothing.
+e0 CALL_I c902 # ret 1 param 0 jump_offset 713
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+0d PUSHBYTES13 6d79206e65703520746f6b656e # my nep5 token
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+03 PUSHBYTES3 4d4752 # MGR
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+58 PUSH8  # The number 8 is pushed onto the stack.
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+07 PUSHBYTES7 0000c16ff28623 # o#
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+7c SWAP  # The top two items on the stack are swapped.
+68 SYSCALL 041f2e7b07 # .{
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+55 PUSH5  # The number 5 is pushed onto the stack.
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+51 PUSH1  # The number 1 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+a1 LTE  # Returns 1 if a is less than or equal to b, 0 otherwise.
+64 JMPIFNOT 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+68 SYSCALL 04efdfe694 #
+63 JMPIF 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+c0 ARRAYSIZE  #
+01 PUSHBYTES1 14 #
+9c NUMEQUAL  # Returns 1 if the numbers are equal, 0 otherwise.
+63 JMPIF 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+7c SWAP  # The top two items on the stack are swapped.
+68 SYSCALL 041f2e7b07 # .{
+6a DUPFROMALTSTACK  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+9f LT  # Returns 1 if a is less than b, 0 otherwise.
+64 JMPIFNOT 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+90 ABS  # The input is made positive.
+7c SWAP  # The top two items on the stack are swapped.
+90 ABS  # The input is made positive.
+7c SWAP  # The top two items on the stack are swapped.
+9e NUMNOTEQUAL  # Returns 1 if the numbers are not equal, 0 otherwise.
+63 JMPIF 0800 # 8
+51 PUSH1  # The number 1 is pushed onto the stack.
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+6a DUPFROMALTSTACK  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+9c NUMEQUAL  # Returns 1 if the numbers are equal, 0 otherwise.
+64 JMPIFNOT 1800 # 24
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+7c SWAP  # The top two items on the stack are swapped.
+68 SYSCALL 04ef7cef5d # |]
+62 JMP 1d00 # 29
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+94 SUB  # b is subtracted from a.
+61 NOP  # Does nothing.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+68 SYSCALL 0452a141f5 # RA
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+7c SWAP  # The top two items on the stack are swapped.
+68 SYSCALL 041f2e7b07 # .{
+6a DUPFROMALTSTACK  #
+54 PUSH4  # The number 4 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+54 PUSH4  # The number 4 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+93 ADD  # a is added to b.
+61 NOP  # Does nothing.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+68 SYSCALL 0452a141f5 # RA
+61 NOP  # Does nothing.
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+08 PUSHBYTES8 7472616e73666572 # transfer
+54 PUSH4  # The number 4 is pushed onto the stack.
+c1 PACK  #
+68 SYSCALL 124e656f2e52756e74696d652e4e6f74696679 # Neo.Runtime.Notify
+51 PUSH1  # The number 1 is pushed onto the stack.
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+0b PUSHBYTES11 746f74616c537570706c79 # totalSupply
+61 NOP  # Does nothing.
+7c SWAP  # The top two items on the stack are swapped.
+68 SYSCALL 041f2e7b07 # .{
+c0 ARRAYSIZE  #
+64 JMPIFNOT 0800 # 8
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+61 NOP  # Does nothing.
+14 PUSHBYTES20 8d3fcf1352ae46a93732b85f8331051ccd4de0a8 # ?RF72_1M
+61 NOP  # Does nothing.
+e0 CALL_I 70fe # ret 1 param 0 jump_offset -400
+61 NOP  # Does nothing.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+68 SYSCALL 0452a141f5 # RA
+61 NOP  # Does nothing.
+68 SYSCALL 048418d60d #
+0b PUSHBYTES11 746f74616c537570706c79 # totalSupply
+61 NOP  # Does nothing.
+e0 CALL_I 4efe # ret 1 param 0 jump_offset -434
+61 NOP  # Does nothing.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+68 SYSCALL 0452a141f5 # RA
+61 NOP  # Does nothing.
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+61 NOP  # Does nothing.
+14 PUSHBYTES20 8d3fcf1352ae46a93732b85f8331051ccd4de0a8 # ?RF72_1M
+61 NOP  # Does nothing.
+e0 CALL_I 27fe # ret 1 param 0 jump_offset -473
+61 NOP  # Does nothing.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+08 PUSHBYTES8 7472616e73666572 # transfer
+54 PUSH4  # The number 4 is pushed onto the stack.
+c1 PACK  #
+68 SYSCALL 124e656f2e52756e74696d652e4e6f74696679 # Neo.Runtime.Notify
+51 PUSH1  # The number 1 is pushed onto the stack.
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+59 PUSH9  # The number 9 is pushed onto the stack.
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+51 PUSH1  # The number 1 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+53 PUSH3  # The number 3 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+54 PUSH4  # The number 4 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+55 PUSH5  # The number 5 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+56 PUSH6  # The number 6 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+57 PUSH7  # The number 7 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+76 DUP  # Duplicates the top stack item.
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+58 PUSH8  # The number 8 is pushed onto the stack.
+52 PUSH2  # The number 2 is pushed onto the stack.
+7a ROLL  # The item n back in the stack is moved to the top.
+c4 SETITEM  #
+6a DUPFROMALTSTACK  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+51 PUSH1  # The number 1 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+52 PUSH2  # The number 2 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+53 PUSH3  # The number 3 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+54 PUSH4  # The number 4 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+55 PUSH5  # The number 5 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+56 PUSH6  # The number 6 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+57 PUSH7  # The number 7 is pushed onto the stack.
+c3 PICKITEM  #
+6a DUPFROMALTSTACK  #
+58 PUSH8  # The number 8 is pushed onto the stack.
+c3 PICKITEM  #
+61 NOP  # Does nothing.
+58 PUSH8  # The number 8 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+51 PUSH1  # The number 1 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+5a PUSH10  # The number 10 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+51 PUSH1  # The number 1 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+57 PUSH7  # The number 7 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+52 PUSH2  # The number 2 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+59 PUSH9  # The number 9 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+52 PUSH2  # The number 2 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+56 PUSH6  # The number 6 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+53 PUSH3  # The number 3 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+58 PUSH8  # The number 8 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+53 PUSH3  # The number 3 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+55 PUSH5  # The number 5 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+54 PUSH4  # The number 4 is pushed onto the stack.
+79 PICK  # The item n back in the stack is copied to the top.
+57 PUSH7  # The number 7 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+54 PUSH4  # The number 4 is pushed onto the stack.
+72 XSWAP  #
+75 DROP  # Removes the top stack item.
+68 SYSCALL 04471b6290 # Gb
+75 DROP  # Removes the top stack item.
+51 PUSH1  # The number 1 is pushed onto the stack.
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #
+00 PUSH0  #An empty array of bytes is pushed onto the stack
+c5 NEWARRAY  #
+6b TOALTSTACK  # Puts the input onto the top of the alt stack. Removes it from the main stack.
+61 NOP  # Does nothing.
+68 SYSCALL 0490d58c79 # y
+51 PUSH1  # The number 1 is pushed onto the stack.
+61 NOP  # Does nothing.
+6c FROMALTSTACK  # Puts the input onto the top of the main stack. Removes it from the alt stack.
+75 DROP  # Removes the top stack item.
+66 RET  #

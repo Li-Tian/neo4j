@@ -434,14 +434,14 @@ public class ApplicationEngine extends ExecutionEngine {
 /*        stackitem_count = getItemCount(tempInvocationStack.stream().map(p -> p
                 .getEvaluationStack().concat(p.getAltStack())));*/
 
-        List<StackItem> list=new ArrayList<>();
-        for (ExecutionContext ec:tempInvocationStack){
-            Iterator<StackItem> itemIterator1=ec.getEvaluationStack().getEnumerator();
-            while (itemIterator1.hasNext()){
+        List<StackItem> list = new ArrayList<>();
+        for (ExecutionContext ec : tempInvocationStack) {
+            Iterator<StackItem> itemIterator1 = ec.getEvaluationStack().getEnumerator();
+            while (itemIterator1.hasNext()) {
                 list.add(itemIterator1.next());
             }
-            Iterator<StackItem> itemIterator2=ec.getAltStack().getEnumerator();
-            while (itemIterator2.hasNext()){
+            Iterator<StackItem> itemIterator2 = ec.getAltStack().getEnumerator();
+            while (itemIterator2.hasNext()) {
                 list.add(itemIterator2.next());
             }
         }
@@ -612,21 +612,24 @@ public class ApplicationEngine extends ExecutionEngine {
         if (getCurrentContext().getInstructionPointer() > (getCurrentContext().script.length -
                 length - 2))
             return 1;
-        byte[] tempByteArray = new byte[2];
-        tempByteArray[0] = getCurrentContext().script[getCurrentContext().getInstructionPointer() + 2];
-        tempByteArray[1] = getCurrentContext().script[getCurrentContext().getInstructionPointer() + 3];
+
         Uint api_hash = null;
-        try {
-            api_hash = (length == 4)
-                    ? BitConverter.toUint(tempByteArray)
-                    : Helper.toInteropMethodHash(new String(getCurrentContext().script,
-                    getCurrentContext().getInstructionPointer
-                    ()+2,length, "ascii"));
+        try {// modified by luchuan ----------------------------------------------------------------
+            int pos = getCurrentContext().getInstructionPointer();
+            if (length == 4){
+                byte[] tempByteArray = BitConverter.subBytes(getCurrentContext().script, pos + 2, pos + 2 + 4);
+                api_hash =  BitConverter.toUint(tempByteArray);
+            }else{
+                String apiName = new String(getCurrentContext().script, pos + 2, length, "ascii");
+                api_hash = Helper.toInteropMethodHash(apiName);
+            }
+            // @end --------------------------------------------------------------------------------
         } catch (UnsupportedEncodingException e) {
             TR.fixMe("转码格式问题，一般不发生");
             throw new RuntimeException(e);
         }
-        long price = ((NeoService)service).getPrice(api_hash);
+
+        long price = ((NeoService) service).getPrice(api_hash);
         if (price > 0) return price;
         if (api_hash == Helper.toInteropMethodHash("Neo.Asset.Create") ||
                 api_hash == Helper.toInteropMethodHash("AntShares.Asset.Create"))
@@ -728,9 +731,7 @@ public class ApplicationEngine extends ExecutionEngine {
         return engine;
     }
 
-    public static ApplicationEngine run(byte[] script, Snapshot snapshot)
-
-    {
+    public static ApplicationEngine run(byte[] script, Snapshot snapshot) {
         IScriptContainer container = null;
         Block persistingBlock = null;
         boolean testMode = false;

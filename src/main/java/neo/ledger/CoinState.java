@@ -1,6 +1,6 @@
 package neo.ledger;
 
-import neo.common.ByteFlag;
+import neo.csharp.common.ByteFlag;
 
 /**
  * 一个代表了当前NEO状态的enum类
@@ -49,7 +49,7 @@ public class CoinState extends ByteFlag {
      * @param other 或操作对象
      * @return 新的状态
      */
-    public CoinState OR(CoinState other) {
+    public CoinState or(CoinState other) {
         return new CoinState((byte) (this.value | other.value));
     }
 }

@@ -36,6 +36,7 @@
                 <directory>${basedir}/src/main/java</directory>
                 <includes>
                     <include>**/*.properties</include>
+                    <include>**/*.avm</include>
                 </includes>
             </resource>
         </resources>
