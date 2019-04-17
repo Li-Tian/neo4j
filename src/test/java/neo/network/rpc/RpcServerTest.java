@@ -20,37 +20,53 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
 
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
 import inet.ipaddr.IPAddressString;
 import neo.Fixed8;
 import neo.MyNeoSystem;
-import neo.NeoSystem;
 import neo.UInt160;
 import neo.UInt256;
-import neo.UIntBase;
 import neo.consensus.MyWallet;
 import neo.csharp.BitConverter;
+import neo.csharp.Uint;
+import neo.csharp.Ulong;
+import neo.csharp.Ushort;
 import neo.csharp.io.BinaryWriter;
+import neo.ledger.Blockchain;
+import neo.ledger.CoinState;
+import neo.ledger.MyBlock;
 import neo.ledger.MyBlockchain2;
 import neo.ledger.MyConsensusService;
+import neo.ledger.RelayResultReason;
 import neo.network.p2p.LocalNode;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.MyTaskManager;
 import neo.network.p2p.payloads.AssetType;
+import neo.network.p2p.payloads.CoinReference;
+import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.Transaction;
+import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.TransactionType;
+import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractLeveldbTest;
 import neo.smartcontract.ContractParametersContext;
-import neo.vm.VMState;
+import neo.vm.OpCode;
 import neo.wallets.AssetDescriptor;
+import neo.wallets.Coin;
 import neo.wallets.TransferOutput;
 import neo.wallets.WalletAccount;
+
+import static neo.ledger.Blockchain.StandbyValidators;
+import static neo.ledger.Blockchain.UtilityToken;
 
 public class RpcServerTest extends AbstractLeveldbTest {
     private static MyNeoSystem system;
     private static TestKit testKit;
+
     @BeforeClass
     public static void setup() {
         try {
@@ -81,7 +97,6 @@ public class RpcServerTest extends AbstractLeveldbTest {
         WalletAccount account = wallet.getAccounts().iterator().next();
         String address = account.getAddress();
         UInt160 script_hash = neo.wallets.Helper.toScriptHash(address);
-        wallet.initTransaction(script_hash);
         String assetid = "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b";//NEO
         String blockHash = "0x770491ed5d25be41c633bd4e42a06712dd5805dd7c9aea9b351bcbe33a96dc8a";
         String blockInfo = "0000000000000000000000000000000000000000000000000000000000000000000000006" +
@@ -101,6 +116,63 @@ public class RpcServerTest extends AbstractLeveldbTest {
                 "a81e882a1227d2c7b226c616e67223a22656e222c226e616d65223a22416e745368617265227d5d0000c" +
                 "16ff28623000000da1745e9b549bd0bfa1a569971c77eba30cd5a4b00000000";
         int blockTimeStramp = 1468595301;
+        MinerTransaction minerTransaction = new MinerTransaction() {
+            {
+                outputs = new TransactionOutput[]{
+                        new TransactionOutput() {
+                            {
+                                assetId = UtilityToken.hash();
+                                value = Fixed8.fromDecimal(BigDecimal.valueOf(1000));
+                                scriptHash = script_hash;
+                            }
+                        }
+                };
+            }
+        };
+        MyBlock testBlock = new MyBlock() {
+            {
+                prevHash = UInt256.parse(blockHash);
+                timestamp = new Uint(Long.toString(new Date("Jul 15 15:08:55 UTC 2016").getTime() / 1000));
+                index = new Uint(1);
+                consensusData = new Ulong(323433455);
+                nextConsensus = Blockchain.getConsensusAddress(StandbyValidators);
+                witness = new Witness() {
+                    {
+                        invocationScript = new byte[0];
+                        verificationScript = new byte[]{OpCode.PUSHT.getCode()};
+                    }
+                };
+                transactions = new Transaction[]{minerTransaction};
+            }
+        };
+        testBlock.rebuildMerkleRoot();
+        system.blockchain.tell(testBlock, testKit.testActor());
+        testKit.expectMsgClass(Blockchain.PersistCompleted.class);
+        testKit.expectMsgClass(LocalNode.RelayDirectly.class);
+        testKit.expectMsg(RelayResultReason.Succeed);
+
+        HashSet<Coin> coins = new HashSet<Coin>();
+        coins.add(new Coin() {
+            {
+                reference = new CoinReference() {
+                    {
+                        prevHash = minerTransaction.hash();
+                        prevIndex = Ushort.ZERO;
+                    }
+                };
+                output = new TransactionOutput() {
+                    {
+                        assetId = UtilityToken.hash();
+                        value = Fixed8.fromDecimal(new BigDecimal(100));
+                        scriptHash = new UInt160();
+                    }
+                };
+                state = CoinState.Confirmed;
+            }
+
+            ;
+        });
+        wallet.initTransaction(coins);
 
         system.startRpc(new IPAddressString("127.0.0.1").getAddress(), 8080, wallet, "", "", new String[]{}, null);
 
@@ -112,47 +184,50 @@ public class RpcServerTest extends AbstractLeveldbTest {
         //getaccountstate
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getaccountstate&params=[\"" + address + "\"]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(5, ((JsonObject)result).size());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(true, UInt160.parse(((JsonObject)result).get("script_hash").getAsString()).equals(script_hash));
-        Assert.assertEquals(false, ((JsonObject)result).get("frozen").getAsBoolean());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("votes").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("balances").size());
+        Assert.assertEquals(5, ((JsonObject) result).size());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(true, UInt160.parse(((JsonObject) result).get("script_hash").getAsString()).equals(script_hash));
+        Assert.assertEquals(false, ((JsonObject) result).get("frozen").getAsBoolean());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("votes").size());
+        Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("balances").size());
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonArray("balances").get(0).getAsJsonObject().size());
+        Assert.assertEquals(true, UInt256.parse(((JsonObject) result).getAsJsonArray("balances").get(0).getAsJsonObject().get("asset").getAsString()).equals(UtilityToken.hash()));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).getAsJsonArray("balances").get(0).getAsJsonObject().get("value").getAsString()).equals(new BigDecimal("1000.00000000")));
 
         //getassetstate
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getassetstate&params=[\""
                 + assetid + "\"]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(12, ((JsonObject)result).size());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(true, UInt256.parse(((JsonObject)result).get("id").getAsString()).equals(UInt256.parse(assetid)));
-        Assert.assertEquals(0, ((JsonObject)result).get("type").getAsInt());
-        Assert.assertEquals(2, ((JsonObject)result).getAsJsonArray("name").size());
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonArray("name").get(0).getAsJsonObject().get("lang").getAsString().equals("zh-CN"));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonArray("name").get(0).getAsJsonObject().get("name").getAsString().equals("小蚁股"));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonArray("name").get(1).getAsJsonObject().get("lang").getAsString().equals("en"));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonArray("name").get(1).getAsJsonObject().get("name").getAsString().equals("AntShare"));
-        Assert.assertEquals(true, ((JsonObject)result).get("amount").getAsString().equals("100000000.00000000"));
-        Assert.assertEquals(true, ((JsonObject)result).get("available").getAsString().equals("100000000.00000000"));
-        Assert.assertEquals(0, ((JsonObject)result).get("precision").getAsInt());
-        Assert.assertEquals(true, ((JsonObject)result).get("owner").getAsString().equals("00"));
-        Assert.assertEquals(true, ((JsonObject)result).get("admin").getAsString().equals("Abf2qMs1pzQb8kYk9RuxtUb9jtRKJVuBJt"));
-        Assert.assertEquals(true, ((JsonObject)result).get("issuer").getAsString().equals("Abf2qMs1pzQb8kYk9RuxtUb9jtRKJVuBJt"));
-        Assert.assertEquals(4000000, ((JsonObject)result).get("expiration").getAsInt());
-        Assert.assertEquals(false, ((JsonObject)result).get("frozen").getAsBoolean());
+        Assert.assertEquals(12, ((JsonObject) result).size());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(true, UInt256.parse(((JsonObject) result).get("id").getAsString()).equals(UInt256.parse(assetid)));
+        Assert.assertEquals(0, ((JsonObject) result).get("type").getAsInt());
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonArray("name").size());
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonArray("name").get(0).getAsJsonObject().get("lang").getAsString().equals("zh-CN"));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonArray("name").get(0).getAsJsonObject().get("name").getAsString().equals("小蚁股"));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonArray("name").get(1).getAsJsonObject().get("lang").getAsString().equals("en"));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonArray("name").get(1).getAsJsonObject().get("name").getAsString().equals("AntShare"));
+        Assert.assertEquals(true, ((JsonObject) result).get("amount").getAsString().equals("100000000.00000000"));
+        Assert.assertEquals(true, ((JsonObject) result).get("available").getAsString().equals("100000000.00000000"));
+        Assert.assertEquals(0, ((JsonObject) result).get("precision").getAsInt());
+        Assert.assertEquals(true, ((JsonObject) result).get("owner").getAsString().equals("00"));
+        Assert.assertEquals(true, ((JsonObject) result).get("admin").getAsString().equals("Abf2qMs1pzQb8kYk9RuxtUb9jtRKJVuBJt"));
+        Assert.assertEquals(true, ((JsonObject) result).get("issuer").getAsString().equals("Abf2qMs1pzQb8kYk9RuxtUb9jtRKJVuBJt"));
+        Assert.assertEquals(4000000, ((JsonObject) result).get("expiration").getAsInt());
+        Assert.assertEquals(false, ((JsonObject) result).get("frozen").getAsBoolean());
 
         //getbalance
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getbalance&params=[\""
-                + assetid + "\"]&id=1");
+                + UtilityToken.hash().toString() + "\"]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(2, ((JsonObject)result).size());
-        Assert.assertEquals(true, ((JsonObject)result).get("balance").getAsString().equals("100.00000000"));
-        Assert.assertEquals(true, ((JsonObject)result).get("confirmed").getAsString().equals("100.00000000"));
+        Assert.assertEquals(2, ((JsonObject) result).size());
+        Assert.assertEquals(true, ((JsonObject) result).get("balance").getAsString().equals("100.00000000"));
+        Assert.assertEquals(true, ((JsonObject) result).get("confirmed").getAsString().equals("100.00000000"));
 
         //getbestblockhash
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getbestblockhash&params=[]&id=1");
         Assert.assertEquals(String.class, result.getClass());
-        Assert.assertEquals(true, result.equals(blockHash));
+        Assert.assertEquals(true, result.equals(testBlock.hash().toString()));
 
         //getblock
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getblock&params=[\""
@@ -162,25 +237,26 @@ public class RpcServerTest extends AbstractLeveldbTest {
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getblock&params=[\""
                 + blockHash + "\",1]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(11, ((JsonObject)result).size());
-        Assert.assertEquals(true, ((JsonObject)result).get("hash").getAsString().equals(blockHash));
-        Assert.assertEquals(401, ((JsonObject)result).get("size").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(true, ((JsonObject)result).get("previousblockhash").getAsString().equals("0x0000000000000000000000000000000000000000000000000000000000000000"));
-        Assert.assertEquals(true, ((JsonObject)result).get("merkleroot").getAsString().equals("0x4746f4904d47a013726943e24aa17c05c7e2cea92991cb3bd66fd4c0b3c8e265"));
-        Assert.assertEquals(blockTimeStramp, ((JsonObject)result).get("time").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("index").getAsInt());
-        Assert.assertEquals(true, ((JsonObject)result).get("nonce").getAsString().equals("2083236893"));
-        Assert.assertEquals(true, ((JsonObject)result).get("nextconsensus").getAsString().equals("0x55bfa4cc95efe9bb65c104bf27385d2b655de759"));
-        Assert.assertEquals(2, ((JsonObject)result).getAsJsonObject("script").size());
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("script").get("invocation").getAsString().equals(""));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("script").get("verification").getAsString().equals("51"));
-        Assert.assertEquals(true, ((JsonObject)result).get("confirmations").getAsString().equals("1"));
+        Assert.assertEquals(12, ((JsonObject) result).size());
+        Assert.assertEquals(true, ((JsonObject) result).get("hash").getAsString().equals(blockHash));
+        Assert.assertEquals(401, ((JsonObject) result).get("size").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(true, ((JsonObject) result).get("previousblockhash").getAsString().equals("0x0000000000000000000000000000000000000000000000000000000000000000"));
+        Assert.assertEquals(true, ((JsonObject) result).get("merkleroot").getAsString().equals("0x4746f4904d47a013726943e24aa17c05c7e2cea92991cb3bd66fd4c0b3c8e265"));
+        Assert.assertEquals(blockTimeStramp, ((JsonObject) result).get("time").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("index").getAsInt());
+        Assert.assertEquals(true, ((JsonObject) result).get("nonce").getAsString().equals("2083236893"));
+        Assert.assertEquals(true, ((JsonObject) result).get("nextconsensus").getAsString().equals("0x55bfa4cc95efe9bb65c104bf27385d2b655de759"));
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonObject("script").size());
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("script").get("invocation").getAsString().equals(""));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("script").get("verification").getAsString().equals("51"));
+        Assert.assertEquals(true, ((JsonObject) result).get("confirmations").getAsString().equals("2"));
+        Assert.assertEquals(true, ((JsonObject) result).get("nextblockhash").getAsString().equals(testBlock.hash().toString()));
 
         //getblockcount
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getblockcount&params=[]&id=1");
         Assert.assertEquals(Integer.class, result.getClass());
-        Assert.assertEquals(true, result.equals(1));
+        Assert.assertEquals(true, result.equals(2));
 
         //getblockheader
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getblockheader&params=[\""
@@ -190,20 +266,21 @@ public class RpcServerTest extends AbstractLeveldbTest {
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getblockheader&params=[\""
                 + blockHash + "\",1]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(11, ((JsonObject)result).size());
-        Assert.assertEquals(true, ((JsonObject)result).get("hash").getAsString().equals(blockHash));
-        Assert.assertEquals(109, ((JsonObject)result).get("size").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(true, ((JsonObject)result).get("previousblockhash").getAsString().equals("0x0000000000000000000000000000000000000000000000000000000000000000"));
-        Assert.assertEquals(true, ((JsonObject)result).get("merkleroot").getAsString().equals("0x4746f4904d47a013726943e24aa17c05c7e2cea92991cb3bd66fd4c0b3c8e265"));
-        Assert.assertEquals(blockTimeStramp, ((JsonObject)result).get("time").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("index").getAsInt());
-        Assert.assertEquals(true, ((JsonObject)result).get("nonce").getAsString().equals("2083236893"));
-        Assert.assertEquals(true, ((JsonObject)result).get("nextconsensus").getAsString().equals("0x55bfa4cc95efe9bb65c104bf27385d2b655de759"));
-        Assert.assertEquals(2, ((JsonObject)result).getAsJsonObject("script").size());
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("script").get("invocation").getAsString().equals(""));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("script").get("verification").getAsString().equals("51"));
-        Assert.assertEquals(true, ((JsonObject)result).get("confirmations").getAsString().equals("1"));
+        Assert.assertEquals(12, ((JsonObject) result).size());
+        Assert.assertEquals(true, ((JsonObject) result).get("hash").getAsString().equals(blockHash));
+        Assert.assertEquals(109, ((JsonObject) result).get("size").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(true, ((JsonObject) result).get("previousblockhash").getAsString().equals("0x0000000000000000000000000000000000000000000000000000000000000000"));
+        Assert.assertEquals(true, ((JsonObject) result).get("merkleroot").getAsString().equals("0x4746f4904d47a013726943e24aa17c05c7e2cea92991cb3bd66fd4c0b3c8e265"));
+        Assert.assertEquals(blockTimeStramp, ((JsonObject) result).get("time").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("index").getAsInt());
+        Assert.assertEquals(true, ((JsonObject) result).get("nonce").getAsString().equals("2083236893"));
+        Assert.assertEquals(true, ((JsonObject) result).get("nextconsensus").getAsString().equals("0x55bfa4cc95efe9bb65c104bf27385d2b655de759"));
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonObject("script").size());
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("script").get("invocation").getAsString().equals(""));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("script").get("verification").getAsString().equals("51"));
+        Assert.assertEquals(true, ((JsonObject) result).get("confirmations").getAsString().equals("2"));
+        Assert.assertEquals(true, ((JsonObject) result).get("nextblockhash").getAsString().equals(testBlock.hash().toString()));
 
         //getblockhash
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getblockhash&params=[0]&id=1");
@@ -234,7 +311,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
         //getrawmempool
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getrawmempool&params=[]&id=1");
         Assert.assertEquals(JsonArray.class, result.getClass());
-        Assert.assertEquals(0, ((JsonArray)result).size());
+        Assert.assertEquals(0, ((JsonArray) result).size());
 
         //getrawtransaction
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getrawtransaction&params=[\""
@@ -244,26 +321,26 @@ public class RpcServerTest extends AbstractLeveldbTest {
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getrawtransaction&params=[\""
                 + assetid + "\",1]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(14, ((JsonObject)result).size());
-        Assert.assertEquals(true, UInt256.parse(((JsonObject)result).get("txid").getAsString()).equals(UInt256.parse(assetid)));
-        Assert.assertEquals(107, ((JsonObject)result).get("size").getAsInt());
-        Assert.assertEquals(TransactionType.RegisterTransaction.value(), ((JsonObject)result).get("type").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("attributes").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("vin").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("vout").size());
-        Assert.assertEquals(true, ((JsonObject)result).get("sys_fee").getAsString().equals("0.00000000"));
-        Assert.assertEquals(true, ((JsonObject)result).get("net_fee").getAsString().equals("0.00000000"));
-        Assert.assertEquals(6, ((JsonObject)result).getAsJsonObject("asset").size());
-        Assert.assertEquals(AssetType.GoverningToken.value(), ((JsonObject)result).getAsJsonObject("asset").get("type").getAsInt());
-        Assert.assertEquals(2, ((JsonObject)result).getAsJsonObject("asset").getAsJsonArray("name").size());
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("asset").getAsJsonArray("name").get(0).getAsJsonObject().get("lang").getAsString().equals("zh-CN"));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("asset").getAsJsonArray("name").get(0).getAsJsonObject().get("name").getAsString().equals("小蚁股"));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("asset").getAsJsonArray("name").get(1).getAsJsonObject().get("lang").getAsString().equals("en"));
-        Assert.assertEquals(true, ((JsonObject)result).getAsJsonObject("asset").getAsJsonArray("name").get(1).getAsJsonObject().get("name").getAsString().equals("AntShare"));
-        Assert.assertEquals(true, ((JsonObject)result).get("blockhash").getAsString().equals(blockHash));
-        Assert.assertEquals(1, ((JsonObject)result).get("confirmations").getAsInt());
-        Assert.assertEquals(blockTimeStramp, ((JsonObject)result).get("blocktime").getAsInt());
+        Assert.assertEquals(14, ((JsonObject) result).size());
+        Assert.assertEquals(true, UInt256.parse(((JsonObject) result).get("txid").getAsString()).equals(UInt256.parse(assetid)));
+        Assert.assertEquals(107, ((JsonObject) result).get("size").getAsInt());
+        Assert.assertEquals(TransactionType.RegisterTransaction.value(), ((JsonObject) result).get("type").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("attributes").size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("vin").size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("vout").size());
+        Assert.assertEquals(true, ((JsonObject) result).get("sys_fee").getAsString().equals("0.00000000"));
+        Assert.assertEquals(true, ((JsonObject) result).get("net_fee").getAsString().equals("0.00000000"));
+        Assert.assertEquals(6, ((JsonObject) result).getAsJsonObject("asset").size());
+        Assert.assertEquals(AssetType.GoverningToken.value(), ((JsonObject) result).getAsJsonObject("asset").get("type").getAsInt());
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonObject("asset").getAsJsonArray("name").size());
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("asset").getAsJsonArray("name").get(0).getAsJsonObject().get("lang").getAsString().equals("zh-CN"));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("asset").getAsJsonArray("name").get(0).getAsJsonObject().get("name").getAsString().equals("小蚁股"));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("asset").getAsJsonArray("name").get(1).getAsJsonObject().get("lang").getAsString().equals("en"));
+        Assert.assertEquals(true, ((JsonObject) result).getAsJsonObject("asset").getAsJsonArray("name").get(1).getAsJsonObject().get("name").getAsString().equals("AntShare"));
+        Assert.assertEquals(true, ((JsonObject) result).get("blockhash").getAsString().equals(blockHash));
+        Assert.assertEquals(2, ((JsonObject) result).get("confirmations").getAsInt());
+        Assert.assertEquals(blockTimeStramp, ((JsonObject) result).get("blocktime").getAsInt());
 
         //getstorage
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getstorage&params=[\""
@@ -278,32 +355,35 @@ public class RpcServerTest extends AbstractLeveldbTest {
         //getpeers
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getpeers&params=[]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(3, ((JsonObject)result).size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("unconnected").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("bad").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("connected").size());
+        Assert.assertEquals(3, ((JsonObject) result).size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("unconnected").size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("bad").size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("connected").size());
 
         //getvalidators
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getvalidators&params=[]&id=1");
         Assert.assertEquals(JsonArray.class, result.getClass());
-        Assert.assertEquals(0, ((JsonArray)result).size());
+        Assert.assertEquals(0, ((JsonArray) result).size());
 
         //getversion
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getversion&params=[]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(3, ((JsonObject)result).size());
-        Assert.assertEquals(0, ((JsonObject)result).get("port").getAsInt());
-        Assert.assertEquals(LocalNode.NONCE.intValue(), ((JsonObject)result).get("nonce").getAsInt());
-        Assert.assertEquals(true, ((JsonObject)result).get("useragent").getAsString().equals("/neo-java:/2.9.2"));
+        Assert.assertEquals(3, ((JsonObject) result).size());
+        Assert.assertEquals(0, ((JsonObject) result).get("port").getAsInt());
+        Assert.assertEquals(LocalNode.NONCE.intValue(), ((JsonObject) result).get("nonce").getAsInt());
+        Assert.assertEquals(true, ((JsonObject) result).get("useragent").getAsString().equals("/neo-java:/2.9.2"));
 
         //getwalletheight
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getwalletheight&params=[]&id=1");
         Assert.assertEquals(Integer.class, result.getClass());
         Assert.assertEquals(0, result);
 
+        JsonObject object = null;
+        JsonArray array = null;
+        //TODO
         //invoke
-        JsonArray array = new JsonArray();
-        JsonObject object = new JsonObject();
+        /*array = new JsonArray();
+        object = new JsonObject();
         object.addProperty("type", Boolean.class.getSimpleName());
         object.addProperty("value", Boolean.FALSE.toString());
         array.add(object);
@@ -335,19 +415,86 @@ public class RpcServerTest extends AbstractLeveldbTest {
         Assert.assertEquals(true, ((JsonObject)result).get("state").getAsString().equals(VMState.FAULT.toString()));
         Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("gas_consumed").getAsString()).equals(new BigDecimal("0.00000000")));
         Assert.assertEquals(0, ((JsonObject)result).get("stack").getAsJsonArray().size());
-        Assert.assertEquals(true, ((JsonObject)result).get("tx").getAsString().equals("d1011b00046e616d656724058e5e1b6008847cd662728549088a9ee82191000000000000000000000000"));
+        Assert.assertEquals(true, ((JsonObject)result).get("tx").getAsString().equals("d1011b00046e616d656724058e5e1b6008847cd662728549088a9ee82191000000000000000000000000"));*/
 
         //listaddress
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=listaddress&params=[]&id=1");
         Assert.assertEquals(JsonArray.class, result.getClass());
-        Assert.assertEquals(8, ((JsonArray)result).size());
-        ((JsonArray)result).get(0).getAsJsonObject().get("address").getAsString();
-        Assert.assertEquals(true, ((JsonArray)result).get(0).getAsJsonObject().get("haskey").getAsBoolean());
-        Assert.assertEquals(new JsonNull(), ((JsonArray)result).get(0).getAsJsonObject().get("label"));
-        Assert.assertEquals(false, ((JsonArray)result).get(0).getAsJsonObject().get("watchonly").getAsBoolean());
+        Assert.assertEquals(8, ((JsonArray) result).size());
+        ((JsonArray) result).get(0).getAsJsonObject().get("address").getAsString();
+        Assert.assertEquals(true, ((JsonArray) result).get(0).getAsJsonObject().get("haskey").getAsBoolean());
+        Assert.assertEquals(new JsonNull(), ((JsonArray) result).get(0).getAsJsonObject().get("label"));
+        Assert.assertEquals(false, ((JsonArray) result).get(0).getAsJsonObject().get("watchonly").getAsBoolean());
+
+        //sendfrom
+        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendfrom&params=[\"" + UtilityToken.hash().toString() + "\",\"" + address + "\",\"" + address + "\",1]&id=1");
+        Assert.assertEquals(JsonObject.class, result.getClass());
+        Assert.assertEquals(10, ((JsonObject) result).size());
+        ((JsonObject) result).get("txid").getAsString();
+        Assert.assertEquals(262, ((JsonObject) result).get("size").getAsInt());
+        Assert.assertEquals(TransactionType.ContractTransaction.value(), ((JsonObject) result).get("type").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("attributes").size());
+        Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("vin").size());
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonArray("vout").size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("n").getAsInt());
+        Assert.assertEquals(true, UInt256.parse(((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("asset").getAsString()).equals(UtilityToken.hash()));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("value").getAsString()).equals(new BigDecimal("1.00000000")));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("sys_fee").getAsString()).equals(new BigDecimal("0.00000000")));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("net_fee").getAsString()).equals(new BigDecimal("900.00000000")));
+        Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("scripts").size());
+
+        //sendtoaddress
+        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendtoaddress&params=[\"" + UtilityToken.hash().toString() + "\",\"" + address + "\",1]&id=1");
+        Assert.assertEquals(JsonObject.class, result.getClass());
+        Assert.assertEquals(10, ((JsonObject) result).size());
+        ((JsonObject) result).get("txid").getAsString();
+        Assert.assertEquals(262, ((JsonObject) result).get("size").getAsInt());
+        Assert.assertEquals(TransactionType.ContractTransaction.value(), ((JsonObject) result).get("type").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("attributes").size());
+        Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("vin").size());
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonArray("vout").size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("n").getAsInt());
+        Assert.assertEquals(true, UInt256.parse(((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("asset").getAsString()).equals(UtilityToken.hash()));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("value").getAsString()).equals(new BigDecimal("1.00000000")));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("sys_fee").getAsString()).equals(new BigDecimal("0.00000000")));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("net_fee").getAsString()).equals(new BigDecimal("900.00000000")));
+        Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("scripts").size());
+
+        //sendmany
+        object = new JsonObject();
+        object.addProperty("asset", UtilityToken.hash().toString());
+        object.addProperty("value", 1);
+        object.addProperty("address", address);
+        array = new JsonArray();
+        array.add(object);
+        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendmany&params=[" + array.toString() + "]&id=1");
+        Assert.assertEquals(JsonObject.class, result.getClass());
+        Assert.assertEquals(10, ((JsonObject) result).size());
+        ((JsonObject) result).get("txid").getAsString();
+        Assert.assertEquals(262, ((JsonObject) result).get("size").getAsInt());
+        Assert.assertEquals(TransactionType.ContractTransaction.value(), ((JsonObject) result).get("type").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("attributes").size());
+        Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("vin").size());
+        Assert.assertEquals(2, ((JsonObject) result).getAsJsonArray("vout").size());
+        Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("n").getAsInt());
+        Assert.assertEquals(true, UInt256.parse(((JsonObject) result).getAsJsonArray("vout").get(0).getAsJsonObject().get("asset").getAsString()).equals(UtilityToken.hash()));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("sys_fee").getAsString()).equals(new BigDecimal("0.00000000")));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("net_fee").getAsString()).equals(new BigDecimal("900.00000000")));
+        Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("scripts").size());
+
+        //validateaddress
+        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=validateaddress&params=[\""
+                + address + "\"]&id=1");
+        Assert.assertEquals(JsonObject.class, result.getClass());
+        Assert.assertEquals(2, ((JsonObject) result).size());
+        Assert.assertEquals(true, ((JsonObject) result).get("address").getAsString().equals(address));
+        Assert.assertEquals(true, ((JsonObject) result).get("isvalid").getAsBoolean());
 
         //sendrawtransaction
-        AssetDescriptor descriptor = new AssetDescriptor(UIntBase.parse(assetid));
+        AssetDescriptor descriptor = new AssetDescriptor(UtilityToken.hash());
         UInt160 from = neo.wallets.Helper.toScriptHash(address);
         UInt160 to = neo.wallets.Helper.toScriptHash(address);
         BigDecimal value = BigDecimal.valueOf(1);
@@ -356,7 +503,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
         UInt160 change_address = null;
         Transaction tx = wallet.makeTransaction(null, Arrays.asList(new TransferOutput[]
                 {
-                        new TransferOutput(UIntBase.parse(assetid), value, to)
+                        new TransferOutput(UtilityToken.hash(), value, to)
                 }), from, change_address, fee);
         ContractParametersContext context = new ContractParametersContext(tx);
         wallet.sign(context);
@@ -369,75 +516,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
 
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendrawtransaction&params=[\""
                 + BitConverter.toHexString(output.toByteArray()) + "\",1]&id=1");
-        Assert.assertNull(result);
-
-        //sendfrom
-        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendfrom&params=[\"" + assetid + "\",\"" + address + "\",\""+ address + "\",1]&id=1");
-        Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(10, ((JsonObject)result).size());
-        ((JsonObject)result).get("txid").getAsString();
-        Assert.assertEquals(262, ((JsonObject)result).get("size").getAsInt());
-        Assert.assertEquals(TransactionType.ContractTransaction.value(), ((JsonObject)result).get("type").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("attributes").size());
-        Assert.assertEquals(1, ((JsonObject)result).getAsJsonArray("vin").size());
-        Assert.assertEquals(2, ((JsonObject)result).getAsJsonArray("vout").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("n").getAsInt());
-        Assert.assertEquals(true, UInt256.parse(((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("asset").getAsString()).equals(UInt256.parse(assetid)));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("value").getAsString()).equals(new BigDecimal("1.00000000")));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("sys_fee").getAsString()).equals(new BigDecimal("0.00000000")));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("net_fee").getAsString()).equals(new BigDecimal("1000.00000000")));
-        Assert.assertEquals(1, ((JsonObject)result).getAsJsonArray("scripts").size());
-
-        //sendtoaddress
-        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendtoaddress&params=[\"" + assetid + "\",\"" + address + "\",1]&id=1");
-        Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(10, ((JsonObject)result).size());
-        ((JsonObject)result).get("txid").getAsString();
-        Assert.assertEquals(262, ((JsonObject)result).get("size").getAsInt());
-        Assert.assertEquals(TransactionType.ContractTransaction.value(), ((JsonObject)result).get("type").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("attributes").size());
-        Assert.assertEquals(1, ((JsonObject)result).getAsJsonArray("vin").size());
-        Assert.assertEquals(2, ((JsonObject)result).getAsJsonArray("vout").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("n").getAsInt());
-        Assert.assertEquals(true, UInt256.parse(((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("asset").getAsString()).equals(UInt256.parse(assetid)));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("value").getAsString()).equals(new BigDecimal("1.00000000")));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("sys_fee").getAsString()).equals(new BigDecimal("0.00000000")));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("net_fee").getAsString()).equals(new BigDecimal("1000.00000000")));
-        Assert.assertEquals(1, ((JsonObject)result).getAsJsonArray("scripts").size());
-
-        //sendmany
-        object = new JsonObject();
-        object.addProperty("asset", assetid);
-        object.addProperty("value", 1);
-        object.addProperty("address", address);
-        array = new JsonArray();
-        array.add(object);
-        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendmany&params=[" + array.toString() + "]&id=1");
-        Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(10, ((JsonObject)result).size());
-        ((JsonObject)result).get("txid").getAsString();
-        Assert.assertEquals(262, ((JsonObject)result).get("size").getAsInt());
-        Assert.assertEquals(TransactionType.ContractTransaction.value(), ((JsonObject)result).get("type").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).get("version").getAsInt());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("attributes").size());
-        Assert.assertEquals(1, ((JsonObject)result).getAsJsonArray("vin").size());
-        Assert.assertEquals(2, ((JsonObject)result).getAsJsonArray("vout").size());
-        Assert.assertEquals(0, ((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("n").getAsInt());
-        Assert.assertEquals(true, UInt256.parse(((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("asset").getAsString()).equals(UInt256.parse(assetid)));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).getAsJsonArray("vout").get(0).getAsJsonObject().get("value").getAsString()).equals(new BigDecimal("1.00000000")));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("sys_fee").getAsString()).equals(new BigDecimal("0.00000000")));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("net_fee").getAsString()).equals(new BigDecimal("1000.00000000")));
-        Assert.assertEquals(1, ((JsonObject)result).getAsJsonArray("scripts").size());
-
-        //validateaddress
-        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=validateaddress&params=[\""
-                + address + "\"]&id=1");
-        Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(2, ((JsonObject)result).size());
-        Assert.assertEquals(true, ((JsonObject)result).get("address").getAsString().equals(address));
-        Assert.assertEquals(true, ((JsonObject)result).get("isvalid").getAsBoolean());
+        Assert.assertEquals(true, result.equals(Boolean.TRUE.toString()));
     }
 
     public Object httpGetResult(String request) {

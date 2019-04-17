@@ -5,6 +5,8 @@ import static akka.pattern.Patterns.ask;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
+
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -748,6 +750,8 @@ public class RpcServer implements IDisposable {
             response.addProperty("result", (String) result);
         } else if (result instanceof Integer) {
             response.addProperty("result", (Integer) result);
+        } else if (result instanceof Boolean) {
+            response.addProperty("result", (Boolean) result);
         }
         return TR.exit(response);
     }
@@ -778,8 +782,6 @@ public class RpcServer implements IDisposable {
                 host = null;
             }
         } catch (Exception e) {
-            TR.error(e);
-            throw new RuntimeException(e);
         }
         TR.exit();
     }
