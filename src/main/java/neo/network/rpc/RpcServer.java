@@ -776,6 +776,8 @@ public class RpcServer implements IDisposable {
         if (host != null) {
             host = null;
         }
+        rpcThread.interrupt();
+        rpcThread = null;
         TR.exit();
     }
 }

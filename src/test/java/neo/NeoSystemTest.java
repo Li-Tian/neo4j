@@ -1,5 +1,6 @@
 package neo;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,9 +19,11 @@ import neo.ledger.MyConsensusService;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.MyTaskManager;
 import neo.network.p2p.Peer;
+import neo.network.rpc.RpcServerTest;
 import neo.persistence.AbstractLeveldbTest;
 
 public class NeoSystemTest extends AbstractLeveldbTest {
+    public static NeoSystem system;
     private static TestKit testKit;
     @BeforeClass
     public static void setup () {
@@ -30,10 +33,15 @@ public class NeoSystemTest extends AbstractLeveldbTest {
             throw new RuntimeException(e);
         }
     }
+    @AfterClass
+    public static void tearDown() throws IOException {
+        AbstractLeveldbTest.tearDown(RpcServerTest.class.getSimpleName());
+        system.rpcServer.dispose();
+    }
 
     @Test
     public void test () {
-        NeoSystem system = new NeoSystem(store);
+        system = new NeoSystem(store);
         MyWallet wallet = new MyWallet();
         system.startConsensus(wallet);
         Assert.assertEquals(true, system.consensus != null);
