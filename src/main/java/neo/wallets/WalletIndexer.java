@@ -213,7 +213,7 @@ public class WalletIndexer implements IDisposable {
 
                     Coin coin;
                     if ((coin = coins_tracked.getOrDefault(reference, null)) != null) {
-                        coin.state = coin.state.OR(CoinState.Confirmed);
+                        coin.state = coin.state.or(CoinState.Confirmed);
                     } else {
                         accounts_tracked.get(output.scriptHash).add(reference);
                         coin = new Coin();
@@ -231,7 +231,7 @@ public class WalletIndexer implements IDisposable {
                 Coin coin;
                 if ((coin = coins_tracked.getOrDefault(input, null)) != null) {
                     if (coin.output.assetId.equals(Blockchain.GoverningToken.hash())) {
-                        coin.state = coin.state.OR(CoinState.Spent).OR(CoinState.Confirmed);
+                        coin.state = coin.state.or(CoinState.Spent).or(CoinState.Confirmed);
                         byte[] value = BitConverter.merge(SerializeHelper.toBytes(coin.output), coin.state.value());
                         DBHelper.batchPut(batch, DataEntryPrefix.ST_Coin, SerializeHelper.toBytes(input), value);
                     } else {

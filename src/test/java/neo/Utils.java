@@ -10,9 +10,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Random;
 import java.util.function.Supplier;
 
+import neo.csharp.io.MemoryStream;
+import neo.vm.OpCode;
 import neo.wallets.KeyPair;
 import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;

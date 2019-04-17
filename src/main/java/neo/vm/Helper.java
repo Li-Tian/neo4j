@@ -14,6 +14,7 @@ import neo.csharp.Uint;
 import neo.csharp.Ulong;
 import neo.csharp.Ushort;
 import neo.csharp.common.ByteEnum;
+import neo.csharp.common.ByteFlag;
 import neo.csharp.io.ISerializable;
 import neo.io.SerializeHelper;
 import neo.log.notr.TR;
@@ -182,11 +183,15 @@ public class Helper {
             sb.emitPush(new BigInteger(String.valueOf((Long) obj)));
         } else if (obj instanceof Ulong) {
             sb.emitPush(new BigInteger(String.valueOf(((Ulong) obj).intValue())));
-        } else if (obj instanceof ByteEnum) {
-            // TODO add by luc
+        } else if (obj instanceof ByteEnum) { // TODO add by luc 2019.4.15 -------------------------
             ByteEnum byteEnum = (ByteEnum) obj;
-            sb.emitPush(new BigInteger(String.valueOf(byteEnum.value())));
-        } else if (obj instanceof Enum) {
+            int value = byteEnum.value();
+            sb.emitPush(BigInteger.valueOf(value));
+        } else if (obj instanceof ByteFlag) {
+            ByteFlag flag = (ByteFlag) obj;
+            int value = flag.value();
+            sb.emitPush(BigInteger.valueOf(value));
+        } else if (obj instanceof Enum) {  // end --------------------------------------------------
             sb.emitPush(new BigInteger(String.valueOf(((Enum) obj).ordinal())));
             TR.fixMe("Enum类型数据是否能转换正常未经验证");
         } else {
@@ -203,9 +208,18 @@ public class Helper {
 //    }
 
     // add by luchuan
+
+    /**
+     * @param sb   script builder
+     * @param api  api
+     * @param args arguments, be careful with the parameter's type, only support: Boolean, String,
+     *             BigInteger, ISerializable, Byte, Short, Ushort, Integer,Uint, Long, ULong,
+     *             ByteEnum, ByteFlag, Enum.
+     */
     public static ScriptBuilder emitSysCall(ScriptBuilder sb, String api, Object... args) {
-        for (int i = args.length - 1; i >= 0; i--)
+        for (int i = args.length - 1; i >= 0; i--) {
             emitPush(sb, args[i]);
+        }
         return sb.emitSysCall(api);
     }
     // @end modify ---------------------------------------------------------------------------------

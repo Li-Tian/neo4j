@@ -516,11 +516,8 @@ public class Blockchain extends AbstractActor {
                 continue;
             }
             if (!header.verify(snapshot)) {
-                System.err.println("blcok2 verify header: false in blockchain" + header.getClass());
-                System.err.println(header.toJson());
                 break;
             }
-            System.err.println("blcok2 verify header: true in blockchain");
             headerIndex.add(header.hash());
             snapshot.getBlocks().add(header.hash(), new BlockState() {
                 {
@@ -619,7 +616,6 @@ public class Blockchain extends AbstractActor {
         snapshot.setPersistingBlock(block);
         snapshot.getBlocks().add(block.hash(), new BlockState() {
             {
-
                 systemFeeAmount = snapshot.getSysFeeAmount(block.prevHash) + Fixed8.toLong(Helper.sum(Arrays.asList(block.transactions), p -> p.getSystemFee()));
                 trimmedBlock = block.trim();
             }
@@ -764,7 +760,7 @@ public class Blockchain extends AbstractActor {
                         vmState = engine.state;
                         gasConsumed = engine.getGasConsumed();
                         stack = items.toArray(new StackItem[items.size()]);
-                        notifications = engine.getService().getNotifications().toArray(new NotifyEventArgs[engine.getService().getNotifications().size()]);
+                        notifications = engine.getService().getNotifications().toArray(new NotifyEventArgs[0]);
                     }
                 });
             }

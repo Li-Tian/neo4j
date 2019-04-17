@@ -1,7 +1,7 @@
 package neo.ledger;
 
 
-import neo.common.ByteFlag;
+import neo.csharp.common.ByteFlag;
 
 /**
  * 智能合约属性状态

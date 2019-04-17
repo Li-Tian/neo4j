@@ -9,17 +9,9 @@ namespace Neo.SmartContract
     /**
      * NEP5 Token Demo
      *
-     * 步骤:
-     * 1. 部署该智能合约
-     * 2. 调用该合约的`deploy`方法，进行代币生成到Owner账户上
-     * 3. 调用合约的`transfer`方法，进行代币分发
-     *
-     * @link 合约部署，可以使用社区的浏览器工具 https://neoray.nel.group/#/login
-     *   需要配合本地钱包，将账户地址，拿到账户合约的ScriptHash值
      *
      * @Note
-     *  1. 大家在填写地址 byte[] 时候，需要对从GUI上提取的合约脚本散列按照字节反转，
-     *    例如 `0xce24e60088712968392d0fe31a39879b71b0af30`, 反转为 `30afb0719b87391ae30f2d396829718800e624cd`（比较蛋疼）
+     *  1. don't forget to reverse the byte array, when assgin the parameters.
      *
      * @author Minge
      * @email luchuan@neo.org
@@ -32,23 +24,23 @@ namespace Neo.SmartContract
         public static byte Decimals() => 8;
         public static BigInteger TotalSupply() => (ulong)100000000 * 100000000;
 
-        // TODO 记得改成自己的钱包地址
+        // TODO set the address to yours
         public static readonly byte[] Owner = "AUejN4mLdGA8Yyhmj1NwqURwE3FrMjZ4e9".ToScriptHash();
 
         [DisplayName("transfer")]
-        public static event Action<byte[], byte[], BigInteger> Transferred;//交易事件
+        public static event Action<byte[], byte[], BigInteger> Transferred;
 
         public static Object Main(string operation, params object[] args)
         {
             if (Runtime.Trigger == TriggerType.Application)
             {
-                if (operation == "deploy") return Deploy();             // 部署
-                if (operation == "totalSupply") return TotalSupply();   // 总量
-                if (operation == "name") return Name();                 // 名称
-                if (operation == "symbol") return Symbol();             // 标示符
-                if (operation == "decimals") return Decimals();         // 精度
-                if (operation == "owner") return Owner;                 // 所有者
-                if (operation == "transfer")                            // 转账
+                if (operation == "deploy") return Deploy();
+                if (operation == "totalSupply") return TotalSupply();
+                if (operation == "name") return Name();
+                if (operation == "symbol") return Symbol();
+                if (operation == "decimals") return Decimals();
+                if (operation == "owner") return Owner;
+                if (operation == "transfer")
                 {
                     if (args.Length != 3) return false;
                     byte[] from = (byte[])args[0];
@@ -56,12 +48,32 @@ namespace Neo.SmartContract
                     BigInteger value = (BigInteger)args[2];
                     return Transfer(from, to, value);
                 }
-                if (operation == "balanceOf")//余额
+                if (operation == "balanceOf")
                 {
                     if (args.Length != 1) return 0;
                     byte[] account = (byte[])args[0];
                     return BalanceOf(account);
                 }
+                if (operation == "migrate")
+                {
+                    if (args.Length != 9) return false;
+
+                    byte[] script = (byte[]) args[0];
+                    byte[] parameter_list = (byte[])args[1];
+                    byte return_type = (byte)args[2];
+                    ContractPropertyState contract_properties = (ContractPropertyState)args[3];
+                    string name = (string)args[4];
+                    string version = (string)args[5];
+                    string author = (string)args[6];
+                    string email = (string)args[7];
+                    string description = (string)args[8];
+                    return Migrate(script, parameter_list, return_type, contract_properties, name, version, author, email, description);
+                }
+                if(operation == "delete")
+                {
+                    return Delete();
+                }
+
             }
             return true;
         }
@@ -101,6 +113,18 @@ namespace Neo.SmartContract
 
             Transferred(null, Owner, TotalSupply());
 
+            return true;
+        }
+
+        public static bool Migrate(byte[] script, byte[] parameter_list, byte return_type, ContractPropertyState contract_properties, string name, string version, string author, string email, string description)
+        {
+            Contract.Migrate(script, parameter_list, return_type, contract_properties, name, version, author, email, description);
+            return true;
+        }
+
+        public static bool Delete()
+        {
+            Contract.Destroy();
             return true;
         }
     }

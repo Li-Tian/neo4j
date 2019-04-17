@@ -1,6 +1,6 @@
 package neo.consensus;
 
-import neo.common.ByteFlag;
+import neo.csharp.common.ByteFlag;
 
 /**
  * Consensus state

@@ -523,7 +523,7 @@ public class UserWallet extends Wallet {
                     Coin tempCoin = new Coin();
                     tempCoin.reference = coin.reference;
                     tempCoin.output = coin.output;
-                    tempCoin.state = coin.state.OR(CoinState.Spent);
+                    tempCoin.state = coin.state.or(CoinState.Spent);
                     resultSet.add(tempCoin);
                 }
                 continue;
