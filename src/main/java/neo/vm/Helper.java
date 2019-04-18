@@ -253,7 +253,7 @@ public class Helper {
                 List<AbstractMap.SimpleEntry<StackItem, ContractParameter>> finalContext = context;
                 parameter.value = StreamSupport.stream(((Array) item).getEnumerator().spliterator(), false).map
                         (p -> toParameter((StackItem) p, finalContext))
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toCollection(ContractParameter.ContractParameterList::new));
             }
         } else if (item instanceof Map) {
             if (context == null)
@@ -283,7 +283,7 @@ public class Helper {
                             (), false).map(p -> new AbstractMap.SimpleEntry<ContractParameter,
                             ContractParameter>(toParameter(p.getKey(), finalContext),
                             toParameter(p.getValue(), finalContext)))
-                            .collect(Collectors.toList());
+                            .collect(Collectors.toCollection(ContractParameter.MapList::new));
                     //LINQ END
                 }
             }
