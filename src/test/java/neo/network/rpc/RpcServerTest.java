@@ -104,7 +104,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
         MyWallet wallet = new MyWallet();
         WalletAccount account = wallet.getAccounts().iterator().next();
         String address = account.getAddress();
-        UInt160 script_hash = neo.wallets.Helper.toScriptHash(address);
+        UInt160 scripthash = neo.wallets.Helper.toScriptHash(address);
         String assetid = "c56f33fc6ecfcd0c225c4ab356fee59390af8560be0e930faebe74a6daff7c9b";//NEO
         String blockHash = "0x770491ed5d25be41c633bd4e42a06712dd5805dd7c9aea9b351bcbe33a96dc8a";
         String blockInfo = "0000000000000000000000000000000000000000000000000000000000000000000000006" +
@@ -131,7 +131,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
                             {
                                 assetId = UtilityToken.hash();
                                 value = Fixed8.fromDecimal(BigDecimal.valueOf(1000));
-                                scriptHash = script_hash;
+                                scriptHash = scripthash;
                             }
                         }
                 };
@@ -194,7 +194,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
         Assert.assertEquals(JsonObject.class, result.getClass());
         Assert.assertEquals(5, ((JsonObject) result).size());
         Assert.assertEquals(0, ((JsonObject) result).get("version").getAsInt());
-        Assert.assertEquals(true, UInt160.parse(((JsonObject) result).get("script_hash").getAsString()).equals(script_hash));
+        Assert.assertEquals(true, UInt160.parse(((JsonObject) result).get("script_hash").getAsString()).equals(scripthash));
         Assert.assertEquals(false, ((JsonObject) result).get("frozen").getAsBoolean());
         Assert.assertEquals(0, ((JsonObject) result).getAsJsonArray("votes").size());
         Assert.assertEquals(1, ((JsonObject) result).getAsJsonArray("balances").size());
@@ -309,7 +309,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
 
         //getcontractstate
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getcontractstate&params=[\""
-                + script_hash + "\"]&id=1");
+                + scripthash + "\"]&id=1");
         Assert.assertNull(result);
 
         //getnewaddress
@@ -352,7 +352,7 @@ public class RpcServerTest extends AbstractLeveldbTest {
 
         //getstorage
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=getstorage&params=[\""
-                + script_hash + "\",\"5065746572\"]&id=1");
+                + scripthash + "\",\"5065746572\"]&id=1");
         Assert.assertNull(result);
 
         //gettxout
@@ -536,11 +536,11 @@ public class RpcServerTest extends AbstractLeveldbTest {
         BigDecimal value = BigDecimal.valueOf(1);
         value.setScale(descriptor.decimals);
         Fixed8 fee = Fixed8.ZERO;
-        UInt160 change_address = null;
+        UInt160 changeaddress = null;
         Transaction tx = wallet.makeTransaction(null, Arrays.asList(new TransferOutput[]
                 {
                         new TransferOutput(UtilityToken.hash(), value, to)
-                }), from, change_address, fee);
+                }), from, changeaddress, fee);
         ContractParametersContext context = new ContractParametersContext(tx);
         wallet.sign(context);
         if (context.completed()) {
