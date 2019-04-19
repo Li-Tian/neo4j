@@ -281,9 +281,9 @@ public class ContractParameter {
         }
     }
 
-    static class ContractParameterList<ContractParameter> extends ArrayList<ContractParameter> {
+    static public class ContractParameterList<E> extends ArrayList<E> {
     }
 
-    static class MapList<E> extends ArrayList<E> {
+    static public class MapList<E> extends ArrayList<E> {
     }
 }

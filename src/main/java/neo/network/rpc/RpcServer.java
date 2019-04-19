@@ -5,14 +5,9 @@ import static akka.pattern.Patterns.ask;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
-
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 
-import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -36,6 +31,7 @@ import neo.UInt160;
 import neo.UInt256;
 import neo.UIntBase;
 import neo.csharp.common.IDisposable;
+import neo.vm.VMState;
 import neo.wallets.AssetDescriptor;
 import neo.wallets.NEP6.NEP6Wallet;
 import neo.wallets.TransferOutput;
@@ -124,7 +120,15 @@ public class RpcServer implements IDisposable {
         ApplicationEngine engine = ApplicationEngine.run(script, null, null, false, maxGasInvoke);
         JsonObject json = new JsonObject();
         json.addProperty("script", BitConverter.toHexString(script));
-        json.addProperty("state", engine.state.toString());
+        if (engine.state == VMState.NONE) {
+            json.addProperty("state", "NONE");
+        } else if (engine.state == VMState.HALT) {
+            json.addProperty("state", "HALT");
+        } else if (engine.state == VMState.FAULT) {
+            json.addProperty("state", "FAULT");
+        } else if (engine.state == VMState.BREAK) {
+            json.addProperty("state", "BREAK");
+        }
         json.addProperty("gas_consumed", engine.getGasConsumed().toString());
         try {
             //json["stack"] = new JArray(engine.ResultStack.Select(p => p.ToParameter().ToJson()));
