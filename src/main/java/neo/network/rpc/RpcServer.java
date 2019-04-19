@@ -571,11 +571,7 @@ public class RpcServer implements IDisposable {
                     if (context.completed()) {
                         tx.witnesses = context.getWitnesses();
                         wallet.applyTransaction(tx);
-                        system.localNode.tell(new LocalNode.Relay() {
-                            {
-                                inventory = tx;
-                            }
-                        }, ActorRef.noSender());
+                        system.localNode.tell(new LocalNode.Relay(tx) , ActorRef.noSender());
                         return TR.exit(tx.toJson());
                     } else {
                         return TR.exit(context.toJson());
@@ -620,11 +616,7 @@ public class RpcServer implements IDisposable {
                     if (context.completed()) {
                         tx.witnesses = context.getWitnesses();
                         wallet.applyTransaction(tx);
-                        system.localNode.tell(new LocalNode.Relay() {
-                            {
-                                inventory = tx;
-                            }
-                        }, ActorRef.noSender());
+                        system.localNode.tell(new LocalNode.Relay(tx), ActorRef.noSender());
                         return TR.exit(tx.toJson());
                     } else {
                         return TR.exit(context.toJson());
@@ -671,11 +663,7 @@ public class RpcServer implements IDisposable {
                     if (context.completed()) {
                         tx.witnesses = context.getWitnesses();
                         wallet.applyTransaction(tx);
-                        system.localNode.tell(new LocalNode.Relay() {
-                            {
-                                inventory = tx;
-                            }
-                        }, ActorRef.noSender());
+                        system.localNode.tell(new LocalNode.Relay(tx), ActorRef.noSender());
                         return TR.exit(tx.toJson());
                     } else {
                         return TR.exit(context.toJson());

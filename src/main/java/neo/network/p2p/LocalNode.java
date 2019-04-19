@@ -43,6 +43,10 @@ public class LocalNode extends Peer {
          * Inventory data
          */
         public IInventory inventory;
+
+        public Relay(IInventory inventory){
+            this.inventory = inventory;
+        }
     }
 
 
@@ -52,6 +56,10 @@ public class LocalNode extends Peer {
      */
     public static class RelayDirectly {
         public IInventory inventory;
+
+        public RelayDirectly(IInventory inventory){
+            this.inventory = inventory;
+        }
     }
 
     /**
@@ -60,6 +68,10 @@ public class LocalNode extends Peer {
      */
     public static class SendDirectly {
         public IInventory inventory;
+
+        public SendDirectly(IInventory inventory){
+            this.inventory = inventory;
+        }
     }
 
     private static final Object lockObj = new Object();

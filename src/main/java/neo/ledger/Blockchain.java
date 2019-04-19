@@ -434,7 +434,6 @@ public class Blockchain extends AbstractActor {
                     break;
                 }
             }
-
             int blocksPersisted = 0;
             for (Block blockToPersist : blocksToPersistList) {
                 block_cache_unverified.remove(blockToPersist.index);
@@ -444,11 +443,7 @@ public class Blockchain extends AbstractActor {
                 // Relay most recent 2 blocks persisted
 
                 if (blockToPersist.index.add(new Uint(100)).intValue() >= headerIndex.size()) {
-                    system.localNode.tell(new LocalNode.RelayDirectly() {
-                        {
-                            inventory = blockToPersist;
-                        }
-                    }, self());
+                    system.localNode.tell(new LocalNode.RelayDirectly(blockToPersist), self());
                 }
             }
             saveHeaderHashList(null);
@@ -463,11 +458,7 @@ public class Blockchain extends AbstractActor {
         } else {
             blockCache.put(block.hash(), block);
             if (block.index.add(new Uint(100)).intValue() >= headerIndex.size()) {
-                system.localNode.tell(new LocalNode.RelayDirectly() {
-                    {
-                        inventory = block;
-                    }
-                }, self());
+                system.localNode.tell(new LocalNode.RelayDirectly(block), self());
             }
             if (block.index.intValue() == headerIndex.size()) {
                 headerIndex.add(block.hash());
@@ -497,11 +488,7 @@ public class Blockchain extends AbstractActor {
             system.consensus.tell(payload, self());
         }
         relayCache.add(payload);
-        system.localNode.tell(new LocalNode.RelayDirectly() {
-            {
-                inventory = payload;
-            }
-        }, self());
+        system.localNode.tell(new LocalNode.RelayDirectly(payload), self());
         return TR.exit(RelayResultReason.Succeed);
     }
 
@@ -557,11 +544,7 @@ public class Blockchain extends AbstractActor {
             return TR.exit(RelayResultReason.OutOfMemory);
         }
 
-        system.localNode.tell(new LocalNode.RelayDirectly() {
-            {
-                inventory = transaction;
-            }
-        }, self());
+        system.localNode.tell(new LocalNode.RelayDirectly(transaction), self());
         return TR.exit(RelayResultReason.Succeed);
     }
 
@@ -734,7 +717,7 @@ public class Blockchain extends AbstractActor {
                         script = tx_publish.script;
                         parameterList = tx_publish.parameterList;
                         returnType = tx_publish.returnType;
-                        contractProperties = new ContractPropertyState ((byte)(tx_publish.needStorage ? 0x01 : 0x00));
+                        contractProperties = new ContractPropertyState((byte) (tx_publish.needStorage ? 0x01 : 0x00));
                         name = tx_publish.name;
                         codeVersion = tx_publish.codeVersion;
                         author = tx_publish.author;
@@ -749,8 +732,8 @@ public class Blockchain extends AbstractActor {
                 if (engine.execute2()) {
                     engine.getService().commit();
                 }
-                ArrayList<StackItem> items = new ArrayList<StackItem>();
-                for (int i=0, n=engine.resultStack.getCount(); i < n; i++) {
+                ArrayList<StackItem> items = new ArrayList<>();
+                for (int i = 0, n = engine.resultStack.getCount(); i < n; i++) {
                     items.add(engine.resultStack.peek(i));
                 }
                 execution_results.add(new ApplicationExecutionResult() {
@@ -794,7 +777,7 @@ public class Blockchain extends AbstractActor {
             } catch (Exception ex) {
                 if (plugin.shouldThrowExceptionFromCommit(ex)) {
                     if (commitExceptions == null) {
-                        commitExceptions = new ArrayList<Exception>();
+                        commitExceptions = new ArrayList<>();
                     }
                     commitExceptions.add(ex);
                 }

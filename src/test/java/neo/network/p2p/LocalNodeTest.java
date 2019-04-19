@@ -198,27 +198,21 @@ public class LocalNodeTest extends AbstractLeveldbTest {
 
 
         // test Relay event
-        LocalNode.Relay relay = new LocalNode.Relay() {{
-            inventory = new ContractTransaction();
-        }};
+        LocalNode.Relay relay = new LocalNode.Relay(new ContractTransaction());
         localNodeRef.tell(relay, testKit.testActor());
         testKit.expectMsgClass(ContractTransaction.class);// Myconsensus
         testKit.expectMsgClass(ContractTransaction.class);// blockchain
 
 
         // test RelayDirectly event
-        LocalNode.RelayDirectly relayDirectly = new LocalNode.RelayDirectly() {{
-            inventory = new ContractTransaction();
-        }};
+        LocalNode.RelayDirectly relayDirectly = new LocalNode.RelayDirectly(new ContractTransaction()) ;
         localNodeRef.tell(relayDirectly, testKit.testActor());
         testKit.expectMsgClass(Idle.class); // MyRemoteNode
         testKit.expectMsgClass(RemoteNode.Relay.class); // MyRemoteNode
 
 
         // test SendDirectly event
-        LocalNode.SendDirectly sendDirectly = new LocalNode.SendDirectly() {{
-            inventory = new ContractTransaction();
-        }};
+        LocalNode.SendDirectly sendDirectly = new LocalNode.SendDirectly(new ContractTransaction());
         localNodeRef.tell(sendDirectly, testKit.testActor());
         testKit.expectMsgClass(ContractTransaction.class);
 

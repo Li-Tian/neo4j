@@ -346,7 +346,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
         Assert.assertEquals(4, array.getCount());
 
         // TODO the first is ?
-//        System.err.println(BitConverter.toHexString(array.getArrayItem(0).getByteArray()));
+//        System.out.println(BitConverter.toHexString(array.getArrayItem(0).getByteArray()));
         Assert.assertArrayEquals(from.toArray(), array.getArrayItem(1).getByteArray());
         Assert.assertArrayEquals(to.toArray(), array.getArrayItem(2).getByteArray());
         Assert.assertEquals(10000, array.getArrayItem(3).getBigInteger().intValue());
@@ -595,7 +595,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
         if (engine.execute2()) {
             engine.getService().commit();
         } else {
-            System.err.println("executed failed");
+            System.out.println("executed failed");
         }
         ArrayList<StackItem> items = new ArrayList<>();
         for (int i = 0, n = engine.resultStack.getCount(); i < n; i++) {

@@ -26,7 +26,6 @@ import neo.csharp.Uint;
 import neo.io.SerializeHelper;
 import neo.io.actors.PriorityMailbox;
 import neo.ledger.Blockchain;
-import neo.log.notr.TR;
 import neo.network.p2p.LocalNode;
 import neo.network.p2p.Message;
 import neo.network.p2p.TaskManager;
@@ -38,6 +37,9 @@ import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionType;
 import neo.plugins.LogLevel;
 import neo.plugins.Plugin;
+
+import neo.log.tr.TR;
+
 
 /**
  * Consensus sevice, implemented the dBFT algorithm. for more details:
@@ -177,9 +179,7 @@ public class ConsensusService extends AbstractActor {
                 log(LogLevel.Info, "send prepare response");
                 context.state = context.state.or(ConsensusState.SignatureSent);
                 context.signHeader();
-                localNode.tell(new LocalNode.SendDirectly() {{
-                    inventory = context.makePrepareResponse(context.signatures[context.myIndex]);
-                }}, self());
+                localNode.tell(new LocalNode.SendDirectly( context.makePrepareResponse(context.signatures[context.myIndex])) , self());
                 checkSignatures();
             } else {
                 requestChangeView();
@@ -243,9 +243,7 @@ public class ConsensusService extends AbstractActor {
         if (validSignatureSize >= context.getM() && isAllTxsExist) {
             Block block = context.createBlock();
             log(LogLevel.Info, "relay block: {block.Hash}");
-            localNode.tell(new LocalNode.Relay() {{
-                inventory = block;
-            }}, self());
+            localNode.tell(new LocalNode.Relay(block), self());
             context.state = context.state.or(ConsensusState.BlockSent);
         }
         TR.exit();
@@ -592,11 +590,7 @@ public class ConsensusService extends AbstractActor {
                 context.fill();
                 context.signHeader();
             }
-            localNode.tell(new LocalNode.SendDirectly() {
-                {
-                    inventory = context.makePrepareRequest();
-                }
-            }, self());
+            localNode.tell(new LocalNode.SendDirectly(context.makePrepareRequest()), self());
             if (context.transactionHashes.length > 1) {
                 for (InvPayload payload : InvPayload.createGroup(InventoryType.Tx, Arrays.stream(context.transactionHashes).skip(1).toArray(UInt256[]::new))) {
                     localNode.tell(Message.create("inv", payload), self());
@@ -663,9 +657,7 @@ public class ConsensusService extends AbstractActor {
                 context.expectedView[context.myIndex] & 0xff, context.state.value() & 0xff);
 
         changeTimer(Duration.ofSeconds(Blockchain.SecondsPerBlock << (context.expectedView[context.myIndex] + 1)));
-        localNode.tell(new LocalNode.SendDirectly() {{
-            inventory = context.makeChangeView();
-        }}, self());
+        localNode.tell(new LocalNode.SendDirectly(context.makeChangeView()), self());
         CheckExpectedView(context.expectedView[context.myIndex]);
         TR.exit();
     }

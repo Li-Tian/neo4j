@@ -51,6 +51,7 @@ import neo.network.p2p.payloads.VersionPayload;
  *
  * <---- getheaders --- ----- headers ----->
  * </code>
+ * TODO 解析双方的block， tx, payload 格式
  */
 public class P2pNetworkTest {
 
@@ -109,14 +110,14 @@ public class P2pNetworkTest {
                     .match(
                             Tcp.Connected.class,
                             conn -> {
-                                System.err.println("client connected success");
+                                System.out.println("client connected success");
                                 sender().tell(TcpMessage.register(self()), self());
 
                                 VersionPayload versionPayload = VersionPayload.create(10333,
                                         LocalNode.NONCE,
                                         LocalNode.USER_AGENT,
                                         Uint.ZERO);
-                                System.err.println("server start to send version message");
+                                System.out.println("server start to send version message");
                                 ByteString data = ByteString.fromArray(SerializeHelper.toBytes(Message.create("version", versionPayload)));
                                 sender().tell(TcpMessage.write(data), getSelf());
                             })
@@ -124,7 +125,7 @@ public class P2pNetworkTest {
                             msg -> {
                                 final ByteString data = msg.data();
                                 Message message = SerializeHelper.parse(Message::new, data.toArray());
-                                System.err.println("server received msg: " + gson.toJson(message));
+                                System.out.println("server received msg: " + gson.toJson(message));
                                 switch (message.command) {
                                     case "version":
                                         sender().tell(TcpMessage.write(ByteString.fromArray(SerializeHelper.toBytes(Message.create("verack")))), getSelf());
@@ -133,8 +134,8 @@ public class P2pNetworkTest {
                                         Blockchain.GenesisBlock.rebuildMerkleRoot();
                                         HeadersPayload payload = HeadersPayload.create(Collections.singleton(Blockchain.GenesisBlock.getHeader()));
                                         Message headersMsg = Message.create("headers", payload);
-                                        System.err.println("send header msg: " + BitConverter.toHexString(SerializeHelper.toBytes(payload)));
-                                        System.err.println("send header msg payload: " + BitConverter.toHexString(SerializeHelper.toBytes(payload)));
+                                        System.out.println("send header msg: " + BitConverter.toHexString(SerializeHelper.toBytes(payload)));
+                                        System.out.println("send header msg payload: " + BitConverter.toHexString(SerializeHelper.toBytes(payload)));
                                         sender().tell(TcpMessage.write(ByteString.fromArray(SerializeHelper.toBytes(headersMsg))), self());
                                         break;
                                     default:
@@ -186,7 +187,7 @@ public class P2pNetworkTest {
                     LocalNode.NONCE,
                     LocalNode.USER_AGENT,
                     Uint.ONE);
-            System.err.println("client send local version: " + gson.toJson(versionPayload));
+            System.out.println("client send local version: " + gson.toJson(versionPayload));
             sendMessage(Message.create("version", versionPayload));
         }
 
@@ -199,12 +200,12 @@ public class P2pNetworkTest {
         protected void onData(ByteString data) {
             msgBuffer = msgBuffer.concat(data);
             for (Message message = tryParseMessage(); message != null; message = tryParseMessage()) {
-                System.err.println("client received " + message.command + ": " + gson.toJson(message));
+                System.out.println("client received " + message.command + ": " + gson.toJson(message));
 
                 switch (message.command) {
                     case "version":
                         version = SerializeHelper.parse(VersionPayload::new, message.payload);
-                        System.err.println("client received version: " + gson.toJson(version));
+                        System.out.println("client received version: " + gson.toJson(version));
                         sendMessage(Message.create("verack"));
                         try {
                             Thread.sleep(1000 * 2);
@@ -218,14 +219,14 @@ public class P2pNetworkTest {
                         break;
                     case "headers":
                         HeadersPayload payload = SerializeHelper.parse(HeadersPayload::new, message.payload);
-                        System.err.println("client received headers: " + gson.toJson(payload));
+                        System.out.println("client received headers: " + gson.toJson(payload));
                         Assert.assertEquals(1, payload.headers.length);
                         Assert.assertEquals(Blockchain.GenesisBlock.getHeader().hash(), payload.headers[0].hash());
                         done = true;
                         break;
                     case "inv":
                         InvPayload invPayload = SerializeHelper.parse(InvPayload::new, message.payload);
-                        System.err.println("client received inv " + invPayload.type.name());
+                        System.out.println("client received inv " + invPayload.type.name());
                         ArrayList<UInt256> notFound = new ArrayList<>(20);
                         for (UInt256 hash : invPayload.hashes) {
                             if (invSet.add(hash)) {
@@ -233,7 +234,7 @@ public class P2pNetworkTest {
                             }
                         }
                         for (InvPayload payload1 : InvPayload.createGroup(invPayload.type, notFound)) {
-                            System.err.println("start to send getdata message with hash: " + payload1.hashes[0].toString());
+                            System.out.println("start to send getdata message with hash: " + payload1.hashes[0].toString());
                             sender().tell(Message.create("getdata", payload1), self());
                         }
                     default:
@@ -257,7 +258,7 @@ public class P2pNetworkTest {
         }
 
         private void enqueueMessage(Message message) {
-            System.err.println("received msg: " + gson.toJson(message));
+            System.out.println("received msg: " + gson.toJson(message));
             messageQueue.add(message);
             checkMessageQueue();
         }
@@ -306,7 +307,7 @@ public class P2pNetworkTest {
         }
 
         private void sendMessage(Message message) {
-            System.err.println("client start to send message: " + message.command + "  " + gson.toJson(message));
+            System.out.println("client start to send message: " + message.command + "  " + gson.toJson(message));
             sendData(ByteString.fromArray(SerializeHelper.toBytes(message)));
         }
 

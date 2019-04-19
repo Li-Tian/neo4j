@@ -25,7 +25,6 @@ import neo.csharp.common.IDisposable;
 import neo.exception.InvalidOperationException;
 import neo.io.SerializeHelper;
 import neo.ledger.Blockchain;
-import neo.log.notr.TR;
 import neo.network.p2p.payloads.Block;
 import neo.network.p2p.payloads.CoinReference;
 import neo.network.p2p.payloads.ConsensusPayload;
@@ -42,6 +41,8 @@ import neo.plugins.IPolicyPlugin;
 import neo.plugins.Plugin;
 import neo.smartcontract.Contract;
 import neo.smartcontract.ContractParametersContext;
+
+import neo.log.tr.TR;
 
 /**
  * Consensus context, it records the data in current consensus activity.
@@ -273,12 +274,16 @@ public class ConsensusContext implements IDisposable {
         message.viewNumber = viewNumber;
         ConsensusPayload payload = new ConsensusPayload();
 
+        if (timestamp == null) {
+            timestamp = TimeProvider.current().getNow();
+        }
         payload.version = VERSION;
         payload.prevHash = prevHash;
         payload.blockIndex = blockIndex;
         payload.validatorIndex = new Ushort(myIndex);
         payload.timestamp = timestamp;
         payload.data = SerializeHelper.toBytes(message);
+
 
         signPayload(payload);
         return TR.exit(payload);
@@ -401,7 +406,7 @@ public class ConsensusContext implements IDisposable {
         keyPair = null;
         for (int i = 0; i < validators.length; i++) {
             WalletAccount account = wallet.getAccount(validators[i]);
-            if (account != null && account.hasKey() == true) {
+            if (account != null && account.hasKey()) {
                 myIndex = i;
                 keyPair = account.getKey();
                 break;
@@ -457,8 +462,14 @@ public class ConsensusContext implements IDisposable {
         }
         transactionHashes = txWithMx.stream().map(p -> p.hash()).toArray(UInt256[]::new);
         transactions = txWithMx.stream().collect(Collectors.toMap(tx -> tx.hash(), tx -> tx));
-        nextConsensus = Blockchain.getConsensusAddress(snapshot.getValidators(txWithMx));
-        timestamp = new Uint((int) Math.max(TimeProvider.current().utcNow().getTime(), getPrevHeader().timestamp.longValue() + 1));
+
+        Collection<ECPoint> ecPoints = snapshot.getValidators(txWithMx);
+
+
+        nextConsensus = Blockchain.getConsensusAddress(ecPoints);
+        Uint now = TimeProvider.current().getNow();
+        Uint prevTime = getPrevHeader().timestamp.add(Uint.ONE);
+        timestamp = now.compareTo(prevTime) > 0 ? now : prevTime;
 
         TR.exit();
     }

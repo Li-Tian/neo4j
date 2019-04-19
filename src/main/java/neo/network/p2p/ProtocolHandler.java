@@ -340,8 +340,7 @@ public class ProtocolHandler extends AbstractActor {
             TR.exit();
             return;
         }
-        LocalNode.Relay relay = new LocalNode.Relay();
-        relay.inventory = inventory;
+        LocalNode.Relay relay = new LocalNode.Relay(inventory);
         system.localNode.tell(relay, self());
 
         TR.exit();

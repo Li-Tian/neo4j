@@ -25,7 +25,7 @@ public class AVMParser {
     @Test
     public void testParser() {
         byte[] script = loadAvm();
-        System.err.println(BitConverter.toHexString(script));
+        System.out.println(BitConverter.toHexString(script));
         Collection<OpCodeItem> opCodeItems = parseAVMScript(script);
         printCodeList(opCodeItems);
     }
@@ -54,7 +54,7 @@ public class AVMParser {
                     builder.append(" ").append(param);
                 }
             }
-            System.err.println((i++) + ": " + BitConverter.toHexString(new byte[]{item.code.getCode()}) + " " + item.code.name() + builder.toString() + " " + item.comment);
+            System.out.println((i++) + ": " + BitConverter.toHexString(new byte[]{item.code.getCode()}) + " " + item.code.name() + builder.toString() + " " + item.comment);
         }
     }
 
@@ -87,7 +87,7 @@ public class AVMParser {
             codeItem.code = opcode;
             opcodeItems.add(codeItem);
 
-//            System.err.println(opcodeItems.size() + ": " + BitConverter.toHexString(new byte[]{opcode.getCode()}) + " " + opcode.name());
+//            System.out.println(opcodeItems.size() + ": " + BitConverter.toHexString(new byte[]{opcode.getCode()}) + " " + opcode.name());
 
             if ((opcode.getCode() >= OpCode.PUSHBYTES1.getCode())
                     && (opcode.getCode() <= OpCode.PUSHBYTES75.getCode())) {

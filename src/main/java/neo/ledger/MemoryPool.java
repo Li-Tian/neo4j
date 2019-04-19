@@ -498,11 +498,7 @@ public class MemoryPool {
                     verifiedSortedTxPool.add(item);
 
                     if (item.lastBroadcastTimestamp.compareTo(rebroadcastCutOffTime) < 0) {
-                        _system.localNode.tell(new LocalNode.RelayDirectly() {
-                            {
-                                inventory = item.tx;
-                            }
-                        }, _system.blockchain);
+                        _system.localNode.tell(new LocalNode.RelayDirectly(item.tx), _system.blockchain);
                         item.lastBroadcastTimestamp = new Date(System.currentTimeMillis());
                     }
                 }

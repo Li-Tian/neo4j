@@ -1,7 +1,8 @@
-package neo.consensus;
+package scenario;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 
 import neo.UInt160;
@@ -20,42 +21,20 @@ import neo.wallets.Wallet;
 import neo.wallets.WalletAccount;
 import neo.wallets.WalletTransactionEventArgs;
 
-public class MyWallet extends Wallet {
+public class MyWallet3 extends Wallet {
 
     private HashMap<UInt160, UserWalletAccount> accounts = new HashMap<>();
     private HashSet<Coin> coins = null;
 
-    public MyWallet() {
+    public MyWallet3(int accountCount) {
         byte[] privateKey = new byte[32];
-        Random rng = new Random();
 
-        rng.nextBytes(privateKey);
-        WalletAccount account = createAccount(privateKey);
-        account.isDefault = true; // the first account is default account
-
-        privateKey = new byte[32];
-        rng.nextBytes(privateKey);
-        createAccount(privateKey);
-
-        privateKey = new byte[32];
-        rng.nextBytes(privateKey);
-        createAccount(privateKey);
-
-        privateKey = new byte[32];
-        rng.nextBytes(privateKey);
-       createAccount(privateKey);
-
-        privateKey = new byte[32];
-        rng.nextBytes(privateKey);
-       createAccount(privateKey);
-
-        privateKey = new byte[32];
-        rng.nextBytes(privateKey);
-        createAccount(privateKey);
-
-        privateKey = new byte[32];
-        rng.nextBytes(privateKey);
-        createAccount(privateKey);
+        for (int i = 0; i < accountCount; i++){
+            Random rng = new Random();
+            rng.nextBytes(privateKey);
+            WalletAccount account = createAccount(privateKey);
+            account.isDefault = i == 0; // the first account is default account
+        }
     }
 
     public void initTransaction (HashSet<Coin> input) {
@@ -79,12 +58,19 @@ public class MyWallet extends Wallet {
 
     @Override
     public Uint getWalletHeight() {
-        return Uint.ZERO;
+        return null;
     }
 
     @Override
     public void applyTransaction(Transaction tx) {
 
+    }
+
+    public UserWalletAccount getDefaultAccount(){
+       for (Map.Entry<UInt160, UserWalletAccount> entry: accounts.entrySet()){
+           return entry.getValue();
+       }
+       return null;
     }
 
     @Override
@@ -110,6 +96,7 @@ public class MyWallet extends Wallet {
         accounts.put(account.scriptHash, account);
         return account;
     }
+
 
     @Override
     public WalletAccount createAccount(Contract contract, KeyPair key) {
