@@ -218,7 +218,7 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
     };
 
     @Test
-    public void testEvent() {
+    public void testEvent() throws Exception {
         // test SetViewNumber event
         int primaryIndex = context.primaryIndex.intValue();
 
@@ -436,6 +436,9 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         changeView = SerializeHelper.parse(ChangeView::new, payload.data);
         Assert.assertEquals(context.viewNumber, changeView.viewNumber);
         Assert.assertEquals(context.viewNumber + 1, changeView.newViewNumber);
+
+        // clear
+        consensusService.postStop();
     }
 
     private static Ulong getNonce() {

@@ -103,6 +103,8 @@ public class StandardServiceTest extends AbstractLeveldbTest {
         Assert.assertEquals(1, notifyEventArgs.size());
         Assert.assertEquals("hello", notifyEventArgs.get(0).state.getString());
 
+        // clear data
+        standardService.notify.clear();
     }
 
     @Test
@@ -347,12 +349,7 @@ public class StandardServiceTest extends AbstractLeveldbTest {
 
     @Test
     public void runtimeNotify() {
-        EventHandler.Listener<NotifyEventArgs> listener = new EventHandler.Listener<NotifyEventArgs>() {
-            @Override
-            public void doWork(Object sender, NotifyEventArgs eventArgs) {
-                Assert.assertEquals("hello", eventArgs.getState().getString());
-            }
-        };
+        EventHandler.Listener<NotifyEventArgs> listener = (sender, eventArgs) -> Assert.assertEquals("hello", eventArgs.getState().getString());
 
         ContractTransaction contractTransaction = new ContractTransaction();
         ExecutionEngine engine = new ExecutionEngine(contractTransaction, Crypto.Default);
@@ -364,17 +361,15 @@ public class StandardServiceTest extends AbstractLeveldbTest {
 
         boolean success = standardService.runtimeNotify(engine);
         Assert.assertTrue(success);
+
+        // remove listenter
+        standardService.notify.clear();
     }
 
 
     @Test
     public void runtimeLog() {
-        EventHandler.Listener<LogEventArgs> listener = new EventHandler.Listener<LogEventArgs>() {
-            @Override
-            public void doWork(Object sender, LogEventArgs eventArgs) {
-                Assert.assertEquals("hello", eventArgs.message);
-            }
-        };
+        EventHandler.Listener<LogEventArgs> listener = (sender, eventArgs) -> Assert.assertEquals("hello", eventArgs.message);
 
         ContractTransaction contractTransaction = new ContractTransaction();
         ExecutionEngine engine = new ExecutionEngine(contractTransaction, Crypto.Default);
@@ -386,6 +381,8 @@ public class StandardServiceTest extends AbstractLeveldbTest {
 
         boolean success = standardService.runtimeLog(engine);
         Assert.assertTrue(success);
+
+        standardService.notify.clear();
     }
 
     @Test

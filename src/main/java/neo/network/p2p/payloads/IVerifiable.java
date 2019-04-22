@@ -10,12 +10,14 @@ import neo.csharp.io.BinaryReader;
 import neo.csharp.io.BinaryWriter;
 import neo.csharp.io.ISerializable;
 import neo.exception.InvalidOperationException;
-import neo.log.tr.TR;
 import neo.persistence.Snapshot;
 import neo.smartcontract.ApplicationEngine;
 import neo.smartcontract.TriggerType;
 import neo.vm.IScriptContainer;
 import neo.vm.ScriptBuilder;
+
+import neo.log.notr.TR;
+
 
 /**
  * An interface for signature verification

@@ -140,7 +140,7 @@ public class PluginTest extends AbstractLeveldbTest {
             self.blockchain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
             self.localNode = TestActorRef.create(self.actorSystem, MyLocalNode.props(self, testKit.testActor()));
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
-            self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self, testKit.testActor()));
+            self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self.localNode, self.taskManager, testKit.testActor()));
         });
     }
 

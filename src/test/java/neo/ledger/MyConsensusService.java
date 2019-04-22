@@ -7,18 +7,19 @@ import neo.NeoSystem;
 import neo.consensus.ConsensusService;
 import neo.consensus.MyWallet;
 import neo.network.p2p.MyTaskManager;
+import neo.wallets.Wallet;
 
 public class MyConsensusService extends ConsensusService {
 
     private ActorRef testRootRef;
 
-    public MyConsensusService(ActorRef localNode, ActorRef taskManager) {
+    public MyConsensusService(ActorRef localNode, ActorRef taskManager, ActorRef testRootRef) {
         super(localNode, taskManager, new MyWallet());
-        this.testRootRef = taskManager;
+        this.testRootRef = testRootRef;
     }
 
-    public static Props props(NeoSystem system, ActorRef actorRef) {
-        return Props.create(MyTaskManager.class, system, actorRef);
+    public static Props props(ActorRef localNode, ActorRef taskManager, ActorRef testRootRef) {
+        return Props.create(MyConsensusService.class, localNode, taskManager, testRootRef);
     }
 
     @Override

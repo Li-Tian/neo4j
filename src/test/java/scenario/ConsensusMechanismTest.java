@@ -15,6 +15,7 @@ import java.util.Date;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
 import neo.Fixed8;
@@ -44,7 +45,9 @@ import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractBlockchainTest;
 import neo.persistence.Snapshot;
 import neo.vm.OpCode;
+import neo.wallets.Wallet;
 import neo.wallets.WalletAccount;
+import scala.concurrent.Future;
 
 /**
  * consensus mechanism test
@@ -78,8 +81,10 @@ public class ConsensusMechanismTest extends AbstractBlockchainTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws IOException, InterruptedException {
         AbstractBlockchainTest.tearDown(InvocationTxWithContractTest.class.getSimpleName());
+
+        // free resource
     }
 
 
@@ -98,7 +103,7 @@ public class ConsensusMechanismTest extends AbstractBlockchainTest {
     }
 
     @Test
-    public void consensus() throws InterruptedException {
+    public void consensus() throws Exception {
         // prepare data
         //  初始化 leveldb 数据
         // 构建 validators
@@ -185,13 +190,13 @@ public class ConsensusMechanismTest extends AbstractBlockchainTest {
         ConsensusContext context6 = new ConsensusContext(wallet6);
         ConsensusContext context7 = new ConsensusContext(wallet7);
 
-        cnode1 = neoSystem.actorSystem.actorOf(ConsensusService.props(neoSystem.localNode, neoSystem.taskManager, context1));
-        cnode2 = neoSystem.actorSystem.actorOf(ConsensusService.props(neoSystem.localNode, neoSystem.taskManager, context2));
-        cnode3 = neoSystem.actorSystem.actorOf(ConsensusService.props(neoSystem.localNode, neoSystem.taskManager, context3));
-        cnode4 = neoSystem.actorSystem.actorOf(ConsensusService.props(neoSystem.localNode, neoSystem.taskManager, context4));
-        cnode5 = neoSystem.actorSystem.actorOf(ConsensusService.props(neoSystem.localNode, neoSystem.taskManager, context5));
-        cnode6 = neoSystem.actorSystem.actorOf(ConsensusService.props(neoSystem.localNode, neoSystem.taskManager, context6));
-        cnode7 = neoSystem.actorSystem.actorOf(ConsensusService.props(neoSystem.localNode, neoSystem.taskManager, context7));
+        cnode1 = neoSystem.actorSystem.actorOf(MyConsensusSerivce.props(neoSystem.localNode, neoSystem.taskManager, context1));
+        cnode2 = neoSystem.actorSystem.actorOf(MyConsensusSerivce.props(neoSystem.localNode, neoSystem.taskManager, context2));
+        cnode3 = neoSystem.actorSystem.actorOf(MyConsensusSerivce.props(neoSystem.localNode, neoSystem.taskManager, context3));
+        cnode4 = neoSystem.actorSystem.actorOf(MyConsensusSerivce.props(neoSystem.localNode, neoSystem.taskManager, context4));
+        cnode5 = neoSystem.actorSystem.actorOf(MyConsensusSerivce.props(neoSystem.localNode, neoSystem.taskManager, context5));
+        cnode6 = neoSystem.actorSystem.actorOf(MyConsensusSerivce.props(neoSystem.localNode, neoSystem.taskManager, context6));
+        cnode7 = neoSystem.actorSystem.actorOf(MyConsensusSerivce.props(neoSystem.localNode, neoSystem.taskManager, context7));
 
         neoSystem.consensus = cnode1;
 
@@ -207,8 +212,26 @@ public class ConsensusMechanismTest extends AbstractBlockchainTest {
         while (!stopTest) {
             Thread.sleep(1000 * 1);
         }
+
+        for (ConsensusService service: MyConsensusSerivce.list){
+            service.postStop();
+        }
     }
 
+    public static class  MyConsensusSerivce extends ConsensusService{
+        private  static ArrayList<ConsensusService> list = new ArrayList<>(10);
+
+        public MyConsensusSerivce(ActorRef localNode, ActorRef taskManager, ConsensusContext context) {
+            super(localNode, taskManager, context);
+            list.add(this);
+        }
+
+        public static Props props(ActorRef localNode, ActorRef taskManager, Wallet wallet) {
+            return Props.create(MyConsensusSerivce.class, localNode, taskManager, wallet)
+                    .withMailbox("consensus-service-mailbox");
+        }
+
+    }
 
     public static class MyLocalNode extends LocalNode {
 

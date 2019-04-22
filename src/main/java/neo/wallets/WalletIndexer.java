@@ -154,15 +154,20 @@ public class WalletIndexer implements IDisposable {
     @Override
     public void dispose() {
         disposed = true;
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+
+        if (thread != null) {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
-        try {
-            db.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if (db != null) {
+            try {
+                db.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

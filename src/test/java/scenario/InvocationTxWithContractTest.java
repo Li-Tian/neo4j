@@ -14,6 +14,7 @@ import java.util.Date;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
+import akka.actor.Terminated;
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
 import neo.AVMParser;
@@ -59,6 +60,7 @@ import neo.vm.StackItem;
 import neo.vm.Types.Array;
 import neo.vm.VMState;
 import neo.wallets.KeyPair;
+import scala.concurrent.Future;
 
 /**
  * 一笔完整的NEP5智能合约调用测试: 创建，部署，转账，查询， 升级，销毁
@@ -89,7 +91,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws IOException, InterruptedException {
         AbstractBlockchainTest.tearDown(InvocationTxWithContractTest.class.getSimpleName());
     }
 

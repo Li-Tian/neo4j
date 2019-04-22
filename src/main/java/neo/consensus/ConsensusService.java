@@ -38,7 +38,7 @@ import neo.network.p2p.payloads.TransactionType;
 import neo.plugins.LogLevel;
 import neo.plugins.Plugin;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 
 /**
@@ -179,7 +179,7 @@ public class ConsensusService extends AbstractActor {
                 log(LogLevel.Info, "send prepare response");
                 context.state = context.state.or(ConsensusState.SignatureSent);
                 context.signHeader();
-                localNode.tell(new LocalNode.SendDirectly( context.makePrepareResponse(context.signatures[context.myIndex])) , self());
+                localNode.tell(new LocalNode.SendDirectly(context.makePrepareResponse(context.signatures[context.myIndex])), self());
                 checkSignatures();
             } else {
                 requestChangeView();
@@ -639,6 +639,10 @@ public class ConsensusService extends AbstractActor {
         TR.enter();
         log(LogLevel.Info, "OnStop");
         context.dispose();
+
+        if (timerToken != null && !timerToken.isCancelled()) {
+            timerToken.cancel();
+        }
         super.postStop();
         TR.exit();
     }

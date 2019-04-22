@@ -91,7 +91,8 @@ public class RpcServerTest extends AbstractLeveldbTest {
     }
 
     @Test
-    public void test() {
+    public void test() throws Exception {
+        MyConsensusService myConsensusService;
         system = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 
@@ -99,8 +100,11 @@ public class RpcServerTest extends AbstractLeveldbTest {
             self.blockchain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
             self.localNode = TestActorRef.create(self.actorSystem, MyLocalNode.props(self, testKit.testActor()));
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
-            self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self, testKit.testActor()));
+            self.consensus=  TestActorRef.create(self.actorSystem, MyConsensusService.props(self.localNode, self.taskManager, testKit.testActor()));
         });
+
+        myConsensusService = ((TestActorRef<MyConsensusService>)system.consensus).underlyingActor();
+
         MyWallet wallet = new MyWallet();
         WalletAccount account = wallet.getAccounts().iterator().next();
         String address = account.getAddress();
@@ -417,24 +421,24 @@ public class RpcServerTest extends AbstractLeveldbTest {
         object.addProperty("type", Boolean.class.getSimpleName());
         object.addProperty("value", Boolean.FALSE.toString());
         array.add(object);
-        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=invoke&params=[\"" +  hash.toString() + "\"," + array.toString() + "]&id=1");
+        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=invoke&params=[\"" + hash.toString() + "\"," + array.toString() + "]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(5, ((JsonObject)result).size());
-        Assert.assertEquals(true, ((JsonObject)result).get("script").getAsString().equals("00679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68"));
-        Assert.assertEquals(true, ((JsonObject)result).get("state").getAsString().equals("HALT"));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("gas_consumed").getAsString()).equals(new BigDecimal("0.00000000")));
-        Assert.assertEquals(2, ((JsonObject)result).get("stack").getAsJsonArray().size());
-        Assert.assertEquals(true, ((JsonObject)result).get("tx").getAsString().equals("d1011600679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68000000000000000000000000"));
+        Assert.assertEquals(5, ((JsonObject) result).size());
+        Assert.assertEquals(true, ((JsonObject) result).get("script").getAsString().equals("00679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68"));
+        Assert.assertEquals(true, ((JsonObject) result).get("state").getAsString().equals("HALT"));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("gas_consumed").getAsString()).equals(new BigDecimal("0.00000000")));
+        Assert.assertEquals(2, ((JsonObject) result).get("stack").getAsJsonArray().size());
+        Assert.assertEquals(true, ((JsonObject) result).get("tx").getAsString().equals("d1011600679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68000000000000000000000000"));
 
         //invokefunction
-        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=invokefunction&params=[\"" +  hash.toString() + "\",\"balanceOf\"," + array.toString() + "]&id=1");
+        result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=invokefunction&params=[\"" + hash.toString() + "\",\"balanceOf\"," + array.toString() + "]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(5, ((JsonObject)result).size());
-        Assert.assertEquals(true, ((JsonObject)result).get("script").getAsString().equals("0051c10962616c616e63654f66679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68"));
-        Assert.assertEquals(true, ((JsonObject)result).get("state").getAsString().equals("HALT"));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("gas_consumed").getAsString()).equals(new BigDecimal("0.00000000")));
-        Assert.assertEquals(3, ((JsonObject)result).get("stack").getAsJsonArray().size());
-        Assert.assertEquals(true, ((JsonObject)result).get("tx").getAsString().equals("d101220051c10962616c616e63654f66679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68000000000000000000000000"));
+        Assert.assertEquals(5, ((JsonObject) result).size());
+        Assert.assertEquals(true, ((JsonObject) result).get("script").getAsString().equals("0051c10962616c616e63654f66679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68"));
+        Assert.assertEquals(true, ((JsonObject) result).get("state").getAsString().equals("HALT"));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("gas_consumed").getAsString()).equals(new BigDecimal("0.00000000")));
+        Assert.assertEquals(3, ((JsonObject) result).get("stack").getAsJsonArray().size());
+        Assert.assertEquals(true, ((JsonObject) result).get("tx").getAsString().equals("d101220051c10962616c616e63654f66679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68000000000000000000000000"));
 
         //invokescript
         ScriptBuilder sb = new ScriptBuilder();
@@ -446,12 +450,12 @@ public class RpcServerTest extends AbstractLeveldbTest {
         }}).toArray();
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=invokescript&params=[\"" + BitConverter.toHexString(script) + "\"]&id=1");
         Assert.assertEquals(JsonObject.class, result.getClass());
-        Assert.assertEquals(5, ((JsonObject)result).size());
-        Assert.assertEquals(true, ((JsonObject)result).get("script").getAsString().equals("00679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68"));
-        Assert.assertEquals(true, ((JsonObject)result).get("state").getAsString().equals("HALT"));
-        Assert.assertEquals(true, new BigDecimal(((JsonObject)result).get("gas_consumed").getAsString()).equals(new BigDecimal("0.00000000")));
-        Assert.assertEquals(2, ((JsonObject)result).get("stack").getAsJsonArray().size());
-        Assert.assertEquals(true, ((JsonObject)result).get("tx").getAsString().equals("d1011600679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68000000000000000000000000"));
+        Assert.assertEquals(5, ((JsonObject) result).size());
+        Assert.assertEquals(true, ((JsonObject) result).get("script").getAsString().equals("00679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68"));
+        Assert.assertEquals(true, ((JsonObject) result).get("state").getAsString().equals("HALT"));
+        Assert.assertEquals(true, new BigDecimal(((JsonObject) result).get("gas_consumed").getAsString()).equals(new BigDecimal("0.00000000")));
+        Assert.assertEquals(2, ((JsonObject) result).get("stack").getAsJsonArray().size());
+        Assert.assertEquals(true, ((JsonObject) result).get("tx").getAsString().equals("d1011600679f7fd096d37ed2c0e3f7f0cfc924beef4ffceb68000000000000000000000000"));
 
         //listaddress
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=listaddress&params=[]&id=1");
@@ -553,6 +557,10 @@ public class RpcServerTest extends AbstractLeveldbTest {
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendrawtransaction&params=[\""
                 + BitConverter.toHexString(output.toByteArray()) + "\",1]&id=1");
         Assert.assertEquals(true, result.equals(Boolean.TRUE.toString()));
+
+
+        // release resource
+        myConsensusService.postStop();
     }
 
     public Object httpGetResult(String request) {

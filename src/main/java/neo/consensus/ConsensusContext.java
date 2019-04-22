@@ -42,7 +42,7 @@ import neo.plugins.Plugin;
 import neo.smartcontract.Contract;
 import neo.smartcontract.ContractParametersContext;
 
-import neo.log.tr.TR;
+import neo.log.notr.TR;
 
 /**
  * Consensus context, it records the data in current consensus activity.
