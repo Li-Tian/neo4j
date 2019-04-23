@@ -47,7 +47,6 @@ import neo.persistence.Snapshot;
 import neo.vm.OpCode;
 import neo.wallets.Wallet;
 import neo.wallets.WalletAccount;
-import scala.concurrent.Future;
 
 /**
  * consensus mechanism test
@@ -216,6 +215,13 @@ public class ConsensusMechanismTest extends AbstractBlockchainTest {
         for (ConsensusService service: MyConsensusSerivce.list){
             service.closeTimer();
         }
+        neoSystem.actorSystem.stop(cnode1);
+        neoSystem.actorSystem.stop(cnode2);
+        neoSystem.actorSystem.stop(cnode3);
+        neoSystem.actorSystem.stop(cnode4);
+        neoSystem.actorSystem.stop(cnode5);
+        neoSystem.actorSystem.stop(cnode6);
+        neoSystem.actorSystem.stop(cnode7);
     }
 
     public static class  MyConsensusSerivce extends ConsensusService{

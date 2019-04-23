@@ -7,8 +7,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
-import java.util.Iterator;
 
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
@@ -16,17 +14,12 @@ import neo.Fixed8;
 import neo.MyNeoSystem;
 import neo.NeoSystem;
 import neo.UInt160;
-import neo.csharp.io.BinaryReader;
-import neo.csharp.io.BinaryWriter;
-import neo.network.p2p.payloads.IVerifiable;
-import neo.wallets.KeyPair;
 import neo.consensus.MyWallet;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.Uint;
 import neo.csharp.Ushort;
 import neo.ledger.Blockchain;
 import neo.ledger.MyBlockchain2;
-import neo.ledger.MyConsensusService;
 import neo.ledger.TransactionState;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.MyTaskManager;
@@ -37,7 +30,7 @@ import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractLeveldbTest;
 import neo.persistence.Snapshot;
-import neo.wallets.WalletAccount;
+import neo.wallets.KeyPair;
 
 public class ContractParametersContextTest extends AbstractLeveldbTest {
     private static NeoSystem neoSystem;
@@ -53,15 +46,14 @@ public class ContractParametersContextTest extends AbstractLeveldbTest {
             self.blockchain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
             self.localNode = TestActorRef.create(self.actorSystem, MyLocalNode.props(self, testKit.testActor()));
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
-            self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self.localNode, self.taskManager, testKit.testActor()));
+            self.consensus =null;
         });
     }
 
 
     @AfterClass
     public static void tearDown() throws Exception {
-        AbstractLeveldbTest.tearDown(ContractParametersContext.class.getSimpleName());
-        MyConsensusService.instance.closeTimer();
+        AbstractLeveldbTest.tearDown(ContractParametersContextTest.class.getSimpleName());
     }
 
     @Test
@@ -133,88 +125,4 @@ public class ContractParametersContextTest extends AbstractLeveldbTest {
         snapshot.commit();
     }
 
-    @Test
-    public void testMutliSignatureContract() {
-        MyWallet wallet = new MyWallet();
-        Iterator<? extends WalletAccount> iterator = wallet.getAccounts().iterator();
-        WalletAccount account1 = iterator.next();
-        WalletAccount account2 = iterator.next();
-        WalletAccount account3 = iterator.next();
-
-        System.err.println("account1: " + account1.scriptHash);
-        System.err.println("account2: " + account2.scriptHash);
-        System.err.println("account3: " + account3.scriptHash);
-
-        Contract contract = Contract.createMultiSigContract(2, new ECPoint[]{account1.getKey().publicKey, account2.getKey().publicKey, account3.getKey().publicKey});
-
-        MyVerificable verificable = new MyVerificable() {{
-            message = "hello world";
-            hashesForVerify = new UInt160[]{contract.scriptHash()};
-        }};
-
-        ContractParametersContext context = new ContractParametersContext(verificable);
-        boolean success = wallet.sign(context);
-        System.err.println("add signature => " + success);
-
-        byte[] signature1 = neo.wallets.Helper.sign(verificable, account1.getKey());
-        byte[] signature2 = neo.wallets.Helper.sign(verificable, account2.getKey());
-        boolean success1 = context.addSignature(contract, account1.getKey().publicKey, signature1);
-//        boolean success2 = context.addSignature(contract, account2.getKey().publicKey, signature1);
-
-        System.err.println(context.completed());
-
-        System.err.println(context.toJson());
-    }
-
-    public static class MyVerificable implements IVerifiable {
-
-        public Witness witness;
-        public String message;
-        public UInt160[] hashesForVerify;
-
-        @Override
-        public Witness[] getWitnesses() {
-            return new Witness[]{witness};
-        }
-
-        @Override
-        public void setWitnesses(Witness[] witnesses) {
-            witness = witnesses[0];
-        }
-
-        @Override
-        public void deserializeUnsigned(BinaryReader reader) {
-            message = reader.readVarString();
-        }
-
-        @Override
-        public UInt160[] getScriptHashesForVerifying(Snapshot snapshot) {
-            return hashesForVerify;
-        }
-
-        @Override
-        public void serializeUnsigned(BinaryWriter writer) {
-            writer.writeVarString(message);
-        }
-
-        @Override
-        public int size() {
-            return message.length();
-        }
-
-        @Override
-        public void serialize(BinaryWriter writer) {
-            writer.writeVarString(message);
-        }
-
-        @Override
-        public void deserialize(BinaryReader reader) {
-            message = reader.readVarString();
-        }
-
-        @Override
-        public byte[] getMessage() {
-            return message.getBytes();
-        }
-    }
 }

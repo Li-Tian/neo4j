@@ -853,6 +853,7 @@ public class WalletTest extends AbstractBlockchainTest {
         indexer.accounts_tracked.clear();
 
         indexer.dispose();
+        Utils.deleteFolder(walletIndexPath);
     }
 
     private static byte[] loadAvm() {

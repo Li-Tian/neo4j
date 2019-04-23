@@ -41,7 +41,6 @@ import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractBlockchainTest;
-import neo.persistence.AbstractLeveldbTest;
 import neo.persistence.Snapshot;
 import neo.vm.OpCode;
 
@@ -64,7 +63,7 @@ public class ConsensusContextTest extends AbstractBlockchainTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown(ConsensusContextTest.class.getSimpleName());
+        AbstractBlockchainTest.tearDown(ConsensusContextTest.class.getSimpleName());
     }
 
 

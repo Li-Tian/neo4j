@@ -93,7 +93,6 @@ public class RpcServerTest extends AbstractLeveldbTest {
 
     @Test
     public void test() throws Exception {
-        MyConsensusService myConsensusService;
         system = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 
@@ -103,8 +102,6 @@ public class RpcServerTest extends AbstractLeveldbTest {
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
             self.consensus=  TestActorRef.create(self.actorSystem, MyConsensusService.props(self.localNode, self.taskManager, testKit.testActor()));
         });
-
-        myConsensusService = ((TestActorRef<MyConsensusService>)system.consensus).underlyingActor();
 
         MyWallet wallet = new MyWallet();
         WalletAccount account = wallet.getAccounts().iterator().next();

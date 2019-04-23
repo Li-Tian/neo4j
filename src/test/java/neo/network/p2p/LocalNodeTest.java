@@ -248,6 +248,9 @@ public class LocalNodeTest extends AbstractLeveldbTest {
 
         // clear data
         localNode.clear();
+
+        ActorRef tcpManager = Tcp.get(localNode.context().system()).manager();
+        tcpManager.tell(TcpMessage.unbind(), localNode.self());
     }
 
     static class MyLocalNode2 extends LocalNode {

@@ -27,7 +27,6 @@ import neo.MyNeoSystem;
 import neo.NeoSystem;
 import neo.ledger.Blockchain;
 import neo.ledger.MyBlockchain2;
-import neo.ledger.MyConsensusService;
 import neo.log.tr.TR;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.MyTaskManager;
@@ -140,7 +139,7 @@ public class PluginTest extends AbstractLeveldbTest {
             self.blockchain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
             self.localNode = TestActorRef.create(self.actorSystem, MyLocalNode.props(self, testKit.testActor()));
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
-            self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self.localNode, self.taskManager, testKit.testActor()));
+            self.consensus = null;
         });
     }
 
@@ -158,8 +157,6 @@ public class PluginTest extends AbstractLeveldbTest {
             }
             System.out.println(file.toString() + " deleted: " + file.delete());
         }
-
-        MyConsensusService.instance.closeTimer();
     }
 
     @Test

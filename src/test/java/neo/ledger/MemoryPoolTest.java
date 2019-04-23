@@ -7,10 +7,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 
 import akka.testkit.TestActorRef;
@@ -27,7 +25,6 @@ import neo.network.p2p.payloads.Transaction;
 import neo.network.p2p.payloads.TransactionAttribute;
 import neo.network.p2p.payloads.TransactionAttributeUsage;
 import neo.persistence.AbstractLeveldbTest;
-import neo.plugins.MyPlugin;
 
 public class MemoryPoolTest extends AbstractLeveldbTest {
     private static NeoSystem neoSystem;
@@ -44,7 +41,7 @@ public class MemoryPoolTest extends AbstractLeveldbTest {
             self.blockchain = TestActorRef.create(self.actorSystem, MyBlockchain2.props(self, store, testKit.testActor()));
             self.localNode = TestActorRef.create(self.actorSystem, MyLocalNode.props(self, testKit.testActor()));
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
-            self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self.localNode, self.taskManager, testKit.testActor()));
+            self.consensus = null;
         });
 
         File file = new File(pluginsPath);
@@ -63,7 +60,6 @@ public class MemoryPoolTest extends AbstractLeveldbTest {
     @AfterClass
     public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(MemoryPoolTest.class.getSimpleName());
-        MyConsensusService.instance.closeTimer();
     }
 
     @Test

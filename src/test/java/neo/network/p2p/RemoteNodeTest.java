@@ -23,10 +23,7 @@ import neo.NeoSystem;
 import neo.cryptography.BloomFilter;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
-import neo.csharp.Ulong;
-import neo.csharp.Ushort;
 import neo.io.SerializeHelper;
-import neo.ledger.Blockchain;
 import neo.ledger.MyBlockchain2;
 import neo.log.tr.TR;
 import neo.network.p2p.payloads.ContractTransaction;
@@ -42,7 +39,7 @@ public class RemoteNodeTest extends AbstractLeveldbTest {
     private static TestKit testKit;
     private static TestActorRef<RemoteNode> remoteNodeRef;
     private static RemoteNode remoteNode;
-    private static InetSocketAddress localAddr = new InetSocketAddress("127.0.0.1", 8080);
+    private static InetSocketAddress localAddr = new InetSocketAddress("127.0.0.1", 8083);
     private static InetSocketAddress remoteAddr = new InetSocketAddress("127.0.0.1", 8081);
 
 

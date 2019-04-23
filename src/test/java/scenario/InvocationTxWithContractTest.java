@@ -90,7 +90,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException, InterruptedException {
+    public static void tearDown() throws IOException {
         AbstractBlockchainTest.tearDown(InvocationTxWithContractTest.class.getSimpleName());
     }
 
@@ -111,7 +111,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
 
 
     @Test
-    public void smartContract() {
+    public void smartContract() throws InterruptedException {
         // prepare data
         // register BlockchainSubscribler
         TestActorRef<BlockchainSubscribler> subscriblerRef = TestActorRef.create(neoSystem.actorSystem, BlockchainSubscribler.props());
@@ -126,7 +126,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
 
         // check
         // print script
-        AVMParser.printScriptOpCode(loadAvm());
+//        AVMParser.printScriptOpCode(loadAvm());
 
         // S1: create smart contract
         // init leveldb data
@@ -234,7 +234,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
         };
         block2.rebuildMerkleRoot();
 
-        AVMParser.printScriptOpCode(deployScript(scriptHash1));
+//        AVMParser.printScriptOpCode(deployScript(scriptHash1));
 
         neoSystem.blockchain.tell(block2, testKit.testActor());
         relayDirectly = testKit.expectMsgClass(LocalNode.RelayDirectly.class);
@@ -323,7 +323,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
         };
         block3.rebuildMerkleRoot();
 
-        AVMParser.printScriptOpCode(deployScript(scriptHash1));
+//        AVMParser.printScriptOpCode(deployScript(scriptHash1));
 
         neoSystem.blockchain.tell(block3, testKit.testActor());
         relayDirectly = testKit.expectMsgClass(LocalNode.RelayDirectly.class);
@@ -404,7 +404,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
         };
         block4.rebuildMerkleRoot();
 
-        AVMParser.printScriptOpCode(balanceOfTx.script);
+//        AVMParser.printScriptOpCode(balanceOfTx.script);
 
         neoSystem.blockchain.tell(block4, testKit.testActor());
         relayDirectly = testKit.expectMsgClass(LocalNode.RelayDirectly.class);
@@ -462,7 +462,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
         };
         block5.rebuildMerkleRoot();
 
-        AVMParser.printScriptOpCode(balanceOfTx.script);
+//        AVMParser.printScriptOpCode(balanceOfTx.script);
 
         neoSystem.blockchain.tell(block5, testKit.testActor());
         relayDirectly = testKit.expectMsgClass(LocalNode.RelayDirectly.class);
@@ -545,7 +545,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
             }
         };
         block6.rebuildMerkleRoot();
-        AVMParser.printScriptOpCode(deleteTx.script);
+//        AVMParser.printScriptOpCode(deleteTx.script);
 
         neoSystem.blockchain.tell(block6, testKit.testActor());
         relayDirectly = testKit.expectMsgClass(LocalNode.RelayDirectly.class);
@@ -591,7 +591,7 @@ public class InvocationTxWithContractTest extends AbstractBlockchainTest {
         ApplicationEngine engine = new ApplicationEngine(TriggerType.Application, tx_invocation, blockchain.getSnapshot().clone(), tx_invocation.gas);
         engine.loadScript(tx_invocation.script);
 
-        AVMParser.printScriptOpCode(tx_invocation.script);
+//        AVMParser.printScriptOpCode(tx_invocation.script);
 
         if (engine.execute2()) {
             engine.getService().commit();

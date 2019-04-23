@@ -2,7 +2,6 @@ package neo.persistence;
 
 
 import java.io.IOException;
-import java.util.Random;
 
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;

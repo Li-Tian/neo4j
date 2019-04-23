@@ -15,7 +15,6 @@ import neo.ledger.MyBlockchain2;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.TaskManager;
 import neo.persistence.AbstractBlockchainTest;
-import neo.persistence.AbstractLeveldbTest;
 import neo.vm.OpCode;
 import neo.vm.ScriptBuilder;
 import neo.vm.VMState;
@@ -37,12 +36,11 @@ public class ApplicationEngineTest extends AbstractBlockchainTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown(ApplicationEngineTest.class.getSimpleName());
+        AbstractBlockchainTest.tearDown(ApplicationEngineTest.class.getSimpleName());
     }
 
     @Test
     public void getGasConsumed() throws Exception {
-        String t="";
         neoSystem = new MyNeoSystem(store, self -> {
             testKit = new TestKit(self.actorSystem);
 

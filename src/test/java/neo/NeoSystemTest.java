@@ -33,6 +33,7 @@ public class NeoSystemTest extends AbstractLeveldbTest {
     public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(NeoSystemTest.class.getSimpleName());
         system.rpcServer.dispose();
+        system.actorSystem.stop(system.localNode);
         MyConsensusService.instance.closeTimer();
     }
 

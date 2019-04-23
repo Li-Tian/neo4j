@@ -79,7 +79,12 @@ public class DbCache<TKey extends ISerializable, TValue extends ICloneable<TValu
     @Override
     protected TValue tryGetInternal(TKey key) {
         TR.enter();
-        return TR.exit(getInternal(key));
+        try {
+            return getInternal(key);
+        }catch (Exception e){
+            TR.error(e);
+            return null;
+        }
     }
 
     @Override

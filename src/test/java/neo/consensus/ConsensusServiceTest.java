@@ -19,8 +19,6 @@ import neo.NeoSystem;
 import neo.TimeProvider;
 import neo.UInt160;
 import neo.UInt256;
-import neo.wallets.KeyPair;
-import neo.wallets.WalletAccount;
 import neo.cryptography.ecc.ECPoint;
 import neo.csharp.BitConverter;
 import neo.csharp.Uint;
@@ -48,10 +46,10 @@ import neo.network.p2p.payloads.TransactionAttributeUsage;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.network.p2p.payloads.Witness;
 import neo.persistence.AbstractBlockchainTest;
-import neo.persistence.AbstractLeveldbTest;
 import neo.persistence.Snapshot;
 import neo.vm.OpCode;
-import scala.PartialFunction;
+import neo.wallets.KeyPair;
+import neo.wallets.WalletAccount;
 
 
 public class ConsensusServiceTest extends AbstractBlockchainTest {
@@ -75,7 +73,7 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        AbstractLeveldbTest.tearDown(ConsensusServiceTest.class.getSimpleName());
+        AbstractBlockchainTest.tearDown(ConsensusServiceTest.class.getSimpleName());
         consensusService.closeTimer();
     }
 
@@ -201,22 +199,7 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         } else {
             Assert.assertTrue(context.state.hasFlag(ConsensusState.Backup));
         }
-        testKit.ignoreMsg(partialFunction);  // ignore timer
     }
-
-    // 忽略共识的超时消息，减少对测试消息的干扰
-    private static PartialFunction partialFunction = new PartialFunction<Object, Boolean>() {
-
-        @Override
-        public Boolean apply(Object v1) {
-            return v1 instanceof ConsensusService.Timer;
-        }
-
-        @Override
-        public boolean isDefinedAt(Object x) {
-            return false;
-        }
-    };
 
     @Test
     public void testEvent() throws Exception {

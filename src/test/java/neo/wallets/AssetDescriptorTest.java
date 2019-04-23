@@ -15,7 +15,6 @@ import neo.ledger.MyBlockchain2;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.TaskManager;
 import neo.persistence.AbstractBlockchainTest;
-import neo.persistence.AbstractLeveldbTest;
 
 /**
  * @author doubi.liu
@@ -34,7 +33,7 @@ public class AssetDescriptorTest extends AbstractBlockchainTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown(AssetDescriptorTest.class.getSimpleName());
+        AbstractBlockchainTest.tearDown(AssetDescriptorTest.class.getSimpleName());
     }
     @Test
     public void toStringTest() throws Exception {

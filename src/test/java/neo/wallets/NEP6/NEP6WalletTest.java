@@ -36,7 +36,6 @@ import neo.network.p2p.TaskManager;
 import neo.network.p2p.payloads.MinerTransaction;
 import neo.network.p2p.payloads.TransactionOutput;
 import neo.persistence.AbstractBlockchainTest;
-import neo.persistence.AbstractLeveldbTest;
 
 /**
  * @author doubi.liu
@@ -321,7 +320,7 @@ public class NEP6WalletTest extends AbstractBlockchainTest {
 
     @AfterClass
     public static void tearDown() throws IOException {
-        AbstractLeveldbTest.tearDown(NEP6WalletTest.class.getSimpleName());
+        AbstractBlockchainTest.tearDown(NEP6WalletTest.class.getSimpleName());
     }
 
     @Test

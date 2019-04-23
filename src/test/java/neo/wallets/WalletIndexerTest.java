@@ -49,15 +49,14 @@ import neo.vm.OpCode;
 public class WalletIndexerTest extends AbstractBlockchainTest {
 
     private static WalletIndexer walletIndexer;
-
+    private static String indexFolder = WalletIndexerTest.class.getClassLoader().getResource("").getPath() + "wallet_index_leveldb";
 
     @BeforeClass
     public static void setup() throws IOException {
         AbstractBlockchainTest.setUp(WalletIndexerTest.class.getSimpleName());
 
-        String path = WalletIndexerTest.class.getClassLoader().getResource("").getPath() + "wallet_index_leveldb";
-        Utils.deleteFolder(path);
-        walletIndexer = new WalletIndexer(path);
+        Utils.deleteFolder(indexFolder);
+        walletIndexer = new WalletIndexer(indexFolder);
         walletIndexer.thread.interrupt();
     }
 
@@ -65,6 +64,7 @@ public class WalletIndexerTest extends AbstractBlockchainTest {
     public static void tearDown() throws IOException {
         walletIndexer.dispose();
         AbstractBlockchainTest.tearDown(WalletIndexerTest.class.getSimpleName());
+        Utils.deleteFolder(indexFolder);
     }
 
     @Test

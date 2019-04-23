@@ -4,6 +4,7 @@ package neo.network.p2p;
 import com.typesafe.config.Config;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -140,7 +141,7 @@ public class TaskManager extends AbstractActor {
     private void onHeaderTaskCompleted() {
         TR.enter();
 
-        if (!sessions.containsKey(sender())){
+        if (!sessions.containsKey(sender())) {
             TR.exit();
             return;
         }
@@ -296,12 +297,17 @@ public class TaskManager extends AbstractActor {
     private void onTimer() {
         TR.enter();
         for (TaskSession session : sessions.values()) {
+            ArrayList<UInt256> listKeyToDelete = new ArrayList<>();
             for (Map.Entry<UInt256, Date> entry : session.tasks.entrySet()) {
                 // C# code: if (DateTime.UtcNow - task.Value > TaskTimeout
-                if (TimeProvider.current().utcNow().getTime() - entry.getValue().getTime() > TaskTimeout.toMillis())
-                    if (session.tasks.remove(entry.getKey()) != null) {
-                        decrementGlobalTask(entry.getKey());
-                    }
+                if (TimeProvider.current().utcNow().getTime() - entry.getValue().getTime() > TaskTimeout.toMillis()) {
+                    listKeyToDelete.add(entry.getKey());
+                }
+            }
+            for (UInt256 key : listKeyToDelete) {
+                if (session.tasks.remove(key) != null) {
+                    decrementGlobalTask(key);
+                }
             }
         }
         for (TaskSession session : sessions.values()) {
