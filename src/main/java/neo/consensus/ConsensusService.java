@@ -639,14 +639,16 @@ public class ConsensusService extends AbstractActor {
         TR.enter();
         log(LogLevel.Info, "OnStop");
         context.dispose();
-
-        if (timerToken != null && !timerToken.isCancelled()) {
-            timerToken.cancel();
-        }
+        closeTimer();
         super.postStop();
         TR.exit();
     }
 
+    public void closeTimer(){
+        if (timerToken != null && !timerToken.isCancelled()) {
+            timerToken.cancel();
+        }
+    }
 
     /**
      * Send ChangeView message

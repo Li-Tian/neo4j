@@ -413,14 +413,18 @@ public abstract class Peer extends AbstractActor {
     @Override
     public void postStop() throws Exception {
         TR.enter();
-        if (timer != null && !timer.isCancelled()) {
-            timer.cancel();
-        }
+        closeTimer();
         if (tcpListener != null) {
             tcpListener.tell(TcpMessage.unbind(), getSelf());
         }
         super.postStop();
         TR.exit();
+    }
+
+    public void closeTimer(){
+        if (timer != null && !timer.isCancelled()) {
+            timer.cancel();
+        }
     }
 
 

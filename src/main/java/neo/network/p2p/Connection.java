@@ -142,11 +142,16 @@ public abstract class Connection extends AbstractActor {
         if (!disconnected && tcp != null) {
             tcp.tell(TcpMessage.close(), ActorRef.noSender());
         }
-        if (!timer.isCancelled()) {
-            timer.cancel();
-        }
+        closeTimer();
         super.postStop();
         TR.exit();
+    }
+
+
+    public void closeTimer(){
+        if (timer != null && !timer.isCancelled()) {
+            timer.cancel();
+        }
     }
 
     /**
