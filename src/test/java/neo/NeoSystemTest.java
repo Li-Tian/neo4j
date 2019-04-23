@@ -6,9 +6,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 
 import akka.testkit.TestActorRef;
 import akka.testkit.TestKit;
@@ -19,7 +16,6 @@ import neo.ledger.MyConsensusService;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.MyTaskManager;
 import neo.network.p2p.Peer;
-import neo.network.rpc.RpcServerTest;
 import neo.persistence.AbstractLeveldbTest;
 
 public class NeoSystemTest extends AbstractLeveldbTest {
@@ -34,9 +30,10 @@ public class NeoSystemTest extends AbstractLeveldbTest {
         }
     }
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(NeoSystemTest.class.getSimpleName());
         system.rpcServer.dispose();
+        MyConsensusService.instance.closeTimer();
     }
 
     @Test

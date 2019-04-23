@@ -13,9 +13,13 @@ public class MyConsensusService extends ConsensusService {
 
     private ActorRef testRootRef;
 
+    public static MyConsensusService instance;
+
     public MyConsensusService(ActorRef localNode, ActorRef taskManager, ActorRef testRootRef) {
         super(localNode, taskManager, new MyWallet());
         this.testRootRef = testRootRef;
+
+        instance = this;
     }
 
     public static Props props(ActorRef localNode, ActorRef taskManager, ActorRef testRootRef) {

@@ -81,7 +81,7 @@ public class ConsensusMechanismTest extends AbstractBlockchainTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException, InterruptedException {
+    public static void tearDown() throws IOException {
         AbstractBlockchainTest.tearDown(InvocationTxWithContractTest.class.getSimpleName());
 
         // free resource
@@ -214,7 +214,7 @@ public class ConsensusMechanismTest extends AbstractBlockchainTest {
         }
 
         for (ConsensusService service: MyConsensusSerivce.list){
-            service.postStop();
+            service.closeTimer();
         }
     }
 

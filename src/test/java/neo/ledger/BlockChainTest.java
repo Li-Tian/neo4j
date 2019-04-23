@@ -61,8 +61,10 @@ public class BlockChainTest extends AbstractLeveldbTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(BlockChainTest.class.getSimpleName());
+
+        MyConsensusService.instance.closeTimer();
     }
 
     public static final Block testBlock1 = new Block() {

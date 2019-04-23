@@ -85,9 +85,10 @@ public class RpcServerTest extends AbstractLeveldbTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(RpcServerTest.class.getSimpleName());
         system.rpcServer.dispose();
+        MyConsensusService.instance.closeTimer();
     }
 
     @Test
@@ -557,10 +558,6 @@ public class RpcServerTest extends AbstractLeveldbTest {
         result = httpGetResult("http://localhost:8080/?jsonrpc=2.0&method=sendrawtransaction&params=[\""
                 + BitConverter.toHexString(output.toByteArray()) + "\",1]&id=1");
         Assert.assertEquals(true, result.equals(Boolean.TRUE.toString()));
-
-
-        // release resource
-        myConsensusService.postStop();
     }
 
     public Object httpGetResult(String request) {

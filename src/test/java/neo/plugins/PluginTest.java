@@ -145,7 +145,7 @@ public class PluginTest extends AbstractLeveldbTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(PluginTest.class.getSimpleName());
 
         File file = new File(pluginsPath);
@@ -158,6 +158,8 @@ public class PluginTest extends AbstractLeveldbTest {
             }
             System.out.println(file.toString() + " deleted: " + file.delete());
         }
+
+        MyConsensusService.instance.closeTimer();
     }
 
     @Test

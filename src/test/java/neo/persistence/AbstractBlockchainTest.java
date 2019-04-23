@@ -9,7 +9,6 @@ import akka.testkit.TestKit;
 import neo.MyNeoSystem;
 import neo.NeoSystem;
 import neo.ledger.MyBlockchain;
-import neo.log.tr.TR;
 import neo.network.p2p.MyLocalNode;
 import neo.network.p2p.MyTaskManager;
 
@@ -50,6 +49,8 @@ public abstract class AbstractBlockchainTest extends AbstractLeveldbTest {
      */
     public static void tearDown(String leveldbName) throws IOException {
         AbstractLeveldbTest.tearDown(leveldbName);
+
+        MyLocalNode.instance.closeTimer();
     }
 
 }

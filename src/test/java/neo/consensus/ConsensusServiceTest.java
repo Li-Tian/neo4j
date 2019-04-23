@@ -74,8 +74,9 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(ConsensusServiceTest.class.getSimpleName());
+        consensusService.closeTimer();
     }
 
     private static void initOnce() {
@@ -436,9 +437,6 @@ public class ConsensusServiceTest extends AbstractBlockchainTest {
         changeView = SerializeHelper.parse(ChangeView::new, payload.data);
         Assert.assertEquals(context.viewNumber, changeView.viewNumber);
         Assert.assertEquals(context.viewNumber + 1, changeView.newViewNumber);
-
-        // clear
-        consensusService.postStop();
     }
 
     private static Ulong getNonce() {

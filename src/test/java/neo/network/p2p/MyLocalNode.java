@@ -9,9 +9,12 @@ public class MyLocalNode extends LocalNode {
 
     private ActorRef testRootRef;
 
+    public static MyLocalNode instance;
+
     public MyLocalNode(NeoSystem system, ActorRef actorRef) {
         super(system);
         this.testRootRef = actorRef;
+        instance = this;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package neo.smartcontract;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -54,6 +55,13 @@ public class ContractParametersContextTest extends AbstractLeveldbTest {
             self.taskManager = TestActorRef.create(self.actorSystem, MyTaskManager.props(self, testKit.testActor()));
             self.consensus = TestActorRef.create(self.actorSystem, MyConsensusService.props(self.localNode, self.taskManager, testKit.testActor()));
         });
+    }
+
+
+    @AfterClass
+    public static void tearDown() throws Exception {
+        AbstractLeveldbTest.tearDown(ContractParametersContext.class.getSimpleName());
+        MyConsensusService.instance.closeTimer();
     }
 
     @Test

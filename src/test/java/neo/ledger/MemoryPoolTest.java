@@ -61,8 +61,9 @@ public class MemoryPoolTest extends AbstractLeveldbTest {
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
+    public static void tearDown() throws Exception {
         AbstractLeveldbTest.tearDown(MemoryPoolTest.class.getSimpleName());
+        MyConsensusService.instance.closeTimer();
     }
 
     @Test

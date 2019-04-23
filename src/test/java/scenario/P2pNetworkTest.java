@@ -64,26 +64,37 @@ public class P2pNetworkTest {
     private static boolean done = false;
 
     @Test
-    public void testP2pNetwork() throws InterruptedException {
+    public void testP2pNetwork() throws Exception {
         // start a local node
         ActorRef server = actorSystem.actorOf(MyServer.props());
-
         // start a remote node
-        ActorRef actorRef = actorSystem.actorOf(MyPeer.props());
+        ActorRef client = actorSystem.actorOf(MyPeer.props());
         Peer.Connect connect = new Peer.Connect() {{
 //            endPoint = new InetSocketAddress("seed1.neo.org", 10333);
 //            endPoint = new InetSocketAddress("localhost", 10333);
             endPoint = new InetSocketAddress(host, port);
             isTrusted = true;
         }};
-        actorRef.tell(connect, ActorRef.noSender());
+//        client.tell(connect, ActorRef.noSender());
 
-        while (!done){
-            Thread.sleep(1000 * 1);
-        }
+//        while (!done){
+//            Thread.sleep(1000 * 1);
+//            System.err.println("waiting.....");
+//        }
+
+        server.tell(TcpMessage.close(), ActorRef.noSender());
+        client.tell(TcpMessage.close(), ActorRef.noSender());
+//        MyPeer.instance.closeTimer();
+//        MyRemoteNode.instance.closeTimer();
     }
 
     static class MyServer extends AbstractActor {
+
+        public static MyServer instance;
+
+        public MyServer(){
+            instance = this;
+        }
 
         public static Props props() {
             return Props.create(MyServer.class);
@@ -91,6 +102,7 @@ public class P2pNetworkTest {
 
         @Override
         public void preStart() {
+            System.err.println("----- prestart ....");
             final ActorRef tcp = Tcp.get(getContext().getSystem()).manager();
             tcp.tell(TcpMessage.bind(self(), new InetSocketAddress(host, port), 100), getSelf());
         }
@@ -154,6 +166,12 @@ public class P2pNetworkTest {
 
     public static class MyPeer extends Peer {
 
+        private static MyPeer instance;
+
+        public MyPeer(){
+            instance = this;
+        }
+
         @Override
         protected void needMorePeers(int count) {
             ArrayList<InetSocketAddress> seeds = new ArrayList<>();
@@ -176,6 +194,8 @@ public class P2pNetworkTest {
 
     public static class MyRemoteNode extends Connection {
 
+        private static MyRemoteNode instance;
+
         private final Queue<Message> messageQueue = new LinkedBlockingQueue<>();
         private ByteString msgBuffer = ByteString.empty();
         public VersionPayload version;
@@ -183,12 +203,14 @@ public class P2pNetworkTest {
 
         protected MyRemoteNode(ActorRef tcp, InetSocketAddress remote, InetSocketAddress local) {
             super(tcp, remote, local);
-            VersionPayload versionPayload = VersionPayload.create(8080,
+            VersionPayload versionPayload = VersionPayload.create(9002,
                     LocalNode.NONCE,
                     LocalNode.USER_AGENT,
                     Uint.ONE);
             System.out.println("client send local version: " + gson.toJson(versionPayload));
             sendMessage(Message.create("version", versionPayload));
+
+            instance = this;
         }
 
         @Override
@@ -250,11 +272,6 @@ public class P2pNetworkTest {
                 hashStop = UInt256.Zero;
             }};
             sendMessage(Message.create("getheaders", blocksPayload));
-        }
-
-
-        private void enqueueMessage(String command, ISerializable payload) {
-            enqueueMessage(Message.create(command, payload));
         }
 
         private void enqueueMessage(Message message) {
